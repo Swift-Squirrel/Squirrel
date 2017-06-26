@@ -7,9 +7,13 @@ class microsTests: XCTestCase {
         // Use XCTAssert and related functions to verify your tests produce the correct results.
         XCTAssertEqual(micros().text, "Hello, World!")
     }
+    
+    func testServer() {
+        XCTAssertNotNil(Server(port: 12) as? Server)
+    }
 
 
     static var allTests = [
-        ("testExample", testExample),
+        ("testExample", testExample), ("testServer", testServer)
     ]
 }
