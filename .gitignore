@@ -71,3 +71,7 @@ fastlane/test_output
 
 # xcodeproj
 micros.xcodeproj
+
+# MicroS
+Public/
+

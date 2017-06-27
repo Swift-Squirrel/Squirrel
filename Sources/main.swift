@@ -8,4 +8,6 @@
 
 import Foundation
 
-print("asd")
+let server = Server()
+
+try server.run()
