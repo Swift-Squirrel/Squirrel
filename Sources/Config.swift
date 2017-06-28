@@ -37,9 +37,24 @@ class Config {
     }
     
     private init() {
-        _serverRoot = "/Users/Navel/Leo/Skola/3BIT/IBT/Micros"
+        _serverRoot = "/Users/Millie/Developer/Micros"
         _webRoot = _serverRoot + "/Public"
         _cache = _serverRoot + "/Storage/Cache"
         _port = 8080
+        
+        createDirectories()
+    }
+    
+    private func createDir(url: String) {
+        let fileManager = FileManager.default
+        if(!fileManager.fileExists(atPath: url)) {
+            try? fileManager.createDirectory(atPath: url, withIntermediateDirectories: true)
+        }
+    }
+    
+    private func createDirectories() {
+        createDir(url: serverRoot)
+        createDir(url: webRoot)
+        createDir(url: cache)
     }
 }
