@@ -37,7 +37,7 @@ class Config {
     }
     
     private init() {
-        _serverRoot = "/Users/Millie/Developer/Micros"
+        _serverRoot = "/Users/Navel/Leo/Skola/3BIT/IBT/Micros"
         _webRoot = _serverRoot + "/Public"
         _cache = _serverRoot + "/Storage/Cache"
         _port = 8080
@@ -48,6 +48,7 @@ class Config {
     private func createDir(url: String) {
         let fileManager = FileManager.default
         if(!fileManager.fileExists(atPath: url)) {
+            Log.write(message: "creating folder: \(url)", logGroup: .info)
             try? fileManager.createDirectory(atPath: url, withIntermediateDirectories: true)
         }
     }

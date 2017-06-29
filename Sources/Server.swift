@@ -45,12 +45,14 @@ class Server {
         
         listenSocket = socket
         try socket.listen(on: Int(port))
-        print("Listening port: \(socket.listeningPort)")
+        Log.write(message: "Server is running on port \(socket.listeningPort)", logGroup: .infoImportant)
+//        print("Listening port: \(socket.listeningPort)")
         let queue = DispatchQueue(label: "clientQueue", attributes: .concurrent)
         repeat {
             let connectedSocket = try socket.acceptClientConnection()
             
-            print("Connection from: \(connectedSocket.remoteHostname)")
+            Log.write(message: "Connection from: \(connectedSocket.remoteHostname)", logGroup: .info)
+            
             queue.async{self.newConnection(socket: connectedSocket)}
         } while acceptNewConnection
         
@@ -58,7 +60,6 @@ class Server {
     func newConnection(socket: Socket) {
         connected[socket.socketfd] = socket
         
-        //        var cont = true
         var dataRead = Data(capacity: bufferSize)
         var cont = true
         var zeroTimes = 100
@@ -69,50 +70,49 @@ class Server {
                     zeroTimes = 100
                     do {
                         let request = try Request(data: dataRead)
+                        Log.write(message: request.method + " " + request.path, logGroup: .infoImportant)
+                        
                         if (request.getHeader(for: "Connection") != nil) && request.getHeader(for: "Connection") != "keep-alive" {
                             cont = false
                         }
                         
                         if let handler = ResponseManager.findHandler(for: request) {
+                            Log.write(message: "Using handler", logGroup: .debug)
                             let response = handler(request)
                             try socket.write(from: response.raw())
                         } else {
                             var p = Config.sibling.webRoot + request.path
                             var isDir: ObjCBool = false
                             if !FileManager.default.fileExists(atPath: p, isDirectory: &isDir) {
+                                Log.write(message: "404", logGroup: .debug)
                                 // 404
                             } else if isDir.boolValue == false {
-                                guard let filePath = URL(string: Config.sibling.webRoot + request.path) else {
+                                Log.write(message: "Sending file", logGroup: .debug)
+                                guard let filePath = URL(string: "file://" + Config.sibling.webRoot + request.path) else {
                                     throw e.unknownError
                                 }
-                                let fileExtension = filePath.pathExtension
-                                
-                                switch fileExtension.lowercased() {
-                                case HTTPHeaders.ContentType.Image.jpeg.rawValue:
-                                    break
-                                case HTTPHeaders.ContentType.Image.png.rawValue:
-                                    break
-                                case HTTPHeaders.ContentType.Text.html.rawValue:
-                                    break
-                                case HTTPHeaders.ContentType.Text.plain.rawValue:
-                                    break
-                                default:
-                                    throw e.unknownError
+                                do {
+                                    let response = try Response(file: filePath)
+                                    self.send(socket: socket, response: response)
+                                } catch let error {
+                                    Log.write(message: "\(error)", logGroup: .errors)
                                 }
                             } else {
                                 p += "index.html"
                                 if FileManager.default.fileExists(atPath: p, isDirectory: &isDir) && !isDir.boolValue {
+                                    Log.write(message: "Sending index.html", logGroup: .debug)
                                     guard let filePath = URL(string: p) else {
                                         throw e.unknownError
                                     }
                                     let body = try String(contentsOfFile: filePath.absoluteString)
                                     let request = Response(
                                         headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
-                                        body: body
+                                        body: body.data(using: .utf8)!
                                     )
                                     try socket.write(from: request.raw())
                                     
                                 } else {
+                                    Log.write(message: "404", logGroup: .debug)
                                     // 404
                                 }
                             }
@@ -136,6 +136,51 @@ class Server {
         } while cont
         connected.removeValue(forKey: socket.socketfd)
         socket.close()
+    }
+    
+    private func send(socket: Socket, response: Response) {
+        if response.bodyLenght <= 4096 {
+            let _ = try? socket.write(from: response.raw())
+        } else {
+//            var data = response.rawHeader()
+            response.setHeader(for: "Transfer-Encoding", to: "chunked")
+            
+            var bytes = [UInt8]()
+            let bodyData = response.rawBody()
+//            var buffer = [UInt8](repeating: 0, count: bodyData.count)
+//            bodyData.getBytes(buffer, length: bodyData.count)
+//            bytes = buffer
+            bytes = Array(bodyData)
+        
+            var c = bytes.count
+            var i = 0
+//            let str = "HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: \(c)\r\nTransfer-Encoding: chunked\r\n\r\n"
+            let _ = try? socket.write(from: response.rawHeader())
+            
+            let chunkSize = 2048
+            
+            while(c >= chunkSize){
+                let d:[UInt8] = Array(bytes[(i*chunkSize)...(chunkSize*(i+1) - 1)])
+                var d1: Data = (String(format: "%X", d.count) + "\r\n").data(using: .utf8)!
+                d1.append(contentsOf: d)
+                d1.append("\r\n".data(using: .utf8)!)
+
+                let _ = try? socket.write(from: d1)
+                c -= chunkSize
+                i += 1
+            }
+            if(c > 0) {
+                let d:[UInt8] = Array(bytes[(bytes.count - c)...(bytes.count - 1)])
+                var d1:Data = (String(format: "%X", c) + "\r\n").data(using: .utf8)!
+                d1.append(contentsOf: d)
+                d1.append("\r\n".data(using: .utf8)!)
+
+                let _ = try? socket.write(from: d1)
+                c = 0
+            }
+            let _ = try? socket.write(from: "0\r\n\r\n".data(using: .utf8)!)
+
+        }
     }
     
     

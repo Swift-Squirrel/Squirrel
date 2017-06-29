@@ -25,6 +25,11 @@ enum HTTPHeaders {
         enum Text: String {
             case html = "text/html"
             case plain = "text/plain"
+            case css = "text/css"
+        }
+        
+        enum Application: String {
+            case js = "application/javascript"
         }
     }
     

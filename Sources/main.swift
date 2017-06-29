@@ -8,6 +8,7 @@
 
 import Foundation
 
+Log.logging(on: true)
 let server = Server()
 
 try server.run()
