@@ -10,24 +10,23 @@ import Foundation
 
 class ResponseManager {
     
-    static var _singleton: ResponseManager? = nil
+    static let sharedInstance = ResponseManager()
     
-    static var manager: ResponseManager {
-        if _singleton == nil {
-            _singleton = ResponseManager()
-        }
-        return _singleton!
-    }
+    var routeTree = RouteTree()
     
     private init() {
-        addRoutes()
     }
     
-    static func findHandler(for request: Request) -> ((Request) -> Response)? {
-        return nil
-        return {
-            (r: Request) in
-            return Response()
+    func get(route: String, handler: @escaping () -> Response) {
+        routeTree.add(route: route, forMethod: .get){
+            _ in
+            return handler()
         }
+    }
+    
+  
+    func findHandler(for request: Request) -> ResponseHandler? {
+        return routeTree.findHandler(for: request.method, in: request.path)
+//        return routeTree.findHandler(forMethod: request.method, withPath: request.path)
     }
 }

@@ -17,11 +17,13 @@ class Request {
     
     private var requestType = ""
     
-    private let _method: String
-    var method: String {
+    private let _method: HTTPHeaders.Method
+    
+    var method: HTTPHeaders.Method {
         return _method
     }
     private let _path: URL
+    
     var path: String {
         return _path.absoluteString
     }
@@ -63,7 +65,8 @@ class Request {
         guard methodRegex.matches(components[0].lowercased()) == true else {
             throw e.unknownError
         }
-        _method = components[0]
+        _method = HTTPHeaders.Method(rawValue: components[0]) ?? HTTPHeaders.Method.get
+        
         guard components[2] == HTTPHeaders.HTTPProtocol.http11.rawValue else {
             throw e.unknownError
         }

@@ -8,7 +8,11 @@
 
 import Foundation
 
+typealias ResponseHandler = ((Request) -> Response)
+
 class Response {
+    
+    private let routeTree = RouteTree()
     
     private let status = HTTPHeaders.Status.s200
     
@@ -62,8 +66,7 @@ class Response {
             setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.plain.rawValue)
         }
         
-    }
-    
+    }    
     
     func rawHeader() -> Data {
         var header = httpProtocolVersion + " " + status.rawValue + "\r\n"

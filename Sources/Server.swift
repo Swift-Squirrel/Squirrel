@@ -25,9 +25,11 @@ class Server {
     var acceptNewConnection = true
     let serverRoot: String
     
-    init(port: UInt16 = Config.sibling.port, serverRoot root: String = Config.sibling.serverRoot) {
+    init(port: UInt16 = Config.sharedInstance.port, serverRoot root: String = Config.sharedInstance.serverRoot) {
         self.port = port
         self.serverRoot = root
+        
+        
     }
     
     deinit {
@@ -38,15 +40,13 @@ class Server {
     }
     
     func run() throws {
-        //Using the following create class method:
-        //public class func create(family: ProtocolFamily = .inet, type: SocketType = .stream, proto: SocketProtocol = .tcp) throws -> Socket
-        let socket = try Socket.create()
+        ResponseManager.sharedInstance.addRoutes()
         
+        let socket = try Socket.create()
         
         listenSocket = socket
         try socket.listen(on: Int(port))
         Log.write(message: "Server is running on port \(socket.listeningPort)", logGroup: .infoImportant)
-//        print("Listening port: \(socket.listeningPort)")
         let queue = DispatchQueue(label: "clientQueue", attributes: .concurrent)
         repeat {
             let connectedSocket = try socket.acceptClientConnection()
@@ -70,25 +70,25 @@ class Server {
                     zeroTimes = 100
                     do {
                         let request = try Request(data: dataRead)
-                        Log.write(message: request.method + " " + request.path, logGroup: .infoImportant)
+                        Log.write(message: request.method.rawValue + " " + request.path, logGroup: .infoImportant)
                         
                         if (request.getHeader(for: "Connection") != nil) && request.getHeader(for: "Connection") != "keep-alive" {
                             cont = false
                         }
                         
-                        if let handler = ResponseManager.findHandler(for: request) {
+                        if let handler = ResponseManager.sharedInstance.findHandler(for: request) {
                             Log.write(message: "Using handler", logGroup: .debug)
                             let response = handler(request)
                             try socket.write(from: response.raw())
                         } else {
-                            var p = Config.sibling.webRoot + request.path
+                            var p = Config.sharedInstance.webRoot + request.path
                             var isDir: ObjCBool = false
                             if !FileManager.default.fileExists(atPath: p, isDirectory: &isDir) {
                                 Log.write(message: "404", logGroup: .debug)
                                 // 404
                             } else if isDir.boolValue == false {
                                 Log.write(message: "Sending file", logGroup: .debug)
-                                guard let filePath = URL(string: "file://" + Config.sibling.webRoot + request.path) else {
+                                guard let filePath = URL(string: "file://" + Config.sharedInstance.webRoot + request.path) else {
                                     throw e.unknownError
                                 }
                                 do {
@@ -116,11 +116,9 @@ class Server {
                                     // 404
                                 }
                             }
-                            
                         }
                     } catch is e {
                         cont = false
-                        
                     }
                     dataRead.removeAll()
                 } else {
@@ -128,7 +126,6 @@ class Server {
                     if(zeroTimes == 0) {
                         cont = false
                     }
-                    
                 }
             } catch let error {
                 print("error: \(error)")
@@ -142,19 +139,14 @@ class Server {
         if response.bodyLenght <= 4096 {
             let _ = try? socket.write(from: response.raw())
         } else {
-//            var data = response.rawHeader()
             response.setHeader(for: "Transfer-Encoding", to: "chunked")
             
             var bytes = [UInt8]()
             let bodyData = response.rawBody()
-//            var buffer = [UInt8](repeating: 0, count: bodyData.count)
-//            bodyData.getBytes(buffer, length: bodyData.count)
-//            bytes = buffer
             bytes = Array(bodyData)
         
             var c = bytes.count
             var i = 0
-//            let str = "HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: \(c)\r\nTransfer-Encoding: chunked\r\n\r\n"
             let _ = try? socket.write(from: response.rawHeader())
             
             let chunkSize = 2048

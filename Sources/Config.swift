@@ -27,15 +27,8 @@ class Config {
         return _port
     }
     
-    private static var _sibling: Config? = nil
-    
-    static var sibling: Config {
-        if _sibling == nil {
-            _sibling = Config()
-        }
-        return _sibling!
-    }
-    
+    static let sharedInstance = Config()
+
     private init() {
         _serverRoot = "/Users/Navel/Leo/Skola/3BIT/IBT/Micros"
         _webRoot = _serverRoot + "/Public"
