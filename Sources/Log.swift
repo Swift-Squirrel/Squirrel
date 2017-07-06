@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Rainbow
 
 class Log {
     
@@ -42,8 +43,19 @@ class Log {
     }
     
     static func write(message: String, logGroup: LogGroups = .info) {
+        var coloredMessage = message
         if (logGroup.rawValue & logging) != 0 {
-            print(message)
+            switch logGroup {
+            case .debug:
+                coloredMessage = coloredMessage.green
+            case .errors:
+                coloredMessage = coloredMessage.red
+            case .info, .infoImportant, .infoAll:
+                coloredMessage = coloredMessage.lightBlue
+            case .warnings:
+                coloredMessage = coloredMessage.lightYellow
+            }
+            print(coloredMessage)
         }
     }
     
