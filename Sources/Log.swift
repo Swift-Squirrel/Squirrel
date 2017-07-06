@@ -26,6 +26,7 @@ class Log {
     }
     
     private static var logging: UInt8 = Logging.all.rawValue ^ LogGroups.debug.rawValue
+    static var colored = true
     
     static func logging(options: [LogGroups]) {
         logging = 0
@@ -43,17 +44,19 @@ class Log {
     }
     
     static func write(message: String, logGroup: LogGroups = .info) {
-        var coloredMessage = message
         if (logGroup.rawValue & logging) != 0 {
-            switch logGroup {
-            case .debug:
-                coloredMessage = coloredMessage.green
-            case .errors:
-                coloredMessage = coloredMessage.red
-            case .info, .infoImportant, .infoAll:
-                coloredMessage = coloredMessage.lightBlue
-            case .warnings:
-                coloredMessage = coloredMessage.lightYellow
+            var coloredMessage = message
+            if colored {
+                switch logGroup {
+                case .debug:
+                    coloredMessage = coloredMessage.green
+                case .errors:
+                    coloredMessage = coloredMessage.red
+                case .info, .infoImportant, .infoAll:
+                    coloredMessage = coloredMessage.lightBlue
+                case .warnings:
+                    coloredMessage = coloredMessage.lightYellow
+                }
             }
             print(coloredMessage)
         }
