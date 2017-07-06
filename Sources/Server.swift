@@ -91,6 +91,9 @@ class Server {
                                 guard let filePath = URL(string: "file://" + Config.sharedInstance.webRoot + request.path) else {
                                     throw e.unknownError
                                 }
+                                guard filePath.absoluteString.hasPrefix(Config.sharedInstance.webRoot) else {
+                                    throw e.unknownError
+                                }
                                 do {
                                     let response = try Response(file: filePath)
                                     self.send(socket: socket, response: response)
