@@ -13,6 +13,8 @@ class RouteNode {
     private let route: String
     private var values: [HTTPHeaders.Method: ResponseHandler] = [:]
     
+    private var defaultHandlers: [HTTPHeaders.Method: ResponseHandler] = [:]
+    
     private var childrens = [RouteNode]() {
         didSet {
             childrens.sort {
@@ -26,6 +28,16 @@ class RouteNode {
     }
     
     func addNode(routes: [String], method: HTTPHeaders.Method, handler: @escaping ResponseHandler) throws {
+        guard routes.count > 0 else {
+            Log.write(message: "Fatal error in adding routes\nroutes variable is empty", logGroup: .errors)
+            throw e.unknownError
+        }
+        
+        if routes.first! == "*"{
+            defaultHandlers[method] = handler
+            return
+        }
+        
         for child in childrens {
             if child.route == routes.first! {
                 var newRoutes = routes
@@ -64,16 +76,16 @@ class RouteNode {
         }
         
         if routes.count == 1 {
-            return values[method]
+            return values[method] ?? defaultHandlers[method]
         }
         var rs = routes
         rs.remove(at: 0)
         for child in childrens {
             if child.route == rs.first! {
-                return child.findHandler(for: method, in: rs)
+                return child.findHandler(for: method, in: rs) ?? defaultHandlers[method]
             }
         }
-        return nil
+        return defaultHandlers[method]
     }
     
     

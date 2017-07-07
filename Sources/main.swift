@@ -9,7 +9,7 @@
 import Foundation
 
 Log.logging(on: true)
-#if CONSOLE
+#if Xcode
 Log.colored = false
 #endif
 let server = Server()
