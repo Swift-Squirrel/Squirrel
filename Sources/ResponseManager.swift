@@ -35,21 +35,21 @@ class ResponseManager {
 
     public func route<T>(get url: String, handler: @escaping (Request, T) -> Response) {
         let closure = {
-            (r: Request) in
+            (req: Request) in
             let blueprint = Blueprint(of: T.self)
-            let values = r.getURLParameters()
+            let values = req.getURLParameters()
             let converted = blueprint.construct(using: values)! // TODO optional
 
-            return handler(r, converted)
+            return handler(req, converted)
             } as ResponseHandler
         route(get: url, handler: closure)
     }
 
     public func route<T>(get url: String, handler: @escaping (T) -> Response) {
         let closure = {
-            (r: Request) in
+            (req: Request) in
             let blueprint = Blueprint(of: T.self)
-            let values = r.getURLParameters()
+            let values = req.getURLParameters()
             let converted = blueprint.construct(using: values)! // TODO optional
 
             return handler(converted)

@@ -40,7 +40,7 @@ class Config {
 
     private func createDir(url: String) {
         let fileManager = FileManager.default
-        if(!fileManager.fileExists(atPath: url)) {
+        if !fileManager.fileExists(atPath: url) {
             Log.write(message: "creating folder: \(url)", logGroup: .info)
             try? fileManager.createDirectory(atPath: url, withIntermediateDirectories: true)
         }

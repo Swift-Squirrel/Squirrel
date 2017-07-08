@@ -35,8 +35,8 @@ class Log {
         }
     }
 
-    static func logging(on: Bool) {
-        if on {
+    static func logging(turnedOn: Bool) {
+        if turnedOn {
             logging = Logging.all.rawValue
         } else {
             logging = Logging.none.rawValue

@@ -8,7 +8,7 @@
 
 import Foundation
 
-Log.logging(on: true)
+Log.logging(turnedOn: true)
 #if Xcode
 Log.colored = false
 #endif

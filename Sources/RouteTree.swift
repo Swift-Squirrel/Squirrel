@@ -15,7 +15,10 @@ class RouteTree {
         Log.write(message: "Adding route for method \(method.rawValue) in route: \(route)", logGroup: .debug)
 
         guard !(route.contains("/./") || !route.hasPrefix("/") || route.contains("/../")) else {
-            Log.write(message: "Route can not contains with \"/./\" or \"/../\" and must has prefix with \"/\"", logGroup: .errors)
+            Log.write(
+                message: "Route can not contains with \"/./\" or \"/../\" and must has prefix with \"/\"",
+                logGroup: .errors
+            )
             exit(1)
         }
 

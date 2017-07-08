@@ -9,7 +9,7 @@
 import Foundation
 import Regex
 
-enum e: Error {
+enum MyError: Error {
     case unknownError
 }
 
@@ -41,13 +41,13 @@ class Request {
     init(data: Data) throws {
         guard let stringData = String(data: data, encoding: .utf8) else {
             // todo throws
-            throw e.unknownError
+            throw MyError.unknownError
 //            return
         }
         var rows = stringData.components(separatedBy: "\r\n\r\n")
-        if (rows.count != 2) {
+        if rows.count != 2 {
             // throw
-            throw e.unknownError
+            throw MyError.unknownError
 //            return
         }
         rawHeader = rows[0]
@@ -57,20 +57,20 @@ class Request {
         let row = rows[0]
         let components = row.components(separatedBy: " ")
         if components.count != 3 {
-            throw e.unknownError
+            throw MyError.unknownError
         }
         guard let p = URL(string: components[1]) else {
-            throw e.unknownError
+            throw MyError.unknownError
         }
         _path = p
         let methodRegex = Regex("^(post|get|delete|put)$")
         guard methodRegex.matches(components[0].lowercased()) == true else {
-            throw e.unknownError
+            throw MyError.unknownError
         }
         _method = HTTPHeaders.Method(rawValue: components[0]) ?? HTTPHeaders.Method.get
 
         guard components[2] == HTTPHeaders.HTTPProtocol.http11.rawValue else {
-            throw e.unknownError
+            throw MyError.unknownError
         }
         httpProtocol = components[2]
 
@@ -78,7 +78,7 @@ class Request {
         for row in rows {
             let pomArray = row.components(separatedBy: ": ")
             if pomArray.count != 2 {
-                throw e.unknownError
+                throw MyError.unknownError
             }
 
             headers[pomArray[0]] = pomArray[1]

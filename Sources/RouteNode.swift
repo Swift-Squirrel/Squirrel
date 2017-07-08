@@ -27,7 +27,7 @@ class RouteNode {
     func addNode(routes: [String], method: HTTPHeaders.Method, handler: @escaping ResponseHandler) throws {
         guard routes.count > 0, let firstElem = routes.first else {
             Log.write(message: "Fatal error in adding routes\nroutes variable is empty", logGroup: .errors)
-            throw e.unknownError
+            throw MyError.unknownError
         }
 
         if firstElem == "*" {
@@ -86,7 +86,7 @@ class RouteNode {
 
     func set(method: HTTPHeaders.Method, handler: @escaping ResponseHandler) throws {
         guard values[method] == nil else {
-            throw e.unknownError
+            throw MyError.unknownError
         }
 
         values[method] = handler

@@ -36,12 +36,12 @@ extension ResponseManager {
 //        }
 
 
-        struct asd {
+        struct Asd {
             var name: String
             var age: Int
         }
 
-        route(get: "/:name/sn/:age") { (p: asd) -> Response in
+        route(get: "/:name/sn/:age") { (p: Asd) -> Response in
             print("ad \(p.name) \(p.age)")
             return Response(headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue], body: "ad \(p.name) \(p.age)".data(using: .utf8)!)
         }

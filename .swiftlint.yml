@@ -1,4 +1,9 @@
 included: # paths to include during linting. `--path` is ignored if present.
     - Sources
-#excluded: # paths to ignore during linting. Takes precedence over `included`.
-##    - .build
+excluded:
+    - "Sources/ResponseManager+addRoutes.swift"
+    - Sources/HTTPHeaders.swift
+line_length:
+    - 120 # warning
+    - 160 # error
+

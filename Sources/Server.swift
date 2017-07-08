@@ -72,7 +72,8 @@ class Server {
                         let request = try Request(data: dataRead)
                         Log.write(message: request.method.rawValue + " " + request.path, logGroup: .infoImportant)
 
-                        if (request.getHeader(for: "Connection") != nil) && request.getHeader(for: "Connection") != "keep-alive" {
+                        if (request.getHeader(for: "Connection") != nil)
+                            && request.getHeader(for: "Connection") != "keep-alive" {
                             cont = false
                         }
 
@@ -88,11 +89,13 @@ class Server {
                                 // 404
                             } else if isDir.boolValue == false {
                                 Log.write(message: "Sending file", logGroup: .debug)
-                                guard let filePath = URL(string: "file://" + Config.sharedInstance.webRoot + request.path) else {
-                                    throw e.unknownError
+                                guard let filePath = URL(
+                                    string: "file://" + Config.sharedInstance.webRoot + request.path
+                                    ) else {
+                                    throw MyError.unknownError
                                 }
                                 guard filePath.absoluteString.hasPrefix(Config.sharedInstance.webRoot) else {
-                                    throw e.unknownError
+                                    throw MyError.unknownError
                                 }
                                 do {
                                     let response = try Response(file: filePath)
@@ -105,7 +108,7 @@ class Server {
                                 if FileManager.default.fileExists(atPath: p, isDirectory: &isDir) && !isDir.boolValue {
                                     Log.write(message: "Sending index.html", logGroup: .debug)
                                     guard let filePath = URL(string: p) else {
-                                        throw e.unknownError
+                                        throw MyError.unknownError
                                     }
                                     let body = try String(contentsOfFile: filePath.absoluteString)
                                     let request = Response(
@@ -120,13 +123,13 @@ class Server {
                                 }
                             }
                         }
-                    } catch is e {
+                    } catch is MyError {
                         cont = false
                     }
                     dataRead.removeAll()
                 } else {
                     zeroTimes -= 1
-                    if(zeroTimes == 0) {
+                    if zeroTimes == 0 {
                         cont = false
                     }
                 }
@@ -154,7 +157,7 @@ class Server {
 
             let chunkSize = 2048
 
-            while(c >= chunkSize) {
+            while c >= chunkSize {
                 let d: [UInt8] = Array(bytes[(i*chunkSize)...(chunkSize*(i+1) - 1)])
                 var d1: Data = (String(format: "%X", d.count) + "\r\n").data(using: .utf8)!
                 d1.append(contentsOf: d)
@@ -164,7 +167,7 @@ class Server {
                 c -= chunkSize
                 i += 1
             }
-            if(c > 0) {
+            if c > 0 {
                 let d: [UInt8] = Array(bytes[(bytes.count - c)...(bytes.count - 1)])
                 var d1: Data = (String(format: "%X", c) + "\r\n").data(using: .utf8)!
                 d1.append(contentsOf: d)
