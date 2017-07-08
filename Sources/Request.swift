@@ -38,8 +38,6 @@ class Request {
     private var getParameters: [String: String] = [:]
     private var postParameters: [String: String] = [:]
     
-    
-    
     init(data: Data) throws {
         guard let stringData = String(data: data, encoding: .utf8) else {
             // todo throws
@@ -93,6 +91,10 @@ class Request {
     
     func getURLParameter(for key: String) -> String? {
         return urlParameters[key]
+    }
+    
+    func getURLParameters() -> [String: String] {
+        return urlParameters
     }
     
     func getHeader(for key: String) -> String? {

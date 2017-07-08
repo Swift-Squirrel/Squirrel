@@ -18,7 +18,7 @@ class RouteNode {
     
     private var childrens = [RouteNode]()
     
-    private var dynamicNode: DynamicRouteNode? = nil
+    private var dynamicNodes = [DynamicRouteNode]()
 
     init(route: String) {
         self.route = route
@@ -36,18 +36,26 @@ class RouteNode {
         }
         
         if firstElem.hasPrefix(":")  {
-            if dynamicNode == nil {
-                dynamicNode = DynamicRouteNode(route: firstElem)
-            }
-            
-            if let dynamicNode = self.dynamicNode {
-                var newRoutes = routes
-                newRoutes.remove(at: 0)
-                if newRoutes.isEmpty {
-                    try dynamicNode.set(method: method, handler: handler)
-                } else {
-                    try dynamicNode.addNode(routes: newRoutes, method: method, handler: handler)
+            for node in dynamicNodes {
+                if ":" + node.route == firstElem {
+                    var newRoutes = routes
+                    newRoutes.remove(at: 0)
+                    if newRoutes.isEmpty {
+                        try node.set(method: method, handler: handler)
+                    } else {
+                        try node.addNode(routes: newRoutes, method: method, handler: handler)
+                    }
+                    return
                 }
+            }
+            let newDynamicNode = DynamicRouteNode(route: firstElem)
+            dynamicNodes.append(newDynamicNode)
+            var newRoutes = routes
+            newRoutes.remove(at: 0)
+            if newRoutes.isEmpty {
+                try newDynamicNode.set(method: method, handler: handler)
+            } else {
+                try newDynamicNode.addNode(routes: newRoutes, method: method, handler: handler)
             }
             return
         }
@@ -99,8 +107,13 @@ class RouteNode {
                 return child.findHandler(for: method, in: rs) ?? defaultHandlers[method]
             }
         }
-        if let dynamicNode = self.dynamicNode {
-            return dynamicNode.findHandler(for: method, in: rs)
+//        if let dynamicNode = self.dynamicNodes {
+//            return dynamicNode.findHandler(for: method, in: rs)
+//        }
+        for node in dynamicNodes {
+            if let handler = node.findHandler(for: method, in: rs) {
+                return handler
+            }
         }
         return defaultHandlers[method]
     }
