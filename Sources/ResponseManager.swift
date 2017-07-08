@@ -17,16 +17,32 @@ class ResponseManager {
     private init() {
     }
     
-    func get(route: String, handler: @escaping () -> Response) {
-        routeTree.add(route: route, forMethod: .get){
-            _ in
-            return handler()
+    /// routing
+    ///
+    /// - Parameters:
+    ///   - url: url
+    ///   - handler: handler
+    public func route(get url: String, handler: @escaping (Request) -> Response) {
+        routeTree.add(route: url, forMethod: .get, handler: handler)
+    }
+    
+    public func route(get url: String, handler: @escaping () -> Response) {
+        routeTree.add(route: url, forMethod: .get) {
+            _ in handler()
         }
     }
     
-  
+    public func route(post url: String, handler: @escaping (Request) -> Response) {
+        routeTree.add(route: url, forMethod: .post, handler: handler)
+    }
+    
+    public func route(post url: String, handler: @escaping () -> Response) {
+        routeTree.add(route: url, forMethod: .post) {
+            _ in handler()
+        }
+    }
+    
     func findHandler(for request: Request) -> ResponseHandler? {
         return routeTree.findHandler(for: request.method, in: request.path)
-//        return routeTree.findHandler(forMethod: request.method, withPath: request.path)
     }
 }

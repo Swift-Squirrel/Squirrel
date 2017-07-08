@@ -10,36 +10,50 @@ import Foundation
 
 class RouteNode {
     
-    private let route: String
+    let route: String
+    
     private var values: [HTTPHeaders.Method: ResponseHandler] = [:]
     
     private var defaultHandlers: [HTTPHeaders.Method: ResponseHandler] = [:]
     
-    private var childrens = [RouteNode]() {
-        didSet {
-            childrens.sort {
-                $0.route < $1.route
-            }
-        }
-    }
+    private var childrens = [RouteNode]()
+    
+    private var dynamicNode: DynamicRouteNode? = nil
 
     init(route: String) {
         self.route = route
     }
     
     func addNode(routes: [String], method: HTTPHeaders.Method, handler: @escaping ResponseHandler) throws {
-        guard routes.count > 0 else {
+        guard routes.count > 0, let firstElem = routes.first else {
             Log.write(message: "Fatal error in adding routes\nroutes variable is empty", logGroup: .errors)
             throw e.unknownError
         }
         
-        if routes.first! == "*"{
+        if firstElem == "*" {
             defaultHandlers[method] = handler
             return
         }
         
+        if firstElem.hasPrefix(":")  {
+            if dynamicNode == nil {
+                dynamicNode = DynamicRouteNode(route: firstElem)
+            }
+            
+            if let dynamicNode = self.dynamicNode {
+                var newRoutes = routes
+                newRoutes.remove(at: 0)
+                if newRoutes.isEmpty {
+                    try dynamicNode.set(method: method, handler: handler)
+                } else {
+                    try dynamicNode.addNode(routes: newRoutes, method: method, handler: handler)
+                }
+            }
+            return
+        }
+        
         for child in childrens {
-            if child.route == routes.first! {
+            if child.route == firstElem {
                 var newRoutes = routes
                 newRoutes.remove(at: 0)
                 if newRoutes.isEmpty {
@@ -51,7 +65,7 @@ class RouteNode {
             }
         }
         
-        let newNode = RouteNode(route: routes.first!)
+        let newNode = RouteNode(route: firstElem)
         childrens.append(newNode)
         var newRoutes = routes
         newRoutes.remove(at: 0)
@@ -84,6 +98,9 @@ class RouteNode {
             if child.route == rs.first! {
                 return child.findHandler(for: method, in: rs) ?? defaultHandlers[method]
             }
+        }
+        if let dynamicNode = self.dynamicNode {
+            return dynamicNode.findHandler(for: method, in: rs)
         }
         return defaultHandlers[method]
     }

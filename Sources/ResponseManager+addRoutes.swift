@@ -11,17 +11,35 @@ import Foundation
 extension ResponseManager {
     func addRoutes() {
         
-        get(route: "/web") { () -> Response in
+        route(get: "/web") {
             return try! Response(file: URL(fileURLWithPath: Config.sharedInstance.webRoot + "/web/index.html"))
         }
         
-        get(route: "/") {
+        route(get: "/") {
             return Response(headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue], body: "Olaaa".data(using: .utf8)!)
         }
         
-//        get(route: "/*") {
-//            return Response(headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue], body: "Olaaa".data(using: .utf8)!)
+//        get(route: "/photos/{id}") {
+//            (request) -> Response in
+//            return Response(headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue], body: "photo with id".data(using: .utf8)!)
 //        }
-
+//        
+//        get(route: "as") { (r) in
+//            return Response()
+//        }
+        
+        
+        route(get: "/photos/:id/:/:name") {
+            (r: Request) in
+            let id = r.getURLParameter(for: "id")!
+            let name = r.getURLParameter(for: "name")!
+            return Response(headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue], body: "photo with id: \(id) \(name)".data(using: .utf8)!)
+        }
+        
+        
+        //        get(route: "/*") {
+        //            return Response(headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue], body: "Olaaa".data(using: .utf8)!)
+        //        }
+        
     }
 }

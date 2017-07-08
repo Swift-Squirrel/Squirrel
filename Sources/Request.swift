@@ -34,6 +34,10 @@ class Request {
     
     private var headers: [String: String] = [:]
     
+    private var urlParameters: [String: String] = [:]
+    private var getParameters: [String: String] = [:]
+    private var postParameters: [String: String] = [:]
+    
     
     
     init(data: Data) throws {
@@ -82,6 +86,15 @@ class Request {
             headers[pomArray[0]] = pomArray[1]
         }
     }
+    
+    func setURLParameter(key: String, value: String) {
+        urlParameters[key] = value
+    }
+    
+    func getURLParameter(for key: String) -> String? {
+        return urlParameters[key]
+    }
+    
     func getHeader(for key: String) -> String? {
         return headers[key]
     }
