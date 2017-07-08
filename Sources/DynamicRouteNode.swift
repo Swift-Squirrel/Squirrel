@@ -12,10 +12,10 @@ class DynamicRouteNode: RouteNode {
     override init(route: String) {
         var r = route
         r.remove(at: r.startIndex)
-        
+
         super.init(route: r)
     }
-    
+
     override func findHandler(for method: HTTPHeaders.Method, in routes: [String]) -> ResponseHandler? {
         if let res = super.findHandler(for: method, in: routes) {
             let key = route

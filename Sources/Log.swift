@@ -10,7 +10,7 @@ import Foundation
 import Rainbow
 
 class Log {
-    
+
     enum LogGroups: UInt8 {
         case errors = 0b00000001
         case warnings = 0b00000010
@@ -19,22 +19,22 @@ class Log {
         case infoAll = 0b00001100
         case debug = 0b00010000
     }
-    
+
     enum Logging: UInt8 {
         case none = 0b0
         case all = 0b11111111
     }
-    
+
     private static var logging: UInt8 = Logging.all.rawValue ^ LogGroups.debug.rawValue
     static var colored = true
-    
+
     static func logging(options: [LogGroups]) {
         logging = 0
         for option in options {
             logging |= option.rawValue
         }
     }
-    
+
     static func logging(on: Bool) {
         if on {
             logging = Logging.all.rawValue
@@ -42,7 +42,7 @@ class Log {
             logging = Logging.none.rawValue
         }
     }
-    
+
     static func write(message: String, logGroup: LogGroups = .info) {
         if (logGroup.rawValue & logging) != 0 {
             var coloredMessage = message
@@ -61,8 +61,8 @@ class Log {
             print(coloredMessage)
         }
     }
-    
+
     private init() {
-        
+
     }
 }

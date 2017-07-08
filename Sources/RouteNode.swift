@@ -9,33 +9,33 @@
 import Foundation
 
 class RouteNode {
-    
+
     let route: String
-    
+
     private var values: [HTTPHeaders.Method: ResponseHandler] = [:]
-    
+
     private var defaultHandlers: [HTTPHeaders.Method: ResponseHandler] = [:]
-    
+
     private var childrens = [RouteNode]()
-    
+
     private var dynamicNodes = [DynamicRouteNode]()
 
     init(route: String) {
         self.route = route
     }
-    
+
     func addNode(routes: [String], method: HTTPHeaders.Method, handler: @escaping ResponseHandler) throws {
         guard routes.count > 0, let firstElem = routes.first else {
             Log.write(message: "Fatal error in adding routes\nroutes variable is empty", logGroup: .errors)
             throw e.unknownError
         }
-        
+
         if firstElem == "*" {
             defaultHandlers[method] = handler
             return
         }
-        
-        if firstElem.hasPrefix(":")  {
+
+        if firstElem.hasPrefix(":") {
             for node in dynamicNodes {
                 if ":" + node.route == firstElem {
                     var newRoutes = routes
@@ -59,7 +59,7 @@ class RouteNode {
             }
             return
         }
-        
+
         for child in childrens {
             if child.route == firstElem {
                 var newRoutes = routes
@@ -72,7 +72,7 @@ class RouteNode {
                 return
             }
         }
-        
+
         let newNode = RouteNode(route: firstElem)
         childrens.append(newNode)
         var newRoutes = routes
@@ -83,20 +83,20 @@ class RouteNode {
             try newNode.addNode(routes: newRoutes, method: method, handler: handler)
         }
     }
-    
+
     func set(method: HTTPHeaders.Method, handler: @escaping ResponseHandler) throws {
         guard values[method] == nil else {
             throw e.unknownError
         }
-        
+
         values[method] = handler
     }
-    
+
     func findHandler(for method: HTTPHeaders.Method, in routes: [String]) -> ResponseHandler? {
         guard routes.count > 0 else {
             return nil
         }
-        
+
         if routes.count == 1 {
             return values[method] ?? defaultHandlers[method]
         }
@@ -117,6 +117,6 @@ class RouteNode {
         }
         return defaultHandlers[method]
     }
-    
-    
+
+
 }
