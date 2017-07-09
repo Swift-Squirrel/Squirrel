@@ -24,6 +24,8 @@ class Server {
     var connected = [Int32: Socket]()
     var acceptNewConnection = true
     let serverRoot: String
+    
+    let responsManager = ResponseManager.sharedInstance
 
     init(port: UInt16 = Config.sharedInstance.port, serverRoot root: String = Config.sharedInstance.serverRoot) {
         self.port = port
@@ -38,10 +40,10 @@ class Server {
         }
         listenSocket?.close()
     }
+    
+    
 
     func run() throws {
-        ResponseManager.sharedInstance.addRoutes()
-
         let socket = try Socket.create()
 
         listenSocket = socket

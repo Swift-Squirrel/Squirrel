@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import Reflection
 
 class ResponseManager {
 
@@ -17,54 +16,9 @@ class ResponseManager {
 
     private init() {
     }
-
-    /// routing
-    ///
-    /// - Parameters:
-    ///   - url: url
-    ///   - handler: handler
-    public func route(get url: String, handler: @escaping (Request) -> Response) {
-        routeTree.add(route: url, forMethod: .get, handler: handler)
-    }
-
-    public func route(get url: String, handler: @escaping () -> Response) {
-        routeTree.add(route: url, forMethod: .get) {
-            _ in handler()
-        }
-    }
-
-    public func route<T>(get url: String, handler: @escaping (Request, T) -> Response) {
-        let closure = {
-            (req: Request) in
-            let blueprint = Blueprint(of: T.self)
-            let values = req.getURLParameters()
-            let converted = blueprint.construct(using: values)! // TODO optional
-
-            return handler(req, converted)
-            } as ResponseHandler
-        route(get: url, handler: closure)
-    }
-
-    public func route<T>(get url: String, handler: @escaping (T) -> Response) {
-        let closure = {
-            (req: Request) in
-            let blueprint = Blueprint(of: T.self)
-            let values = req.getURLParameters()
-            let converted = blueprint.construct(using: values)! // TODO optional
-
-            return handler(converted)
-            } as ResponseHandler
-        route(get: url, handler: closure)
-    }
-
-    public func route(post url: String, handler: @escaping (Request) -> Response) {
-        routeTree.add(route: url, forMethod: .post, handler: handler)
-    }
-
-    public func route(post url: String, handler: @escaping () -> Response) {
-        routeTree.add(route: url, forMethod: .post) {
-            _ in handler()
-        }
+    
+    func route(method: HTTPHeaders.Method, url: String, handler: @escaping ResponseHandler) {
+        routeTree.add(route: url, forMethod: method, handler: handler)
     }
 
     func findHandler(for request: Request) -> ResponseHandler? {
