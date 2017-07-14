@@ -38,49 +38,39 @@ class RouteNode {
         if firstElem.hasPrefix(":") {
             for node in dynamicNodes {
                 if ":" + node.route == firstElem {
-                    var newRoutes = routes
-                    newRoutes.remove(at: 0)
-                    if newRoutes.isEmpty {
-                        try node.set(method: method, handler: handler)
-                    } else {
-                        try node.addNode(routes: newRoutes, method: method, handler: handler)
-                    }
+                    try nodeSetAdd(routes: routes, node: node, method: method, handler: handler)
                     return
                 }
             }
             let newDynamicNode = DynamicRouteNode(route: firstElem)
             dynamicNodes.append(newDynamicNode)
-            var newRoutes = routes
-            newRoutes.remove(at: 0)
-            if newRoutes.isEmpty {
-                try newDynamicNode.set(method: method, handler: handler)
-            } else {
-                try newDynamicNode.addNode(routes: newRoutes, method: method, handler: handler)
-            }
+            try nodeSetAdd(routes: routes, node: newDynamicNode, method: method, handler: handler)
             return
         }
 
         for child in childrens {
             if child.route == firstElem {
-                var newRoutes = routes
-                newRoutes.remove(at: 0)
-                if newRoutes.isEmpty {
-                    try child.set(method: method, handler: handler)
-                } else {
-                    try child.addNode(routes: newRoutes, method: method, handler: handler)
-                }
+                try nodeSetAdd(routes: routes, node: child, method: method, handler: handler)
                 return
             }
         }
 
         let newNode = RouteNode(route: firstElem)
         childrens.append(newNode)
+        try nodeSetAdd(routes: routes, node: newNode, method: method, handler: handler)
+    }
+
+    private func nodeSetAdd(routes: [String],
+                            node: RouteNode,
+                            method: HTTPHeaders.Method,
+                            handler: @escaping ResponseHandler
+        ) throws {
         var newRoutes = routes
         newRoutes.remove(at: 0)
         if newRoutes.isEmpty {
-            try newNode.set(method: method, handler: handler)
+            try node.set(method: method, handler: handler)
         } else {
-            try newNode.addNode(routes: newRoutes, method: method, handler: handler)
+            try node.addNode(routes: newRoutes, method: method, handler: handler)
         }
     }
 
@@ -107,9 +97,9 @@ class RouteNode {
                 return child.findHandler(for: method, in: rs) ?? defaultHandlers[method]
             }
         }
-//        if let dynamicNode = self.dynamicNodes {
-//            return dynamicNode.findHandler(for: method, in: rs)
-//        }
+        //        if let dynamicNode = self.dynamicNodes {
+        //            return dynamicNode.findHandler(for: method, in: rs)
+        //        }
         for node in dynamicNodes {
             if let handler = node.findHandler(for: method, in: rs) {
                 return handler
@@ -117,6 +107,4 @@ class RouteNode {
         }
         return defaultHandlers[method]
     }
-
-
 }

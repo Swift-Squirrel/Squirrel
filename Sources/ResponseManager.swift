@@ -16,7 +16,7 @@ class ResponseManager {
 
     private init() {
     }
-    
+
     func route(method: HTTPHeaders.Method, url: String, handler: @escaping ResponseHandler) {
         routeTree.add(route: url, forMethod: method, handler: handler)
     }

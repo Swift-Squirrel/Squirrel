@@ -13,6 +13,7 @@ class Config {
     private let _webRoot: String
     private let _cache: String
     private let _port: UInt16
+    private let _isAllowedDirBrowsing: Bool
 
     var serverRoot: String {
         return _serverRoot
@@ -26,6 +27,9 @@ class Config {
     var port: UInt16 {
         return _port
     }
+    var  isAllowedDirBrowsing: Bool {
+        return _isAllowedDirBrowsing
+    }
 
     static let sharedInstance = Config()
 
@@ -34,6 +38,7 @@ class Config {
         _webRoot = _serverRoot + "/Public"
         _cache = _serverRoot + "/Storage/Cache"
         _port = 8080
+        _isAllowedDirBrowsing = false
 
         createDirectories()
     }

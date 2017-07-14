@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import PathKit
 
 typealias ResponseHandler = ((Request) -> Response)
 
@@ -44,28 +45,59 @@ class Response {
 
     }
 
-    init(file: URL) throws {
-        body = try Data(contentsOf: file)
-        let fileExtension = file.pathExtension
-        switch fileExtension.lowercased() {
-        case "js", "json":
-            setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Application.js.rawValue)
+    init(pathToFile path: Path) {
+        guard path.exists else {
+            let res = ErrorHandler.sharedInstance.response(for: MyError.unknownError)
+            headers = res.headers
+            body = res.body
+            return
 
-        case "jpg", "jpeg":
-            setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.jpeg.rawValue)
-        case "png":
-            setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.png.rawValue)
+        }
+        guard path.isFile else {
+            let res = ErrorHandler.sharedInstance.response(for: MyError.unknownError)
+            headers = res.headers
+            body = res.body
+            return
+        }
+        do {
+            body = try path.read()
+        } catch let error {
+            let res = ErrorHandler.sharedInstance.response(for: error)
+            headers = res.headers
+            body = res.body
+            return
+        }
+        if let fileExtension = path.`extension` {
+            switch fileExtension.lowercased() {
+            case "js", "json":
+                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Application.js.rawValue)
 
-        case "css":
-            setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.css.rawValue)
-        case "html":
-            setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.html.rawValue)
-        case "txt":
-            setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.plain.rawValue)
-        default:
+            case "jpg", "jpeg":
+                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.jpeg.rawValue)
+            case "png":
+                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.png.rawValue)
+
+            case "css":
+                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.css.rawValue)
+            case "html":
+                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.html.rawValue)
+            case "txt":
+                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.plain.rawValue)
+            default:
+                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.plain.rawValue)
+            }
+        } else {
+            // TODO
             setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.plain.rawValue)
         }
 
+    }
+
+    func responeHandler() -> ResponseHandler {
+        return {
+            _ in
+            return self
+        }
     }
 
     func rawHeader() -> Data {

@@ -15,11 +15,17 @@ Log.colored = false
 let server = Server()
 
 server.route(get: "/:") {
-    return Response(headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue], body: "Olaa la".data(using: .utf8)!)
+    return Response(
+        headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
+        body: "Olaa la".data(using: .utf8)!
+    )
 }
-server.route(get: "/*") {
-    return Response(headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue], body: "Olaa la lalalala".data(using: .utf8)!)
-}
+//server.route(get: "/*") {
+//    return Response(
+//        headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
+//        body: "Olaa la lalalala".data(using: .utf8)!
+//    )
+//}
 
 struct Asd {
     var name: String

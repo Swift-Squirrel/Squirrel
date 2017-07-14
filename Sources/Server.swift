@@ -15,6 +15,7 @@
 import Foundation
 import Socket
 import Dispatch
+import PathKit
 
 class Server {
 
@@ -24,7 +25,7 @@ class Server {
     var connected = [Int32: Socket]()
     var acceptNewConnection = true
     let serverRoot: String
-    
+
     let responsManager = ResponseManager.sharedInstance
 
     init(port: UInt16 = Config.sharedInstance.port, serverRoot root: String = Config.sharedInstance.serverRoot) {
@@ -40,8 +41,7 @@ class Server {
         }
         listenSocket?.close()
     }
-    
-    
+
 
     func run() throws {
         let socket = try Socket.create()
@@ -59,6 +59,7 @@ class Server {
         } while acceptNewConnection
 
     }
+
     func newConnection(socket: Socket) {
         connected[socket.socketfd] = socket
 
@@ -78,53 +79,9 @@ class Server {
                             && request.getHeader(for: "Connection") != "keep-alive" {
                             cont = false
                         }
-
-                        if let handler = ResponseManager.sharedInstance.findHandler(for: request) {
-                            Log.write(message: "Using handler", logGroup: .debug)
-                            let response = handler(request)
-                            try socket.write(from: response.raw())
-                        } else {
-                            var p = Config.sharedInstance.webRoot + request.path
-                            var isDir: ObjCBool = false
-                            if !FileManager.default.fileExists(atPath: p, isDirectory: &isDir) {
-                                Log.write(message: "404", logGroup: .debug)
-                                // 404
-                            } else if isDir.boolValue == false {
-                                Log.write(message: "Sending file", logGroup: .debug)
-                                guard let filePath = URL(
-                                    string: "file://" + Config.sharedInstance.webRoot + request.path
-                                    ) else {
-                                    throw MyError.unknownError
-                                }
-                                guard filePath.absoluteString.hasPrefix(Config.sharedInstance.webRoot) else {
-                                    throw MyError.unknownError
-                                }
-                                do {
-                                    let response = try Response(file: filePath)
-                                    self.send(socket: socket, response: response)
-                                } catch let error {
-                                    Log.write(message: "\(error)", logGroup: .errors)
-                                }
-                            } else {
-                                p += "index.html"
-                                if FileManager.default.fileExists(atPath: p, isDirectory: &isDir) && !isDir.boolValue {
-                                    Log.write(message: "Sending index.html", logGroup: .debug)
-                                    guard let filePath = URL(string: p) else {
-                                        throw MyError.unknownError
-                                    }
-                                    let body = try String(contentsOfFile: filePath.absoluteString)
-                                    let request = Response(
-                                        headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
-                                        body: body.data(using: .utf8)!
-                                    )
-                                    try socket.write(from: request.raw())
-
-                                } else {
-                                    Log.write(message: "404", logGroup: .debug)
-                                    // 404
-                                }
-                            }
-                        }
+                        let handler = getHandler(for: request)
+                        let response = handler(request)
+                        send(socket: socket, response: response)
                     } catch is MyError {
                         cont = false
                     }
@@ -141,6 +98,42 @@ class Server {
         } while cont
         connected.removeValue(forKey: socket.socketfd)
         socket.close()
+    }
+
+    private func getHandler(for request: Request) -> ResponseHandler {
+        if let handler = ResponseManager.sharedInstance.findHandler(for: request) {
+            Log.write(message: "Using handler", logGroup: .debug)
+            return handler
+        }
+        let path = Path(Config.sharedInstance.webRoot + request.path).normalize()
+
+        guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot) else {
+            return ErrorHandler.sharedInstance.handler(for: MyError.unknownError)
+        }
+
+        guard path.exists else {
+            return ErrorHandler.sharedInstance.handler(for: MyError.unknownError)
+        }
+
+        if path.isDirectory {
+            let index = Path(path.absolute().description + "/index.html")
+            if index.exists {
+                return Response(pathToFile: index).responeHandler()
+
+            }
+            guard Config.sharedInstance.isAllowedDirBrowsing else {
+                return ErrorHandler.sharedInstance.handler(for: MyError.unknownError)
+            }
+            return {
+                // TODO
+                _ in
+                return Response(
+                    headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
+                    body: "Not implemented".data(using: .utf8)!
+                )
+            }
+        }
+        return Response(pathToFile: path).responeHandler()
     }
 
     private func send(socket: Socket, response: Response) {
@@ -179,9 +172,6 @@ class Server {
                 c = 0
             }
             let _ = try? socket.write(from: "0\r\n\r\n".data(using: .utf8)!)
-
         }
     }
-
-
 }
