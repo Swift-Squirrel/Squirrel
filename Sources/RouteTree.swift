@@ -11,7 +11,7 @@ import Foundation
 class RouteTree {
     private var root: RouteNode? = nil
 
-    func add(route: String, forMethod method: HTTPHeaders.Method, handler: @escaping ResponseHandler) {
+    func add(route: String, forMethod method: HTTPHeaders.Method, handler: @escaping AnyResponseHandler) {
         Log.write(message: "Adding route for method \(method.rawValue) in route: \(route)", logGroup: .debug)
 
         guard !(route.contains("/./") || !route.hasPrefix("/") || route.contains("/../")) else {
@@ -53,7 +53,7 @@ class RouteTree {
         }
     }
 
-    func findHandler(for method: HTTPHeaders.Method, in route: String) -> ResponseHandler? {
+    func findHandler(for method: HTTPHeaders.Method, in route: String) -> AnyResponseHandler? {
         guard route.hasPrefix("/") else {
             Log.write(message: "Route is without prefix \"/\"", logGroup: .errors)
             return nil

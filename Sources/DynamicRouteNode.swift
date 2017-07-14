@@ -16,7 +16,7 @@ class DynamicRouteNode: RouteNode {
         super.init(route: r)
     }
 
-    override func findHandler(for method: HTTPHeaders.Method, in routes: [String]) -> ResponseHandler? {
+    override func findHandler(for method: HTTPHeaders.Method, in routes: [String]) -> AnyResponseHandler? {
         if let res = super.findHandler(for: method, in: routes) {
             let key = route
             if key == "" {
@@ -26,7 +26,7 @@ class DynamicRouteNode: RouteNode {
                 return {
                     request in
                     request.setURLParameter(key: key, value: value)
-                    return res(request)
+                    return try res(request)
                 }
             }
         }

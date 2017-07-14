@@ -15,7 +15,7 @@ class ErrorHandler {
 
     }
 
-    func handler(for: Error) -> ResponseHandler {
+    func handler(for: Error) -> AnyResponseHandler {
         // TODO
         return {
             _ in

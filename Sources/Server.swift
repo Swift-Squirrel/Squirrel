@@ -80,7 +80,13 @@ class Server {
                             cont = false
                         }
                         let handler = getHandler(for: request)
-                        let response = handler(request)
+                        let handlerResult: Any
+                        do {
+                            handlerResult = try handler(request) // TODO
+                        } catch let error {
+                            handlerResult = ErrorHandler.sharedInstance.response(for: error)
+                        }
+                        let response = parseAnyResponse(any: handlerResult)
                         send(socket: socket, response: response)
                     } catch is MyError {
                         cont = false
@@ -100,7 +106,26 @@ class Server {
         socket.close()
     }
 
-    private func getHandler(for request: Request) -> ResponseHandler {
+    private func parseAnyResponse(any: Any) -> Response {
+        switch any {
+        case let response as Response:
+            return response
+        case let string as String:
+            // TODO Response(html:)
+            return Response(
+                headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
+                body: string.data(using: .utf16)!
+            )
+        default:
+            // Object as JSON
+            return Response(
+                headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
+                body: "Not implemented".data(using: .utf8)!
+            )
+        }
+    }
+
+    private func getHandler(for request: Request) -> AnyResponseHandler {
         if let handler = ResponseManager.sharedInstance.findHandler(for: request) {
             Log.write(message: "Using handler", logGroup: .debug)
             return handler
@@ -124,14 +149,10 @@ class Server {
             guard Config.sharedInstance.isAllowedDirBrowsing else {
                 return ErrorHandler.sharedInstance.handler(for: MyError.unknownError)
             }
-            return {
-                // TODO
-                _ in
-                return Response(
-                    headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
-                    body: "Not implemented".data(using: .utf8)!
-                )
-            }
+            return Response(
+                headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
+                body: "Not implemented".data(using: .utf8)!
+            ).responeHandler()
         }
         return Response(pathToFile: path).responeHandler()
     }

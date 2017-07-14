@@ -11,6 +11,8 @@ import PathKit
 
 typealias ResponseHandler = ((Request) -> Response)
 
+typealias AnyResponseHandler = ((Request) throws -> Any)
+
 class Response {
 
     private let routeTree = RouteTree()

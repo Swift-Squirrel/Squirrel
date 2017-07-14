@@ -17,11 +17,11 @@ class ResponseManager {
     private init() {
     }
 
-    func route(method: HTTPHeaders.Method, url: String, handler: @escaping ResponseHandler) {
+    func route(method: HTTPHeaders.Method, url: String, handler: @escaping AnyResponseHandler) {
         routeTree.add(route: url, forMethod: method, handler: handler)
     }
 
-    func findHandler(for request: Request) -> ResponseHandler? {
+    func findHandler(for request: Request) -> AnyResponseHandler? {
         return routeTree.findHandler(for: request.method, in: request.path)
     }
 }

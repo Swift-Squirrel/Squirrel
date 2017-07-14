@@ -14,6 +14,10 @@ Log.colored = false
 #endif
 let server = Server()
 
+server.route(get: "/hell") {
+    return "Hell! Ou!"
+}
+
 server.route(get: "/:") {
     return Response(
         headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],

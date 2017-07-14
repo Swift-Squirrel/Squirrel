@@ -12,9 +12,9 @@ class RouteNode {
 
     let route: String
 
-    private var values: [HTTPHeaders.Method: ResponseHandler] = [:]
+    private var values: [HTTPHeaders.Method: AnyResponseHandler] = [:]
 
-    private var defaultHandlers: [HTTPHeaders.Method: ResponseHandler] = [:]
+    private var defaultHandlers: [HTTPHeaders.Method: AnyResponseHandler] = [:]
 
     private var childrens = [RouteNode]()
 
@@ -24,7 +24,7 @@ class RouteNode {
         self.route = route
     }
 
-    func addNode(routes: [String], method: HTTPHeaders.Method, handler: @escaping ResponseHandler) throws {
+    func addNode(routes: [String], method: HTTPHeaders.Method, handler: @escaping AnyResponseHandler) throws {
         guard routes.count > 0, let firstElem = routes.first else {
             Log.write(message: "Fatal error in adding routes\nroutes variable is empty", logGroup: .errors)
             throw MyError.unknownError
@@ -63,7 +63,7 @@ class RouteNode {
     private func nodeSetAdd(routes: [String],
                             node: RouteNode,
                             method: HTTPHeaders.Method,
-                            handler: @escaping ResponseHandler
+                            handler: @escaping AnyResponseHandler
         ) throws {
         var newRoutes = routes
         newRoutes.remove(at: 0)
@@ -74,7 +74,7 @@ class RouteNode {
         }
     }
 
-    func set(method: HTTPHeaders.Method, handler: @escaping ResponseHandler) throws {
+    func set(method: HTTPHeaders.Method, handler: @escaping AnyResponseHandler) throws {
         guard values[method] == nil else {
             throw MyError.unknownError
         }
@@ -82,7 +82,7 @@ class RouteNode {
         values[method] = handler
     }
 
-    func findHandler(for method: HTTPHeaders.Method, in routes: [String]) -> ResponseHandler? {
+    func findHandler(for method: HTTPHeaders.Method, in routes: [String]) -> AnyResponseHandler? {
         guard routes.count > 0 else {
             return nil
         }
@@ -97,9 +97,6 @@ class RouteNode {
                 return child.findHandler(for: method, in: rs) ?? defaultHandlers[method]
             }
         }
-        //        if let dynamicNode = self.dynamicNodes {
-        //            return dynamicNode.findHandler(for: method, in: rs)
-        //        }
         for node in dynamicNodes {
             if let handler = node.findHandler(for: method, in: rs) {
                 return handler
