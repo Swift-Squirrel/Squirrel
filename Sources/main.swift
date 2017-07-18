@@ -44,5 +44,4 @@ server.route(get: "/:name/sn/:age") { (p: Asd) -> Response in
     )
 }
 
-
 try server.run()

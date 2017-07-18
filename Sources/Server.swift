@@ -143,18 +143,31 @@ class Server {
         if path.isDirectory {
             let index = Path(path.absolute().description + "/index.html")
             if index.exists {
-                return Response(pathToFile: index).responeHandler()
-
+                do {
+                    return try Response(pathToFile: index).responeHandler()
+                } catch let error as ResponseError {
+                    return error.response.responeHandler()
+                } catch let error {
+                    let res = ErrorHandler.sharedInstance.handler(for: error)
+                    return res
+                }
             }
             guard Config.sharedInstance.isAllowedDirBrowsing else {
                 return ErrorHandler.sharedInstance.handler(for: MyError.unknownError)
             }
+            // TODO
             return Response(
                 headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
                 body: "Not implemented".data(using: .utf8)!
             ).responeHandler()
         }
-        return Response(pathToFile: path).responeHandler()
+        do {
+            return try Response(pathToFile: path).responeHandler()
+        } catch let error as ResponseError {
+            return error.response.responeHandler()
+        } catch let error {
+            return ErrorHandler.sharedInstance.handler(for: error)
+        }
     }
 
     private func send(socket: Socket, response: Response) {

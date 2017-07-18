@@ -11,6 +11,16 @@ import Regex
 
 enum MyError: Error {
     case unknownError
+
+    case responseError(errResponse: Response)
+}
+
+struct ResponseError: Error {
+    let response: Response
+
+    init(response: Response) {
+        self.response = response
+    }
 }
 
 class Request {

@@ -17,7 +17,7 @@ class Response {
 
     private let routeTree = RouteTree()
 
-    private let status = HTTPHeaders.Status.s200
+    private let status: HTTPStatus
 
     private let httpProtocolVersion = "HTTP/1.1"
 
@@ -32,46 +32,50 @@ class Response {
         return pom.count
     }
 
-    init(headers: [String: String], body: Data) {
+    init(status: HTTPStatus) {
+        self.status = status
+    }
+
+    init(headers: [String: String], body: Data, status: HTTPStatus = .ok) {
         self.body = body
         for (key, value) in headers {
             self.headers[key] = value
         }
+        self.status = status
     }
+
+
 
     func setHeader(for key: String, to value: String) {
         headers[key] = value
     }
 
-    init() {
-
+    private func getResponseError(error: Error) -> ResponseError {
+        let res = ErrorHandler.sharedInstance.response(for: error)
+        return ResponseError(response: res)
     }
 
-    init(pathToFile path: Path) {
-        guard path.exists else {
-            let res = ErrorHandler.sharedInstance.response(for: MyError.unknownError)
-            headers = res.headers
-            body = res.body
-            return
+    init(pathToFile path: Path) throws {
 
+        status = .ok
+
+        guard path.exists else {
+            throw getResponseError(error: MyError.unknownError)
         }
+
         guard path.isFile else {
-            let res = ErrorHandler.sharedInstance.response(for: MyError.unknownError)
-            headers = res.headers
-            body = res.body
-            return
+            throw getResponseError(error: MyError.unknownError)
         }
         do {
             body = try path.read()
         } catch let error {
-            let res = ErrorHandler.sharedInstance.response(for: error)
-            headers = res.headers
-            body = res.body
-            return
+            throw getResponseError(error: error)
         }
         if let fileExtension = path.`extension` {
             switch fileExtension.lowercased() {
-            case "js", "json":
+            case "json":
+                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Application.json.rawValue)
+            case "js":
                 setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Application.js.rawValue)
 
             case "jpg", "jpeg":
@@ -103,7 +107,7 @@ class Response {
     }
 
     func rawHeader() -> Data {
-        var header = httpProtocolVersion + " " + status.rawValue + "\r\n"
+        var header = httpProtocolVersion + " " + status.message + "\r\n"
         header += HTTPHeaders.contentLength + ": " + String(bodyLenght) + "\r\n"
         for (key, value) in headers {
             header += key + ": " + value + "\r\n"
