@@ -79,15 +79,7 @@ class Server {
                             && request.getHeader(for: "Connection") != "keep-alive" {
                             cont = false
                         }
-                        let handler = getHandler(for: request)
-                        var response: Response
-                        do {
-                            let handlerResult = try handler(request) // TODO
-                            response = try parseAnyResponse(any: handlerResult)
-                        } catch let error {
-                            response = ErrorHandler.sharedInstance.response(for: error)
-                        }
-
+                        let response = handle(request: request)
                         send(socket: socket, response: response)
                     } catch is MyError {
                         cont = false
@@ -105,6 +97,17 @@ class Server {
         } while cont
         connected.removeValue(forKey: socket.socketfd)
         socket.close()
+    }
+
+    private func handle(request: Request) -> Response {
+        do {
+            let handler = try getHandler(for: request)
+            let handlerResult = try handler(request) // TODO
+            return try parseAnyResponse(any: handlerResult)
+        } catch let error {
+            return ErrorHandler.sharedInstance.response(for: error)
+        }
+
     }
 
     private func parseAnyResponse(any: Any) throws -> Response {
@@ -127,35 +130,28 @@ class Server {
         }
     }
 
-    private func getHandler(for request: Request) -> AnyResponseHandler {
-        if let handler = ResponseManager.sharedInstance.findHandler(for: request) {
+    private func getHandler(for request: Request) throws -> AnyResponseHandler {
+        if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
             Log.write(message: "Using handler", logGroup: .debug)
             return handler
         }
         let path = Path(Config.sharedInstance.webRoot + request.path).normalize()
 
         guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot) else {
-            return ErrorHandler.sharedInstance.handler(for: MyError.unknownError)
+            throw MyError.unknownError
         }
 
         guard path.exists else {
-            return ErrorHandler.sharedInstance.handler(for: MyError.unknownError)
+            throw MyError.unknownError
         }
 
         if path.isDirectory {
             let index = Path(path.absolute().description + "/index.html")
             if index.exists {
-                do {
-                    return try Response(pathToFile: index).responeHandler()
-                } catch let error as ResponseError {
-                    return error.response.responeHandler()
-                } catch let error {
-                    let res = ErrorHandler.sharedInstance.handler(for: error)
-                    return res
-                }
+                return try Response(pathToFile: index).responeHandler()
             }
             guard Config.sharedInstance.isAllowedDirBrowsing else {
-                return ErrorHandler.sharedInstance.handler(for: MyError.unknownError)
+                throw MyError.unknownError
             }
             // TODO
             return Response(
@@ -163,13 +159,7 @@ class Server {
                 body: "Not implemented".data(using: .utf8)!
             ).responeHandler()
         }
-        do {
-            return try Response(pathToFile: path).responeHandler()
-        } catch let error as ResponseError {
-            return error.response.responeHandler()
-        } catch let error {
-            return ErrorHandler.sharedInstance.handler(for: error)
-        }
+        return try Response(pathToFile: path).responeHandler()
     }
 
     private func send(socket: Socket, response: Response) {

@@ -26,14 +26,13 @@ struct JSONCoding {
         } else {
             throw MyError.unknownError
         }
-
     }
 
     static func isValid(json: String) -> Bool {
         guard let data = json.data(using: .utf8, allowLossyConversion: false) else {
             return false
         }
-        return ((try? JSONSerialization.jsonObject(with: data, options: .mutableContainers)) != nil) 
+        return ((try? JSONSerialization.jsonObject(with: data, options: .mutableContainers)) != nil)
     }
 
     static func encodeJSON<T>(object: T) throws -> String {
@@ -85,7 +84,6 @@ struct JSONCoding {
                 }
             }
             obj = val
-        //        obj = decode(object: value)
         case let v as [Any?]:
             var val: [Any?] = []
             for i in v {
@@ -97,7 +95,6 @@ struct JSONCoding {
             }
             obj = val
         default:
-            //        print("asd")
             obj = encode(object: value)
         }
         return obj

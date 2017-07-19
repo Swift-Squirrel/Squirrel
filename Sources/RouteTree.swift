@@ -53,10 +53,10 @@ class RouteTree {
         }
     }
 
-    func findHandler(for method: HTTPHeaders.Method, in route: String) -> AnyResponseHandler? {
+    func findHandler(for method: HTTPHeaders.Method, in route: String) throws -> AnyResponseHandler? {
         guard route.hasPrefix("/") else {
             Log.write(message: "Route is without prefix \"/\"", logGroup: .errors)
-            return nil
+            throw MyError.unknownError
         }
 
         var routes = route.components(separatedBy: "/").filter { $0 != "" }
@@ -73,12 +73,12 @@ class RouteTree {
         }
 
         guard i >= 0 else {
-            return nil
+            throw MyError.unknownError
         }
 
         routes.insert("/", at: 0)
 
-        return root?.findHandler(for: method, in: routes)
+        return try root?.findHandler(for: method, in: routes)
     }
 
 

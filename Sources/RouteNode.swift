@@ -82,23 +82,29 @@ class RouteNode {
         values[method] = handler
     }
 
-    func findHandler(for method: HTTPHeaders.Method, in routes: [String]) -> AnyResponseHandler? {
+    func findHandler(for method: HTTPHeaders.Method, in routes: [String]) throws -> AnyResponseHandler? {
         guard routes.count > 0 else {
             return nil
         }
 
         if routes.count == 1 {
-            return values[method] ?? defaultHandlers[method]
+            guard let handler = values[method] ?? defaultHandlers[method] else {
+                throw MyError.unknownError
+            }
+            return handler
         }
         var rs = routes
         rs.remove(at: 0)
         for child in childrens {
             if child.route == rs.first! {
-                return child.findHandler(for: method, in: rs) ?? defaultHandlers[method]
+                guard let handler = try child.findHandler(for: method, in: rs) ?? defaultHandlers[method] else {
+                    throw MyError.unknownError
+                }
+                return handler
             }
         }
         for node in dynamicNodes {
-            if let handler = node.findHandler(for: method, in: rs) {
+            if let handler = try node.findHandler(for: method, in: rs) {
                 return handler
             }
         }

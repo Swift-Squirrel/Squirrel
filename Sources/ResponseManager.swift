@@ -21,7 +21,7 @@ class ResponseManager {
         routeTree.add(route: url, forMethod: method, handler: handler)
     }
 
-    func findHandler(for request: Request) -> AnyResponseHandler? {
-        return routeTree.findHandler(for: request.method, in: request.path)
+    func findHandler(for request: Request) throws -> AnyResponseHandler? {
+        return try routeTree.findHandler(for: request.method, in: request.path)
     }
 }
