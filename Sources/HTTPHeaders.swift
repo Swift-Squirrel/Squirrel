@@ -14,6 +14,11 @@ enum HTTPHeaders {
         case http11 = "HTTP/1.1"
     }
     static let contentLength = "Content-Length"
+    static let location = "Location"
+    static let wwwAuthenticate = "WWW-Authenticate"
+    static let retryAfter = "Retry-After"
+    static let allow = "Allow"
+
     enum ContentType {
         static let contentType = "Content-Type"
 
@@ -40,10 +45,6 @@ enum HTTPHeaders {
         case put = "PUT"
         case delete = "DELETE"
     }
-
-//    enum Status: String {
-//        case s200 = "200 OK"
-//    }
 }
 
 enum HTTPStatus: CustomStringConvertible {

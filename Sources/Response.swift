@@ -21,7 +21,7 @@ class Response {
 
     private let httpProtocolVersion = "HTTP/1.1"
 
-    private var headers = [
+    private var headers: [String: String] = [
         HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.plain.rawValue
     ]
 
@@ -34,17 +34,48 @@ class Response {
 
     init(status: HTTPStatus) {
         self.status = status
+
+        if let location = getLocationFor(status: status) {
+            headers[HTTPHeaders.location] = location
+        }
+
+        switch status {
+        case .unauthorized(let wwwAuthenticate):
+            headers[HTTPHeaders.wwwAuthenticate] = wwwAuthenticate
+        case .tooManyRequests(let retryAfter),
+             .serviceUnavailable(let retryAfter):
+            headers[HTTPHeaders.retryAfter] = retryAfter
+        case .notAllowed(let allowed):
+            let value = allowed.flatMap({ $0.rawValue.uppercased() }).joined(separator: ", ")
+            headers[HTTPHeaders.allow] = value
+        default:
+            break
+        }
     }
 
-    init(headers: [String: String], body: Data, status: HTTPStatus = .ok) {
-        self.body = body
+    convenience init(status: HTTPStatus = .ok, headers: [String: String], body: Data) {
+        self.init(status: status)
+
+        self.body = body 
         for (key, value) in headers {
             self.headers[key] = value
         }
-        self.status = status
     }
 
+    private func getLocationFor(status: HTTPStatus) -> String? {
+        switch status {
+        case .created(let location),
+             .movedPermanently(let location),
+             .found(let location),
+             .seeOther(let location),
+             .temporaryRedirect(let location),
+             .permanentRedirect(let location):
 
+            return location.description
+        default:
+            return nil
+        }
+    }
 
     func setHeader(for key: String, to value: String) {
         headers[key] = value
@@ -74,7 +105,10 @@ class Response {
         if let fileExtension = path.`extension` {
             switch fileExtension.lowercased() {
             case "json":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Application.json.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Application.json.rawValue
+                )
             case "js":
                 setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Application.js.rawValue)
 
@@ -96,7 +130,6 @@ class Response {
             // TODO
             setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.plain.rawValue)
         }
-
     }
 
     func responeHandler() -> ResponseHandler {
@@ -107,7 +140,7 @@ class Response {
     }
 
     func rawHeader() -> Data {
-        var header = httpProtocolVersion + " " + status.message + "\r\n"
+        var header = httpProtocolVersion + " " + status.description + "\r\n"
         header += HTTPHeaders.contentLength + ": " + String(bodyLenght) + "\r\n"
         for (key, value) in headers {
             header += key + ": " + value + "\r\n"

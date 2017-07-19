@@ -29,6 +29,13 @@ struct JSONCoding {
 
     }
 
+    static func isValid(json: String) -> Bool {
+        guard let data = json.data(using: .utf8, allowLossyConversion: false) else {
+            return false
+        }
+        return ((try? JSONSerialization.jsonObject(with: data, options: .mutableContainers)) != nil) 
+    }
+
     static func encodeJSON<T>(object: T) throws -> String {
         let theJSONData = try encodeDataJSON(object: object)
         if let theJSONText = String(data: theJSONData, encoding: .utf8) {

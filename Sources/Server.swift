@@ -80,13 +80,14 @@ class Server {
                             cont = false
                         }
                         let handler = getHandler(for: request)
-                        let handlerResult: Any
+                        var response: Response
                         do {
-                            handlerResult = try handler(request) // TODO
+                            let handlerResult = try handler(request) // TODO
+                            response = try parseAnyResponse(any: handlerResult)
                         } catch let error {
-                            handlerResult = ErrorHandler.sharedInstance.response(for: error)
+                            response = ErrorHandler.sharedInstance.response(for: error)
                         }
-                        let response = parseAnyResponse(any: handlerResult)
+
                         send(socket: socket, response: response)
                     } catch is MyError {
                         cont = false
@@ -106,7 +107,7 @@ class Server {
         socket.close()
     }
 
-    private func parseAnyResponse(any: Any) -> Response {
+    private func parseAnyResponse(any: Any) throws -> Response {
         switch any {
         case let response as Response:
             return response
@@ -114,14 +115,15 @@ class Server {
             // TODO Response(html:)
             return Response(
                 headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
-                body: string.data(using: .utf16)!
+                body: string.data(using: .utf8)!
             )
         default:
             // Object as JSON
-            return Response(
-                headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
-                body: "Not implemented".data(using: .utf8)!
-            )
+            return try Response(object: any)
+//            return Response(
+//                headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
+//                body: "Not implemented".data(using: .utf8)!
+//            )
         }
     }
 

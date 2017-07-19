@@ -14,8 +14,17 @@ Log.colored = false
 #endif
 let server = Server()
 
+//server.route(get: "/") {
+//
+//    return Response(status: .ok)
+//}
+
+server.route(get: "/") {
+    return "asd"
+}
+
 server.route(get: "/hell") {
-    return "Hell! Ou!"
+    return try Response(html: "{\"name\":\"Tom\",\"age\":24}")
 }
 
 server.route(get: "/:") {
@@ -36,12 +45,9 @@ struct Asd {
     var age: Int
 }
 
-server.route(get: "/:name/sn/:age") { (p: Asd) -> Response in
+server.route(get: "/:name/:age") { (p: Asd) -> Any in
     print("ad \(p.name) \(p.age)")
-    return Response(
-        headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
-        body: "ad \(p.name) \(p.age)".data(using: .utf8)!
-    )
+    return p
 }
 
 try server.run()
