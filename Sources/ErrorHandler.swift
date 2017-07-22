@@ -8,7 +8,7 @@
 
 import Foundation
 
-protocol ErrorHandlerProtocol {
+public protocol ErrorHandlerProtocol {
     func getResponse(for error: Error) -> Response?
 }
 
@@ -31,14 +31,14 @@ struct BasicErrors: ErrorHandlerProtocol {
 }
 
 class ErrorHandler {
-    static let sharedInstance = ErrorHandler()
+    public static let sharedInstance = ErrorHandler()
 
     private init() {
         addErrorHandler(handler: BasicErrors())
     }
     private var handlers = [ErrorHandlerProtocol]()
 
-    func addErrorHandler(handler: ErrorHandlerProtocol) {
+    public func addErrorHandler(handler: ErrorHandlerProtocol) {
         handlers.insert(handler, at: 0)
     }
 

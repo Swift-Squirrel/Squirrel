@@ -9,11 +9,11 @@
 import Foundation
 
 
-protocol AsHTTPProtocol {
+public protocol AsHTTPProtocol {
     var asHTTPError: HTTPError { get }
 }
 
-struct JSONError: Error, AsHTTPProtocol {
+public struct JSONError: Error, AsHTTPProtocol {
     enum ErrorKind {
         case parseError
         case encodeError
@@ -22,12 +22,12 @@ struct JSONError: Error, AsHTTPProtocol {
     let kind: ErrorKind
     let message: String
 
-    var asHTTPError: HTTPError {
+    public var asHTTPError: HTTPError {
         return HTTPError(status: .internalError, description: message)
     }
 }
 
-struct DataError: Error, AsHTTPProtocol {
+public struct DataError: Error, AsHTTPProtocol {
     enum ErrorKind {
         case dataEncodingError
         case dataCodingError(string: String)
@@ -62,16 +62,16 @@ struct DataError: Error, AsHTTPProtocol {
         return msg
     }
 
-    var asHTTPError: HTTPError {
+    public var asHTTPError: HTTPError {
         return HTTPError(status: .internalError, description: message)
     }
 }
 
-struct HTTPError: Error, AsHTTPProtocol, CustomStringConvertible {
+public struct HTTPError: Error, AsHTTPProtocol, CustomStringConvertible {
     let status: HTTPStatus
-    let description: String
+    public let description: String
 
-    var asHTTPError: HTTPError {
+    public var asHTTPError: HTTPError {
         return self
     }
 }
@@ -96,7 +96,7 @@ struct RouteError: Error, CustomStringConvertible {
 
 }
 
-struct RequestError: Error, AsHTTPProtocol {
+public struct RequestError: Error, AsHTTPProtocol {
     enum ErrorKind {
         case unseparatableHead
         case parseError(string: String, expectations: String)
@@ -137,7 +137,7 @@ struct RequestError: Error, AsHTTPProtocol {
         return msg
     }
 
-    var asHTTPError: HTTPError {
+    public var asHTTPError: HTTPError {
         switch kind {
         case .unseparatableHead:
             return HTTPError(status: .badRequest, description: "Can not separate head of request")

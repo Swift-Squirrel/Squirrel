@@ -13,7 +13,7 @@ typealias ResponseHandler = ((Request) -> Response)
 
 typealias AnyResponseHandler = ((Request) throws -> Any)
 
-class Response {
+public class Response {
 
     private let routeTree = RouteTree()
 

@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct JSONCoding {
+public struct JSONCoding {
     private init() {
 
     }
