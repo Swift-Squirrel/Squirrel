@@ -28,8 +28,7 @@ class Response {
     private var body = Data()
 
     var bodyLenght: Int {
-        let pom: [UInt8] = Array(body)
-        return pom.count
+        return (Array(body)).count
     }
 
     init(status: HTTPStatus) {
@@ -53,10 +52,10 @@ class Response {
         }
     }
 
-    convenience init(status: HTTPStatus = .ok, headers: [String: String], body: Data) {
+    convenience init(status: HTTPStatus = .ok, headers: [String: String] = [:], body: Data) {
         self.init(status: status)
 
-        self.body = body 
+        self.body = body
         for (key, value) in headers {
             self.headers[key] = value
         }
@@ -81,27 +80,19 @@ class Response {
         headers[key] = value
     }
 
-    private func getResponseError(error: Error) -> ResponseError {
-        let res = ErrorHandler.sharedInstance.response(for: error)
-        return ResponseError(response: res)
-    }
-
     init(pathToFile path: Path) throws {
 
         status = .ok
 
         guard path.exists else {
-            throw getResponseError(error: MyError.unknownError)
+            throw HTTPError(status: .notFound, description: "Path does not exists.")
         }
 
         guard path.isFile else {
-            throw getResponseError(error: MyError.unknownError)
+            throw HTTPError(status: .notFound, description: "File not found")
         }
-        do {
-            body = try path.read()
-        } catch let error {
-            throw getResponseError(error: error)
-        }
+        body = try path.read()
+
         if let fileExtension = path.`extension` {
             switch fileExtension.lowercased() {
             case "json":

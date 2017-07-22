@@ -21,10 +21,10 @@ struct JSONCoding {
                 ) {
                 return theJSONData
             } else {
-                throw MyError.unknownError
+                throw JSONError(kind: .parseError, message: "Can not serialize data to json format.")
             }
         } else {
-            throw MyError.unknownError
+            throw JSONError(kind: .encodeError, message: "Can not encode object to JSON.")
         }
     }
 
@@ -40,10 +40,14 @@ struct JSONCoding {
         if let theJSONText = String(data: theJSONData, encoding: .utf8) {
             return theJSONText
         } else {
-            throw MyError.unknownError
+            throw DataError(kind: .dataEncodingError)
         }
     }
 
+    /// Encode object to json representation
+    ///
+    /// - Parameter object: object to encode
+    /// - Returns: json representation or nil otherwise
     static private func encode<T>(object: T) -> Any? {
         let childrens = Mirror(reflecting: object).children
         var res: [String: Any] = [:]

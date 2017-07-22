@@ -81,8 +81,11 @@ class Server {
                         }
                         let response = handle(request: request)
                         send(socket: socket, response: response)
-                    } catch is MyError {
+                    } catch let error {
+                        let response = Response(status: .internalError)
+                        send(socket: socket, response: response)
                         cont = false
+                        throw error
                     }
                     dataRead.removeAll()
                 } else {
@@ -93,6 +96,7 @@ class Server {
                 }
             } catch let error {
                 print("error: \(error)")
+                cont = false
             }
         } while cont
         connected.removeValue(forKey: socket.socketfd)
@@ -102,7 +106,7 @@ class Server {
     private func handle(request: Request) -> Response {
         do {
             let handler = try getHandler(for: request)
-            let handlerResult = try handler(request) // TODO
+            let handlerResult = try handler(request)
             return try parseAnyResponse(any: handlerResult)
         } catch let error {
             return ErrorHandler.sharedInstance.response(for: error)
@@ -115,18 +119,9 @@ class Server {
         case let response as Response:
             return response
         case let string as String:
-            // TODO Response(html:)
-            return Response(
-                headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
-                body: string.data(using: .utf8)!
-            )
+            return try Response(html: string)
         default:
-            // Object as JSON
             return try Response(object: any)
-//            return Response(
-//                headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
-//                body: "Not implemented".data(using: .utf8)!
-//            )
         }
     }
 
@@ -138,11 +133,16 @@ class Server {
         let path = Path(Config.sharedInstance.webRoot + request.path).normalize()
 
         guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot) else {
-            throw MyError.unknownError
+            if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
+                Log.write(message: "Using handler", logGroup: .debug)
+                return handler
+            } else {
+                throw HTTPError(status: .notFound, description: "'/' is not handled")
+            }
         }
 
         guard path.exists else {
-            throw MyError.unknownError
+            throw HTTPError(status: .notFound, description: "\(request.path) is not found.")
         }
 
         if path.isDirectory {
@@ -151,7 +151,7 @@ class Server {
                 return try Response(pathToFile: index).responeHandler()
             }
             guard Config.sharedInstance.isAllowedDirBrowsing else {
-                throw MyError.unknownError
+                throw HTTPError(status: .forbidden, description: "Directory browsing is not allowed")
             }
             // TODO
             return Response(

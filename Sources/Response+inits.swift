@@ -18,7 +18,7 @@ extension Response {
 
     convenience init(html: String) throws {
         guard let data = html.data(using: .utf8) else {
-            throw MyError.unknownError
+            throw DataError(kind: .dataCodingError(string: html))
         }
         self.init(
             headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
@@ -36,11 +36,11 @@ extension Response {
 
     convenience init(json: String) throws {
         guard let data = json.data(using: .utf8) else {
-            throw MyError.unknownError
+            throw DataError(kind: .dataCodingError(string: json))
         }
 
         guard JSONCoding.isValid(json: json) else {
-            throw MyError.unknownError
+            throw JSONError(kind: .parseError, message: "'\(json)' is not valid json format")
         }
 
         self.init(

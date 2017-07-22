@@ -26,10 +26,11 @@ extension Server {
             (req: Request) in
             let blueprint = Blueprint(of: T.self)
             let values = req.getURLParameters()
-            let converted = blueprint.construct(using: values)! // TODO optional
-
-            return try handler(req, converted)
+            guard let converted = blueprint.construct(using: values) else {
+                throw HTTPError(status: .badRequest, description: "Wrong parameters type or missing parameters")
             }
+            return try handler(req, converted)
+        }
         route(get: url, handler: closure)
     }
 
@@ -38,10 +39,11 @@ extension Server {
             (req: Request) in
             let blueprint = Blueprint(of: T.self)
             let values = req.getURLParameters()
-            let converted = blueprint.construct(using: values)! // TODO optional
-
-            return try handler(converted)
+            guard let converted = blueprint.construct(using: values) else {
+                throw HTTPError(status: .badRequest, description: "Wrong parameters type or missing parameters")
             }
+            return try handler(converted)
+        }
         route(get: url, handler: closure)
     }
 }

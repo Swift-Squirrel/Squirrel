@@ -9,20 +9,6 @@
 import Foundation
 import Regex
 
-enum MyError: Error {
-    case unknownError
-
-    case responseError(errResponse: Response)
-}
-
-struct ResponseError: Error {
-    let response: Response
-
-    init(response: Response) {
-        self.response = response
-    }
-}
-
 class Request {
 
     private var requestType = ""
@@ -48,17 +34,19 @@ class Request {
     private var getParameters: [String: String] = [:]
     private var postParameters: [String: String] = [:]
 
+    /// Init Request from data
+    ///
+    /// - Parameter data: Data of request
+    /// - Throws: `DataError` and other parse errors
+    /// - TODO: Do not parse body to string
+    /// - Bug: When body contains binary data, init will fail
     init(data: Data) throws {
         guard let stringData = String(data: data, encoding: .utf8) else {
-            // todo throws
-            throw MyError.unknownError
-//            return
+            throw DataError(kind: .dataEncodingError)
         }
         var rows = stringData.components(separatedBy: "\r\n\r\n")
         if rows.count != 2 {
-            // throw
-            throw MyError.unknownError
-//            return
+            throw RequestError(kind: .unseparatableHead)
         }
         rawHeader = rows[0]
         rawBody = rows[1]
@@ -67,20 +55,25 @@ class Request {
         let row = rows[0]
         let components = row.components(separatedBy: " ")
         if components.count != 3 {
-            throw MyError.unknownError
+            throw RequestError(
+                kind: .parseError(
+                    string: row,
+                    expectations: "String has to be separatable into exactly three parts divided by ' '."
+                )
+            )
         }
         guard let p = URL(string: components[1]) else {
-            throw MyError.unknownError
+            throw RequestError(kind: .parseError(string: components[1], expectations: "Has to be parsable as URL."))
         }
         _path = p
-        let methodRegex = Regex("^(post|get|delete|put)$")
+        let methodRegex = Regex("^(post|get|delete|put|head|option)$")
         guard methodRegex.matches(components[0].lowercased()) == true else {
-            throw MyError.unknownError
+            throw RequestError(kind: .unknownMethod(method: components[0]))
         }
         _method = HTTPHeaders.Method(rawValue: components[0]) ?? HTTPHeaders.Method.get
 
         guard components[2] == HTTPHeaders.HTTPProtocol.http11.rawValue else {
-            throw MyError.unknownError
+            throw RequestError(kind: .unknownProtocol(prot: components[2]))
         }
         httpProtocol = components[2]
 
@@ -88,7 +81,10 @@ class Request {
         for row in rows {
             let pomArray = row.components(separatedBy: ": ")
             if pomArray.count != 2 {
-                throw MyError.unknownError
+                throw RequestError(kind: .parseError(
+                    string: row,
+                    expectations: "Header row has to be separatable by ': ' to two parts"
+                    ))
             }
 
             headers[pomArray[0]] = pomArray[1]

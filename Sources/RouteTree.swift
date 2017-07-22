@@ -25,18 +25,21 @@ class RouteTree {
         if route == "/" {
             if root == nil {
                 root = RouteNode(route: "/")
-                do {
-                   try root!.set(method: method, handler: handler)
-                } catch let errr {
-                    print(errr)
-                }
-            } else {
-                do {
-                    try root!.set(method: method, handler: handler)
-                } catch let errr {
-                    print(errr)
-                }
-
+            }
+            do {
+                try root!.set(method: method, handler: handler)
+            } catch let error as RouteError {
+                Log.write(
+                    message: error.description,
+                    logGroup: .errors
+                )
+                exit(1)
+            } catch let error {
+                Log.write(
+                    message: error.localizedDescription,
+                    logGroup: .errors
+                )
+                exit(1)
             }
         } else {
             let routes = route.components(separatedBy: "/").filter { $0 != "" }
@@ -47,8 +50,18 @@ class RouteTree {
             let root = self.root!
             do {
                 try root.addNode(routes: routes, method: method, handler: handler)
-            } catch let errr {
-                print(errr)
+            } catch let error as RouteError {
+                Log.write(
+                    message: error.description,
+                    logGroup: .errors
+                )
+                exit(1)
+            } catch let error {
+                Log.write(
+                    message: error.localizedDescription,
+                    logGroup: .errors
+                )
+                exit(1)
             }
         }
     }
@@ -56,7 +69,7 @@ class RouteTree {
     func findHandler(for method: HTTPHeaders.Method, in route: String) throws -> AnyResponseHandler? {
         guard route.hasPrefix("/") else {
             Log.write(message: "Route is without prefix \"/\"", logGroup: .errors)
-            throw MyError.unknownError
+            throw HTTPError(status: .badRequest, description: "Route is without prefix '/'")
         }
 
         var routes = route.components(separatedBy: "/").filter { $0 != "" }
@@ -72,8 +85,8 @@ class RouteTree {
             }
         }
 
-        guard i >= 0 else {
-            throw MyError.unknownError
+        if i < 0 {
+            routes.removeAll()
         }
 
         routes.insert("/", at: 0)

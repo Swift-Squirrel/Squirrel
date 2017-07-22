@@ -8,30 +8,59 @@
 
 import Foundation
 
+protocol ErrorHandlerProtocol {
+    func getResponse(for error: Error) -> Response?
+}
+
+struct BasicErrors: ErrorHandlerProtocol {
+    fileprivate init() {
+
+    }
+
+    func getResponse(for error: Error) -> Response? {
+        guard let error = error as? HTTPError else {
+            return nil
+        }
+        if let body = error.description.data(using: .utf8) {
+            return Response(status: error.status, body: body)
+        } else {
+            return Response(status: .internalError)
+        }
+
+    }
+}
+
 class ErrorHandler {
     static let sharedInstance = ErrorHandler()
 
     private init() {
+        addErrorHandler(handler: BasicErrors())
+    }
+    private var handlers = [ErrorHandlerProtocol]()
 
+    func addErrorHandler(handler: ErrorHandlerProtocol) {
+        handlers.insert(handler, at: 0)
     }
 
-    func handler(for: Error) -> AnyResponseHandler {
-        // TODO
-        return {
-            _ in
-            return Response(
-                headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
-                body: "Error".data(using: .utf8)!
-            )
+    private func getErrorResponse(for error: Error) -> Response? {
+        var solvingError = error
+        if let asHTTPErrorProtocol = error as? AsHTTPProtocol {
+            solvingError = asHTTPErrorProtocol.asHTTPError
         }
+        for handler in handlers {
+            if let response = handler.getResponse(for: solvingError) {
+                return response
+            }
+        }
+        return nil
     }
-    func response(for: Error) -> Response {
-        // TODO
-        return Response(
-            headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
-            body: "Error".data(using: .utf8)!
-        )
 
+    func response(for error: Error) -> Response {
+        guard let response = getErrorResponse(for: error) else {
+            let body = "Internal error has occured, nothing to handle it.".data(using: .utf8)!
+            return Response(status: .internalError, body: body)
+        }
+        return response
     }
 
 }

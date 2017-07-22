@@ -44,6 +44,8 @@ enum HTTPHeaders {
         case get = "GET"
         case put = "PUT"
         case delete = "DELETE"
+        case head = "HEAD"
+        case option = "OPTION"
     }
 }
 
@@ -229,12 +231,4 @@ enum HTTPStatus: CustomStringConvertible {
         let message = self.message
         return "\(code) \(message)"
     }
-
-//    var description: String {
-//        return " "
-//    }
 }
-
-//extension HTTPStatus: CustomStringConvertible {
-//
-//}
