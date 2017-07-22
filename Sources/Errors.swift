@@ -147,6 +147,6 @@ public struct RequestError: Error, AsHTTPProtocol {
             return HTTPError(status: .notImplemented, description: message)
         case .unknownProtocol:
             return HTTPError(status: .httpVersionUnsupported, description: message)
-        } 
+        }
     }
 }

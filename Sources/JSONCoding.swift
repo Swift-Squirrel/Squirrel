@@ -66,18 +66,13 @@ public struct JSONCoding {
         var obj: Any? = []
         switch value {
 
-        case let v as Int:
-            obj = v
-        case let v as UInt:
-            obj = v
-        case let v as Double:
-            obj = v
-        case let v as Float:
-            obj = v
-        case let v as Bool:
-            obj = v
-        case let v as String:
-            obj = v
+        case is Int,
+             is UInt,
+             is Double,
+             is Float,
+             is Bool,
+             is String:
+            obj = value
         case let v as [String: Any?]:
             var val: [String: Any?] = [:]
             for (k, v) in v {
