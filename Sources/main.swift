@@ -27,9 +27,9 @@ server.route(get: "/hell") {
     return try Response(html: "{\"name\":\"Tom\",\"age\":24}")
 }
 
-server.route(get: "/hell") {
-    return try Response(html: "{\"name\":\"e\":24}")
-}
+//server.route(get: "/hell") {
+//    return try Response(html: "{\"name\":\"e\":24}")
+//}
 
 server.route(get: "/:") {
     return Response(
