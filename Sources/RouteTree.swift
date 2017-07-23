@@ -12,13 +12,10 @@ class RouteTree {
     private var root: RouteNode? = nil
 
     func add(route: String, forMethod method: HTTPHeaders.Method, handler: @escaping AnyResponseHandler) {
-        Log.write(message: "Adding route for method \(method.rawValue) in route: \(route)", logGroup: .debug)
+        log.debug("Adding route for method \(method.rawValue) in route: \(route)")
 
         guard !(route.contains("/./") || !route.hasPrefix("/") || route.contains("/../")) else {
-            Log.write(
-                message: "Route can not contains with \"/./\" or \"/../\" and must has prefix with \"/\"",
-                logGroup: .errors
-            )
+            log.error("Route can not contains with \"/./\" or \"/../\" and must has prefix with \"/\"")
             exit(1)
         }
 
@@ -29,16 +26,10 @@ class RouteTree {
             do {
                 try root!.set(method: method, handler: handler)
             } catch let error as RouteError {
-                Log.write(
-                    message: error.description,
-                    logGroup: .errors
-                )
+                log.error(error.description)
                 exit(1)
             } catch let error {
-                Log.write(
-                    message: error.localizedDescription,
-                    logGroup: .errors
-                )
+                log.error(error.localizedDescription)
                 exit(1)
             }
         } else {
@@ -51,16 +42,10 @@ class RouteTree {
             do {
                 try root.addNode(routes: routes, method: method, handler: handler)
             } catch let error as RouteError {
-                Log.write(
-                    message: error.description,
-                    logGroup: .errors
-                )
+                log.error(error.description)
                 exit(1)
             } catch let error {
-                Log.write(
-                    message: error.localizedDescription,
-                    logGroup: .errors
-                )
+                log.error(error.localizedDescription)
                 exit(1)
             }
         }
@@ -68,7 +53,7 @@ class RouteTree {
 
     func findHandler(for method: HTTPHeaders.Method, in route: String) throws -> AnyResponseHandler? {
         guard route.hasPrefix("/") else {
-            Log.write(message: "Route is without prefix \"/\"", logGroup: .errors)
+            log.error("Route is without prefix \"/\"")
             throw HTTPError(status: .badRequest, description: "Route is without prefix '/'")
         }
 

@@ -8,10 +8,10 @@
 
 import Foundation
 
-Log.logging(turnedOn: true)
-#if Xcode
-Log.colored = false
-#endif
+//Log.logging(turnedOn: true)
+//#if Xcode
+//Log.colored = false
+//#endif
 let server = Server()
 
 //server.route(get: "/") {

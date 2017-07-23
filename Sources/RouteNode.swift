@@ -26,7 +26,7 @@ class RouteNode {
 
     func addNode(routes: [String], method: HTTPHeaders.Method, handler: @escaping AnyResponseHandler) throws {
         guard routes.count > 0, let firstElem = routes.first else {
-            Log.write(message: "Fatal error in adding routes\nroutes variable is empty", logGroup: .errors)
+            log.error("Fatal error in adding routes, routes variable is empty")
             throw RouteError(kind: .addNodeError)
         }
 

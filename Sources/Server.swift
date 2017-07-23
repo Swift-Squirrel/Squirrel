@@ -32,7 +32,6 @@ class Server {
         self.port = port
         self.serverRoot = root
 
-
     }
 
     deinit {
@@ -42,19 +41,16 @@ class Server {
         listenSocket?.close()
     }
 
-
     func run() throws {
         let socket = try Socket.create()
 
         listenSocket = socket
         try socket.listen(on: Int(port))
-        Log.write(message: "Server is running on port \(socket.listeningPort)", logGroup: .infoImportant)
+        log.info("Server is running on port \(socket.listeningPort)")
         let queue = DispatchQueue(label: "clientQueue", attributes: .concurrent)
         repeat {
             let connectedSocket = try socket.acceptClientConnection()
-
-            Log.write(message: "Connection from: \(connectedSocket.remoteHostname)", logGroup: .info)
-
+            log.verbose("Connection from: \(connectedSocket.remoteHostname)")
             queue.async {self.newConnection(socket: connectedSocket)}
         } while acceptNewConnection
 
@@ -73,7 +69,7 @@ class Server {
                     zeroTimes = 100
                     do {
                         let request = try Request(data: dataRead)
-                        Log.write(message: request.method.rawValue + " " + request.path, logGroup: .infoImportant)
+                        log.info(request.method.rawValue + " " + request.path)
 
                         if (request.getHeader(for: "Connection") != nil)
                             && request.getHeader(for: "Connection") != "keep-alive" {
@@ -127,14 +123,14 @@ class Server {
 
     private func getHandler(for request: Request) throws -> AnyResponseHandler {
         if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
-            Log.write(message: "Using handler", logGroup: .debug)
+            log.debug("Using handler")
             return handler
         }
         let path = Path(Config.sharedInstance.webRoot + request.path).normalize()
 
         guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot) else {
             if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
-                Log.write(message: "Using handler", logGroup: .debug)
+                log.debug("Using handler")
                 return handler
             } else {
                 throw HTTPError(status: .notFound, description: "'/' is not handled")
