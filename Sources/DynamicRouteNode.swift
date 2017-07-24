@@ -6,8 +6,6 @@
 //
 //
 
-import Cocoa
-
 class DynamicRouteNode: RouteNode {
     override init(route: String) {
         var r = route
