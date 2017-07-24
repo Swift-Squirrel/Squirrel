@@ -1,6 +1,6 @@
 import XCTest
-@testable import microsTests
+@testable import MicrosTests
 
 XCTMain([
-    testCase(microsTests.allTests),
+    testCase(MicrosTests.allTests),
 ])
