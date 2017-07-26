@@ -43,7 +43,6 @@ class JSONCodingTests: XCTestCase {
         if let result = try? JSONCoding.encodeJSON(object: s1) {
             assertEqual(result, "{\"a\":3,\"c\":{\"a\":\"SubStruct\"}}","got: \(result)")
         }
-
     }
 
     func testJSONValidity() {
@@ -65,6 +64,5 @@ class JSONCodingTests: XCTestCase {
             assertFalse(result, "Error on invalid json with index \(i)!")
             i += 1
         }
-
     }
 }
