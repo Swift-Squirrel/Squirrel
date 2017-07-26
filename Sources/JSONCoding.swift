@@ -28,7 +28,7 @@ public struct JSONCoding {
         }
     }
 
-    static func isValid(json: String) -> Bool {
+    public static func isValid(json: String) -> Bool {
         guard let data = json.data(using: .utf8, allowLossyConversion: false) else {
             return false
         }

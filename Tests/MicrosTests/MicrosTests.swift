@@ -9,6 +9,21 @@ class MicrosTests: XCTestCase {
 //        XCTAssertNotNil(Server(port: 12) as? Server)
     }
 
+    func testJSONCoding() {
+        /*
+            public struct JSONCoding {
+
+            internal static func encodeDataJSON<T>(object: T) throws -> Data
+
+            internal static func isValid(json: String) -> Bool
+
+            internal static func encodeJSON<T>(object: T) throws -> String
+            }
+         */
+
+        
+    }
+
 
     static var allTests = [
         ("testServer", testServer)
