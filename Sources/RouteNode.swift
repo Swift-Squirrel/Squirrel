@@ -31,7 +31,7 @@ class RouteNode {
         }
 
         if firstElem == "*" {
-            defaultHandlers[method] = handler
+            try setDefault(method: method, handler: handler)
             return
         }
 
@@ -73,6 +73,13 @@ class RouteNode {
         }
     }
 
+    private func setDefault(method: HTTPHeaders.Method, handler: @escaping AnyResponseHandler) throws {
+        guard defaultHandlers[method] == nil else {
+            throw RouteError(kind: .methodHandlerOverwrite)
+        }
+        defaultHandlers[method] = handler
+    }
+
     func set(method: HTTPHeaders.Method, handler: @escaping AnyResponseHandler) throws {
         guard values[method] == nil else {
             throw RouteError(kind: .methodHandlerOverwrite)
@@ -87,6 +94,9 @@ class RouteNode {
 
         if routes.count == 1 {
             guard let handler = values[method] ?? defaultHandlers[method] else {
+                if values.count == 0 && defaultHandlers.count == 0 {
+                    return nil
+                }
                 var methods: [HTTPHeaders.Method] = values.keys.flatMap({ $0 })
                 methods.append(contentsOf: defaultHandlers.keys.flatMap({ $0 }))
                 throw HTTPError(status: .notAllowed(allowed: methods), description: "Method is not allowed")

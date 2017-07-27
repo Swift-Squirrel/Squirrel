@@ -148,6 +148,7 @@ class RouteThreeTests: XCTestCase {
         assertNotNil(try three.findHandler(for: .get, in: "/web/asd/../index"))
         assertNotNil(try three.findHandler(for: .get, in: "/web/asd/.././index"))
         assertNil(try three.findHandler(for: .get, in: "/web/asd/../../../index"))
+        assertNil(try three.findHandler(for: .get, in: "/.././web/asd/../../../index"))
         assertNil(try three.findHandler(for: .get, in: "/./web/asd/../.././../index"))
 
         three.add(route: "/", forMethod: .get, handler: handler)

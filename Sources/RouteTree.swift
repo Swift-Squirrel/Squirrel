@@ -64,6 +64,12 @@ class RouteTree {
             if r == "." {
                 routes.remove(at: i)
             } else if r == ".." {
+                if i == 0 {
+                    i = -1
+                    break
+                }
+                routes.remove(at: i)
+                routes.remove(at: i - 1)
                 i -= 1
             } else {
                 i += 1
