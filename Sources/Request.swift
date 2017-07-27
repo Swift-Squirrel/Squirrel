@@ -21,6 +21,8 @@ class Request {
     private let _path: URL
     private let _fullpath: URL
 
+    private var _cookies: [String: String] = [:]
+
     var path: String {
         return _path.absoluteString
     }
@@ -94,17 +96,38 @@ class Request {
             headers[pomArray[0].lowercased()] = pomArray[1]
         }
 
-        if _method == .post {
-            guard let contentType = getHeader(for: HTTPHeaders.ContentType.contentType) else {
-                throw HTTPError(status: .unsupportedMediaType, description: "Missing \(HTTPHeaders.ContentType.contentType)")
-            }
+        parseCookies()
 
-            switch contentType {
-            case HTTPHeaders.ContentType.Application.formUrlencoded.rawValue:
-                try parseURLEncoded(body: rawBody.data(using: .utf8)!) // TODO not as string
-            default:
-                throw HTTPError(status: .unsupportedMediaType, description: "Unsupported \(HTTPHeaders.ContentType.contentType)")
+        if _method == .post {
+            try parsePostRequest()
+        }
+    }
+
+    private func parseCookies() {
+        guard let cookieLine = getHeader(for: "Cookie") else {
+            return
+        }
+
+        let groups = cookieLine.components(separatedBy: "; ")
+        for group in groups {
+            let values = group.components(separatedBy: "=")
+            guard values.count == 2 else {
+                return
             }
+            _cookies[values[0]] = values[1]
+        }
+    }
+
+    private func parsePostRequest() throws {
+        guard let contentType = getHeader(for: HTTPHeaders.ContentType.contentType) else {
+            throw HTTPError(status: .unsupportedMediaType, description: "Missing \(HTTPHeaders.ContentType.contentType)")
+        }
+
+        switch contentType {
+        case HTTPHeaders.ContentType.Application.formUrlencoded.rawValue:
+            try parseURLEncoded(body: rawBody.data(using: .utf8)!) // TODO not as string
+        default:
+            throw HTTPError(status: .unsupportedMediaType, description: "Unsupported \(HTTPHeaders.ContentType.contentType)")
         }
     }
 
@@ -146,6 +169,13 @@ class Request {
 
     var postParameters: [String: String] {
         return _postParameters
+    }
+
+    func getCookie(for key: String) -> String? {
+        return _cookies[key]
+    }
+    var cookies: [String: String] {
+        return _cookies
     }
 
     var getParameters: [String: String?] {
