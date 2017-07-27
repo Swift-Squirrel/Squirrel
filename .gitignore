@@ -76,3 +76,6 @@ micros.xcodeproj
 Public/
 Storage/
 
+# Testing
+Sources/main.swift
+
