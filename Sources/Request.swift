@@ -19,6 +19,7 @@ class Request {
         return _method
     }
     private let _path: URL
+    private let _fullpath: URL
 
     var path: String {
         return _path.absoluteString
@@ -31,7 +32,6 @@ class Request {
     private var headers: [String: String] = [:]
 
     private var urlParameters: [String: String] = [:]
-    private var getParameters: [String: String] = [:]
     private var postParameters: [String: String] = [:]
 
     /// Init Request from data
@@ -62,10 +62,14 @@ class Request {
                 )
             )
         }
-        guard let p = URL(string: components[1]) else {
+
+
+        guard let fullpath = URL(string: components[1]) else {
             throw RequestError(kind: .parseError(string: components[1], expectations: "Has to be parsable as URL."))
         }
-        _path = p
+        _fullpath = fullpath
+        _path = URL(string: fullpath.path)!
+
         let methodRegex = Regex("^(post|get|delete|put|head|option)$")
         guard methodRegex.matches(components[0].lowercased()) == true else {
             throw RequestError(kind: .unknownMethod(method: components[0]))
@@ -102,6 +106,15 @@ class Request {
     func getURLParameters() -> [String: String] {
         return urlParameters
     }
+
+    func getGetParameter(for key: String) -> String? {
+        return _fullpath[key]
+    }
+
+    var getParameters: [String: String?] {
+        return _fullpath.allQueryParams
+    }
+
 
     func getHeader(for key: String) -> String? {
         return headers[key]

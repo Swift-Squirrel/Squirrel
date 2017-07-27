@@ -32,7 +32,12 @@ class ResponseManager {
         let closure: AnyResponseHandler = {
             (req: Request) in
             let blueprint = Blueprint(of: T.self)
-            let values = req.getURLParameters()
+            var values = req.getURLParameters()
+            for (k,v) in req.getParameters {
+                if(values[k] == nil) {
+                    values[k] = v
+                }
+            }
             guard let converted = blueprint.construct(using: values) else {
                 throw HTTPError(status: .badRequest, description: "Wrong parameters type or missing parameters")
             }
@@ -45,7 +50,12 @@ class ResponseManager {
         let closure: AnyResponseHandler = {
             (req: Request) in
             let blueprint = Blueprint(of: T.self)
-            let values = req.getURLParameters()
+            var values = req.getURLParameters()
+            for (k,v) in req.getParameters {
+                if(values[k] == nil) {
+                    values[k] = v
+                }
+            }
             guard let converted = blueprint.construct(using: values) else {
                 throw HTTPError(status: .badRequest, description: "Wrong parameters type or missing parameters")
             }

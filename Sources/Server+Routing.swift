@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import Reflection
 
 extension Server {
     public func route(get url: String, handler: @escaping (Request) throws -> Any) {
