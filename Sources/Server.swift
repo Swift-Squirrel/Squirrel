@@ -26,7 +26,7 @@ class Server {
     var acceptNewConnection = true
     let serverRoot: String
 
-    let responsManager = ResponseManager.sharedInstance
+    let responseManager = ResponseManager.sharedInstance
 
     init(port: UInt16 = Config.sharedInstance.port, serverRoot root: String = Config.sharedInstance.serverRoot) {
         self.port = port

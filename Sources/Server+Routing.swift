@@ -12,7 +12,7 @@ import Reflection
 extension Server {
 
     public func route(get url: String, handler: @escaping (Request) throws -> Any) {
-        responsManager.route(method: .get, url: url, handler: handler)
+        responseManager.route(method: .get, url: url, handler: handler)
     }
 
     public func route(get url: String, handler: @escaping () throws -> Any) {
