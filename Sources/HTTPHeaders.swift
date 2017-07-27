@@ -36,6 +36,7 @@ enum HTTPHeaders {
         enum Application: String {
             case js = "application/javascript"
             case json = "application/json"
+            case formUrlencoded = "application/x-www-form-urlencoded"
         }
     }
 

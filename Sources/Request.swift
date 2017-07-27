@@ -32,7 +32,7 @@ class Request {
     private var headers: [String: String] = [:]
 
     private var urlParameters: [String: String] = [:]
-    private var postParameters: [String: String] = [:]
+    private var _postParameters: [String: String] = [:]
 
     /// Init Request from data
     ///
@@ -91,7 +91,36 @@ class Request {
                     ))
             }
 
-            headers[pomArray[0]] = pomArray[1]
+            headers[pomArray[0].lowercased()] = pomArray[1]
+        }
+
+        if _method == .post {
+            guard let contentType = getHeader(for: HTTPHeaders.ContentType.contentType) else {
+                throw HTTPError(status: .unsupportedMediaType, description: "Missing \(HTTPHeaders.ContentType.contentType)")
+            }
+
+            switch contentType {
+            case HTTPHeaders.ContentType.Application.formUrlencoded.rawValue:
+                try parseURLEncoded(body: rawBody.data(using: .utf8)!) // TODO not as string
+            default:
+                throw HTTPError(status: .unsupportedMediaType, description: "Unsupported \(HTTPHeaders.ContentType.contentType)")
+            }
+        }
+    }
+
+    private func parseURLEncoded(body data: Data) throws {
+        guard let body = String(data: data, encoding: .utf8) else {
+            throw DataError(kind: .dataEncodingError)
+        }
+        let groups = body.components(separatedBy: "&")
+        for group in groups {
+            var values = group.components(separatedBy: "=")
+            guard values.count > 1 else {
+                throw RequestError(kind: .postBodyParseError(errorString: group))
+            }
+            let key = values.removeFirst()
+            let value = values.joined()
+            _postParameters[key] = value
         }
     }
 
@@ -111,12 +140,19 @@ class Request {
         return _fullpath[key]
     }
 
+    func getPostParameter(for key: String) -> String? {
+        return _postParameters[key]
+    }
+
+    var postParameters: [String: String] {
+        return _postParameters
+    }
+
     var getParameters: [String: String?] {
         return _fullpath.allQueryParams
     }
 
-
     func getHeader(for key: String) -> String? {
-        return headers[key]
+        return headers[key.lowercased()]
     }
 }

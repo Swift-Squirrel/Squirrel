@@ -24,4 +24,8 @@ extension Server {
     public func route<T>(get url: String, handler: @escaping (T) throws -> Any) {
         responseManager.route(get: url, handler: handler)
     }
+
+    public func route<T>(post url: String, handler: @escaping (T) throws -> Any) {
+        responseManager.route(post: url, handler: handler)
+    }
 }

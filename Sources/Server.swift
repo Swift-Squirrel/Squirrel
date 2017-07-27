@@ -78,7 +78,7 @@ class Server {
                         let response = handle(request: request)
                         send(socket: socket, response: response)
                     } catch let error {
-                        let response = Response(status: .internalError)
+                        let response = ErrorHandler.sharedInstance.response(for: error)
                         send(socket: socket, response: response)
                         cont = false
                         throw error

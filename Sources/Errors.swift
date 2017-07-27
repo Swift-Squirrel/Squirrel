@@ -102,6 +102,7 @@ public struct RequestError: Error, AsHTTPProtocol {
         case parseError(string: String, expectations: String)
         case unknownMethod(method: String)
         case unknownProtocol(prot: String)
+        case postBodyParseError(errorString: String)
     }
 
     init(kind: ErrorKind, message: String? = nil) {
@@ -126,6 +127,8 @@ public struct RequestError: Error, AsHTTPProtocol {
                 msg = "Unknown method \(method)"
             case .unknownProtocol(let prot):
                 msg = "Unknown protocol \(prot)"
+            case .postBodyParseError(let errorString):
+                msg = "Can not parse: \(errorString)"
             }
         }
         switch kind {
@@ -147,6 +150,8 @@ public struct RequestError: Error, AsHTTPProtocol {
             return HTTPError(status: .notImplemented, description: message)
         case .unknownProtocol:
             return HTTPError(status: .httpVersionUnsupported, description: message)
+        case .postBodyParseError:
+            return HTTPError(status: .badRequest, description: message)
         }
     }
 }
