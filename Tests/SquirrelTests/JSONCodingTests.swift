@@ -8,7 +8,7 @@
 
 import XCTest
 import Test
-@testable import Micros
+@testable import Squirrel
 
 
 class JSONCodingTests: XCTestCase {

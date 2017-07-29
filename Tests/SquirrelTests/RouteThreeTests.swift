@@ -8,7 +8,7 @@
 
 import XCTest
 import Test
-@testable import Micros
+@testable import Squirrel
 
 class RouteThreeTests: XCTestCase {
     let handler: AnyResponseHandler = {(_: Request) throws -> Any in return "handler"}

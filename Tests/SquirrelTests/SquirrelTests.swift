@@ -1,7 +1,7 @@
 import XCTest
-@testable import Micros
+@testable import Squirrel
 
-class MicrosTests: XCTestCase {
+class SquirrelTests: XCTestCase {
     
     func testServer() {
         let server: Any = Server(port: 8080, serverRoot: "/Users/Navel/Leo/Skola/3BIT/IBT/Micros")
