@@ -46,7 +46,7 @@ class Config {
     static let sharedInstance = Config()
 
     private init() {
-        _serverRoot = "/Users/Navel/Leo/Skola/3BIT/IBT/Micros"
+        _serverRoot = "/Users/Navel/Leo/Skola/3BIT/IBT/Squirrel"
         _webRoot = _serverRoot + "/Public"
         _cache = _serverRoot + "/Storage/Cache"
         _logDir = Path(components: [_serverRoot, "Storage/Logs"])
