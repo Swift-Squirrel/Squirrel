@@ -1,2 +1,2 @@
-# micros
-micro framework in swift
+# Squirrel
+web framework in swift
