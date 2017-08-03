@@ -72,9 +72,10 @@ fastlane/test_output
 # xcodeproj
 Squirrel.xcodeproj
 
-# MicroS
+# Squirrel
 Public/
 Storage/
+.squirrel
 
 # Testing
 Sources/main.swift
