@@ -49,11 +49,19 @@ public struct JSONCoding {
     /// - Parameter object: object to encode
     /// - Returns: json representation or nil otherwise
     static private func encode<T>(object: T) -> Any? {
-        let childrens = Mirror(reflecting: object).children
+        let mirror = Mirror(reflecting: object)
+        let childrens = mirror.children
         var res: [String: Any] = [:]
-        for child in childrens {
-            if let key = child.label {
-                res[key] = encodeValue(value: child.value)
+        if let arr = object as? [Any] {
+            var name = mirror.description.components(separatedBy: "<")[1]
+            name = name.substring(to: name.index(before: name.endIndex)) + "s"
+
+            res[name] = arr.map( { encode(object: $0) } )
+        } else {
+            for child in childrens {
+                if let key = child.label {
+                    res[key] = encodeValue(value: child.value)
+                }
             }
         }
         if res.count == 0 {
@@ -73,6 +81,8 @@ public struct JSONCoding {
              is Bool,
              is String:
             obj = value
+        case let v as Date:
+            obj = v.timeIntervalSince1970.description
         case let v as [String: Any?]:
             var val: [String: Any?] = [:]
             for (k, v) in v {
