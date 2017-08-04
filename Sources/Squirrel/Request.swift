@@ -9,7 +9,7 @@
 import Foundation
 import Regex
 
-class Request {
+open class Request {
 
     private var requestType = ""
 

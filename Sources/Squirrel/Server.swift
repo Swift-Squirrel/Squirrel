@@ -17,7 +17,7 @@ import Socket
 import Dispatch
 import PathKit
 
-class Server {
+open class Server {
 
     private let port: UInt16
     let bufferSize = 20
@@ -28,7 +28,7 @@ class Server {
 
     let responseManager = ResponseManager.sharedInstance
 
-    init(port: UInt16 = Config.sharedInstance.port, serverRoot root: String = Config.sharedInstance.serverRoot) {
+    public init(port: UInt16 = Config.sharedInstance.port, serverRoot root: String = Config.sharedInstance.serverRoot) {
         self.port = port
         self.serverRoot = root
 
@@ -41,7 +41,7 @@ class Server {
         listenSocket?.close()
     }
 
-    func run() throws {
+    public func run() throws {
         let socket = try Socket.create()
 
         listenSocket = socket

@@ -13,7 +13,7 @@ class ResponseManager {
 
     static let sharedInstance = ResponseManager()
 
-    var routeTree = RouteTree()
+    private var routeTree = RouteTree()
 
     private init() {
     }
