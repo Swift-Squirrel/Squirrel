@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SquirrelConnector
 
 public struct JSONCoding {
     private init() {
@@ -52,7 +53,9 @@ public struct JSONCoding {
         let mirror = Mirror(reflecting: object)
         let childrens = mirror.children
         var res: [String: Any] = [:]
-        if let arr = object as? [Any] {
+        if object is Primitive {
+            return object
+        } else if let arr = object as? [Any] {
             var name = mirror.description.components(separatedBy: "<")[1]
             name = name.substring(to: name.index(before: name.endIndex)) + "s"
 
@@ -64,6 +67,7 @@ public struct JSONCoding {
         } else if let dic = object as? [String: Any] {
             for (k, v) in dic {
                 res[k] = encode(object: v)
+
             }
         } else {
             for child in childrens {

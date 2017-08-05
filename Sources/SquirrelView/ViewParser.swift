@@ -19,6 +19,28 @@ class ViewParser {
         if name.contains(".") {
             var names = name.components(separatedBy: ".")
 
+            if names[1] == "reversed()" || names[1] == "count" {
+                guard names.count == 2 else {
+                    return nil
+                }
+
+                if let arr = data[names[0]] as? [Any] {
+                    if names[1] == "count" {
+                        return arr.count
+                    } else {
+                        return arr.reversed()
+                    }
+                } else if let dic = data[names[0]] as? [String: Any] {
+                    if names[1] == "count" {
+                        return dic.count
+                    } else {
+                        return nil
+                    }
+                } else {
+                    return nil
+                }
+            }
+
             guard let newData = data[names[0]] as? [String: Any] else {
                 return nil
             }

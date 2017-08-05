@@ -13,10 +13,6 @@ import SquirrelJSONEncoding
 
 public struct View: ViewProtocol {
     public func getContent() throws -> String {
-        guard let data = JSONCoding.encode(object: data) as? [String: Any] else {
-            throw JSONError(kind: .encodeError, message: "Encode error")
-        }
-        ViewParser.data = data
         guard sourceExists else {
             throw ViewError(kind: .notExists, description: "Source file \(name).nut does not exists")
         }
@@ -43,8 +39,6 @@ public struct View: ViewProtocol {
     private let compiledPath: Path
 
     private let name: String
-
-    private var data: Any?
 
     public var sourceExists: Bool {
         return path.exists
@@ -73,14 +67,16 @@ public struct View: ViewProtocol {
 
     public init(name: String) {
         self.name = name
-        self.data = nil
+//        self.data = nil
         path = Path(components: [Config.sharedInstance.views.string, name + ".nut"]).normalize()
         compiledPath = Path(components: [Config.sharedInstance.storageViews.string, name + ".fruit"]).normalize()
     }
 
-    public init(name: String, object: Any) {
+    public init<T>(name: String, object: T) throws {
         self.init(name: name)
-        self.data = object
-
+        guard let data = JSONCoding.encode(object: object) as? [String: Any] else {
+            throw JSONError(kind: .encodeError, message: "Encode error")
+        }
+        ViewParser.data = data
     }
 }
