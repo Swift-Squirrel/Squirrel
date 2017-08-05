@@ -13,7 +13,7 @@ public struct JSONCoding {
 
     }
 
-    static func encodeDataJSON<T>(object: T) throws -> Data {
+    public static func encodeDataJSON<T>(object: T) throws -> Data {
         if let data = encode(object: object) {
             if let theJSONData = try? JSONSerialization.data(
                 withJSONObject: data,
@@ -35,12 +35,12 @@ public struct JSONCoding {
         return ((try? JSONSerialization.jsonObject(with: data, options: .mutableContainers)) != nil)
     }
 
-    static func encodeJSON<T>(object: T) throws -> String {
+    public static func encodeJSON<T>(object: T) throws -> String {
         let theJSONData = try encodeDataJSON(object: object)
         if let theJSONText = String(data: theJSONData, encoding: .utf8) {
             return theJSONText
         } else {
-            throw DataError(kind: .dataEncodingError)
+            throw JSONError(kind: .dataEncodingError, message: "Can not encode data")
         }
     }
 
@@ -48,7 +48,7 @@ public struct JSONCoding {
     ///
     /// - Parameter object: object to encode
     /// - Returns: json representation or nil otherwise
-    static private func encode<T>(object: T) -> Any? {
+    public static func encode<T>(object: T) -> Any? {
         let mirror = Mirror(reflecting: object)
         let childrens = mirror.children
         var res: [String: Any] = [:]
@@ -56,7 +56,15 @@ public struct JSONCoding {
             var name = mirror.description.components(separatedBy: "<")[1]
             name = name.substring(to: name.index(before: name.endIndex)) + "s"
 
+            let first = name.lowercased().substring(to: name.index(after: name.startIndex) )
+            let rest = String(name.characters.dropFirst())
+            name = "\(first)\(rest)"
+
             res[name] = arr.map( { encode(object: $0) } )
+        } else if let dic = object as? [String: Any] {
+            for (k, v) in dic {
+                res[k] = encode(object: v)
+            }
         } else {
             for child in childrens {
                 if let key = child.label {

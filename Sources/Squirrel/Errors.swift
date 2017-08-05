@@ -7,21 +7,21 @@
 //
 
 import Foundation
+import SquirrelView
+import SquirrelJSONEncoding
 
-
-public protocol AsHTTPProtocol {
-    var asHTTPError: HTTPError { get }
+extension ViewError: SquirrelErrorProtocol {
+    public var asHTTPError: HTTPError {
+        switch kind {
+        case .notExists:
+            return HTTPError(status: .notFound, description: description)
+        case .getModif:
+            return HTTPError(status: .internalError, description: description)
+        }
+    }
 }
 
-public struct JSONError: Error, AsHTTPProtocol {
-    enum ErrorKind {
-        case parseError
-        case encodeError
-    }
-
-    let kind: ErrorKind
-    let message: String
-
+extension JSONError: AsHTTPProtocol {
     public var asHTTPError: HTTPError {
         return HTTPError(status: .internalError, description: message)
     }

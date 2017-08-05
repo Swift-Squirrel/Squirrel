@@ -12,7 +12,7 @@ import SwiftyBeaver
 
 // TODO use PathKit
 
-class Config {
+public class Config {
     private let _serverRoot: String
     private let _webRoot: String
     private let _cache: String
@@ -20,40 +20,60 @@ class Config {
     private let _isAllowedDirBrowsing: Bool
     private let _logDir: Path
     private let _logFile: Path
+    private let _resourcesDir: Path
+    private let _viewsDir: Path
+    private let _views: Path
+    private let _storage: Path
+    private let _storageViews: Path
+
+    public let log = SwiftyBeaver.self
 
     private let logFileName = "server.log"
 
-    var logFile: Path {
+    public var logFile: Path {
         return _logFile
     }
 
-    var serverRoot: String {
+    public var serverRoot: String {
         return _serverRoot
     }
-    var webRoot: String {
+    public var webRoot: String {
         return _webRoot
     }
-    var cache: String {
+    public var cache: String {
         return _cache
     }
-    var port: UInt16 {
+    public var port: UInt16 {
         return _port
     }
-    var  isAllowedDirBrowsing: Bool {
+    public var isAllowedDirBrowsing: Bool {
         return _isAllowedDirBrowsing
     }
 
-    static let sharedInstance = Config()
+    public var storageViews: Path {
+        return _storageViews
+    }
+
+    public var views: Path {
+        return _views
+    }
+
+    public static let sharedInstance = Config()
 
     private init() {
         _serverRoot = "/Users/Navel/Leo/Skola/3BIT/IBT/Squirrel"
         _webRoot = _serverRoot + "/Public"
         _cache = _serverRoot + "/Storage/Cache"
-        _logDir = Path(components: [_serverRoot, "Storage/Logs"])
+        _storage = Path(components: [_serverRoot, "Storage"])
+        _logDir = Path(components: [_storage.string, "Logs"])
         _logFile = Path(components: [_logDir.description, logFileName])
+        _resourcesDir = Path(components: [_serverRoot, "Resources"]).absolute()
+        _viewsDir = Path(components: [_resourcesDir.string, "Views"])
+        _views = Path(components: [_viewsDir.string, "Views"])
+        _storageViews = Path(components: [_storage.string, "Views"])
+
         _port = 8080
         _isAllowedDirBrowsing = false
-
 
         initLog()
         createDirectories()
@@ -64,7 +84,7 @@ class Config {
         console.minLevel = .verbose
 
         #if !Xcode
-        console.useTerminalColors = true
+            console.useTerminalColors = true
         #endif
 
         let file = FileDestination()
@@ -74,6 +94,14 @@ class Config {
         log.addDestination(file)
     }
 
+    private func createDir(path dir: Path) {
+        guard !dir.exists else {
+            return
+        }
+        try? dir.mkpath()
+        log.info("creating folder: \(dir.string)")
+    }
+    
     private func createDir(url: String) {
         let fileManager = FileManager.default
         if !fileManager.fileExists(atPath: url) {
@@ -86,6 +114,7 @@ class Config {
         createDir(url: _logDir.description)
         createDir(url: serverRoot)
         createDir(url: webRoot)
+        createDir(path: storageViews)
         createDir(url: cache)
     }
 }

@@ -4,6 +4,11 @@ import PackageDescription
 
 let package = Package(
     name: "Squirrel",
+    targets: [
+        Target(name: "App", dependencies: ["Squirrel"]),
+        Target(name: "Squirrel", dependencies: ["SquirrelView", "SquirrelConfig", "SquirrelJSONEncoding"]),
+        Target(name: "SquirrelView", dependencies: ["SquirrelConfig", "SquirrelJSONEncoding"])
+    ],
     dependencies: [
         .Package(url: "https://github.com/IBM-Swift/BlueSocket", majorVersion: 0, minor: 12),
         .Package(url: "https://github.com/sharplet/Regex.git", majorVersion: 1),

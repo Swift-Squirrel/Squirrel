@@ -6,16 +6,18 @@
 //
 //
 
-#if os(Linux)
-    import Glibc
-#else
-    import Darwin
-#endif
+//#if os(Linux)
+//    import Glibc
+//#else
+//    import Darwin
+//#endif
 
 import Foundation
 import Socket
 import Dispatch
 import PathKit
+import SquirrelView
+import SquirrelConfig
 
 open class Server {
 
@@ -114,6 +116,8 @@ open class Server {
         switch any {
         case let response as Response:
             return response
+        case let view as ViewProtocol:
+            return try Response(view: view)
         case let string as String:
             return try Response(html: string)
         default:

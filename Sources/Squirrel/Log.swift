@@ -8,5 +8,6 @@
 
 import Foundation
 import SwiftyBeaver
+import SquirrelConfig
 
-let log = SwiftyBeaver.self
+let log = Config.sharedInstance.log

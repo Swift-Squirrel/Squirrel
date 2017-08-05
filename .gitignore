@@ -76,6 +76,8 @@ Squirrel.xcodeproj
 Public/
 Storage/
 .squirrel
+Sources/App
+Resources/
 
 # Testing
 Sources/main.swift

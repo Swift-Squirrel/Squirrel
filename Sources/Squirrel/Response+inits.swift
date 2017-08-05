@@ -8,6 +8,8 @@
 
 import Foundation
 import PathKit
+import SquirrelView
+import SquirrelJSONEncoding
 
 // JSON and HTML
 extension Response {
@@ -17,7 +19,7 @@ extension Response {
     }
 
     convenience init(html: String) throws {
-        guard let data = html.data(using: .utf8) else {
+        guard let data = html.data(using: .utf8) else { 
             throw DataError(kind: .dataCodingError(string: html))
         }
         self.init(
@@ -47,5 +49,12 @@ extension Response {
             headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Application.json.rawValue],
             body: data
         )
+    }
+}
+
+extension Response {
+    convenience init(view: ViewProtocol) throws {
+        let content = try view.getContent()
+        try self.init(html: content)
     }
 }
