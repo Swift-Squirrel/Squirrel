@@ -15,17 +15,34 @@ public struct JSONCoding {
     }
 
     public static func encodeDataJSON<T>(object: T) throws -> Data {
-        if let data = encode(object: object) {
-            if let theJSONData = try? JSONSerialization.data(
-                withJSONObject: data,
-                options: []
-                ) {
-                return theJSONData
+        if let arr = object as? [Any] {
+            var name = Mirror(reflecting: arr).description.components(separatedBy: "<")[1]
+            name = name.substring(to: name.index(before: name.endIndex)) + "s"
+
+            let first = name.lowercased().substring(to: name.index(after: name.startIndex) )
+            let rest = String(name.characters.dropFirst())
+            name = "\(first)\(rest)"
+            if let data = encode(object: [name: object]) {
+                return try dataSerialization(data: data)
             } else {
-                throw JSONError(kind: .parseError, message: "Can not serialize data to json format.")
+                throw JSONError(kind: .encodeError, message: "Can not encode object to JSON.")
             }
+        }
+        if let data = encode(object: object) {
+            return try dataSerialization(data: data)
         } else {
             throw JSONError(kind: .encodeError, message: "Can not encode object to JSON.")
+        }
+    }
+
+    static private func dataSerialization(data: Any) throws -> Data{
+        if let theJSONData = try? JSONSerialization.data(
+            withJSONObject: data,
+            options: []
+            ) {
+            return theJSONData
+        } else {
+            throw JSONError(kind: .parseError, message: "Can not serialize data to json format.")
         }
     }
 
@@ -50,26 +67,19 @@ public struct JSONCoding {
     /// - Parameter object: object to encode
     /// - Returns: json representation or nil otherwise
     public static func encode<T>(object: T) -> Any? {
-        let mirror = Mirror(reflecting: object)
-        let childrens = mirror.children
         var res: [String: Any] = [:]
         if object is Primitive {
             return object
         } else if let arr = object as? [Any] {
-            var name = mirror.description.components(separatedBy: "<")[1]
-            name = name.substring(to: name.index(before: name.endIndex)) + "s"
-
-            let first = name.lowercased().substring(to: name.index(after: name.startIndex) )
-            let rest = String(name.characters.dropFirst())
-            name = "\(first)\(rest)"
-
-            res[name] = arr.map( { encode(object: $0) } )
+            return arr.map( { encode(object: $0 ) } )
         } else if let dic = object as? [String: Any] {
             for (k, v) in dic {
                 res[k] = encode(object: v)
 
             }
         } else {
+            let mirror = Mirror(reflecting: object)
+            let childrens = mirror.children
             for child in childrens {
                 if let key = child.label {
                     res[key] = encodeValue(value: child.value)

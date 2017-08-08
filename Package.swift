@@ -7,7 +7,8 @@ let package = Package(
     targets: [
         Target(name: "App", dependencies: ["Squirrel"]),
         Target(name: "Squirrel", dependencies: ["SquirrelView", "SquirrelConfig", "SquirrelJSONEncoding"]),
-        Target(name: "SquirrelView", dependencies: ["SquirrelConfig", "SquirrelJSONEncoding"])
+        Target(name: "SquirrelView", dependencies: ["SquirrelConfig", "SquirrelJSONEncoding", "NutView"]),
+        Target(name: "NutView", dependencies: ["SquirrelJSONEncoding"])
     ],
     dependencies: [
         .Package(url: "https://github.com/IBM-Swift/BlueSocket", majorVersion: 0, minor: 12),

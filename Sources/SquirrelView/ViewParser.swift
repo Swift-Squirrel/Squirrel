@@ -7,7 +7,7 @@
 //
 
 import Regex
-
+/*
 class ViewParser {
     static var data: [String: Any] = [:]
 
@@ -117,3 +117,4 @@ class ViewParser {
         return res
     }
 }
+ */

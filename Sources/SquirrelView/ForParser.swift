@@ -5,7 +5,7 @@
 //  Created by Filip Klembara on 8/5/17.
 //
 //
-
+/*
 struct ForParser: ParseCommandProtocol {
     func parse(text: inout [String], prevChar: inout String) throws -> String {
         var cond = ""
@@ -82,3 +82,4 @@ struct ForParser: ParseCommandProtocol {
 
     let prefix = "\\for "
 }
+*/
