@@ -14,21 +14,22 @@ public struct JSONCoding {
 
     }
 
-    public static func encodeDataJSON<T>(object: T) throws -> Data {
-        if let arr = object as? [Any] {
-            var name = Mirror(reflecting: arr).description.components(separatedBy: "<")[1]
+    public static func encodeSerializeJSON<T>(object: T) -> Any? {
+//        if let arr = object as? [Any] {
+        let desc = Mirror(reflecting: object).description
+        if desc.hasPrefix("Mirror for Array<") {
+            var name = desc.components(separatedBy: "<")[1]
             name = name.substring(to: name.index(before: name.endIndex)) + "s"
 
             let first = name.lowercased().substring(to: name.index(after: name.startIndex) )
             let rest = String(name.characters.dropFirst())
             name = "\(first)\(rest)"
-            if let data = encode(object: [name: object]) {
-                return try dataSerialization(data: data)
-            } else {
-                throw JSONError(kind: .encodeError, message: "Can not encode object to JSON.")
-            }
+            return encode(object: [name: object])
         }
-        if let data = encode(object: object) {
+        return object
+    }
+    public static func encodeDataJSON<T>(object: T) throws -> Data {
+        if let data = encodeSerializeJSON(object: object) {
             return try dataSerialization(data: data)
         } else {
             throw JSONError(kind: .encodeError, message: "Can not encode object to JSON.")
@@ -47,10 +48,14 @@ public struct JSONCoding {
     }
 
     public static func isValid(json: String) -> Bool {
-        guard let data = json.data(using: .utf8, allowLossyConversion: false) else {
+        return toJSON(json: json) != nil
+    }
+
+    public static func toJSON(json string: String) -> Any? {
+        guard let data = string.data(using: .utf8, allowLossyConversion: false) else {
             return false
         }
-        return ((try? JSONSerialization.jsonObject(with: data, options: .mutableContainers)) != nil)
+        return try? JSONSerialization.jsonObject(with: data, options: .mutableContainers)
     }
 
     public static func encodeJSON<T>(object: T) throws -> String {

@@ -9,7 +9,7 @@
 protocol NutTokenProtocol {
     var id: String { get }
 
-    var serialized: Any { get }
+    var serialized: [String: Any] { get }
 
 }
 
@@ -22,22 +22,8 @@ struct TextToken: NutTokenProtocol {
         self.value = value
     }
 
-    var serialized: Any {
+    var serialized: [String: Any] {
         return ["id": id, "value": value]
-    }
-}
-
-struct ExpressionToken: NutTokenProtocol {
-    let id = "expression"
-
-    private let infix: String
-
-    init(infix: String) {
-        self.infix = infix
-    }
-
-    var serialized: Any {
-        return ["id": id, "infix": infix]
     }
 }
 
@@ -83,7 +69,7 @@ struct IfToken: NutTokenProtocol, IfTokenProtocol {
         }
     }
 
-    var serialized: Any {
+    var serialized: [String: Any] {
         var res: [String: Any] = ["id": id, "condition": condition, "then": thenBlock.map( { $0.serialized })]
         if let variable = self.variable {
             res["variable"] = variable
@@ -144,13 +130,63 @@ struct ElseIfToken: NutTokenProtocol, IfTokenProtocol {
 
     }
 
-    var serialized: Any {
+    var serialized: [String: Any] {
         var res: [String: Any] = ["id": id, "condition": condition, "then": thenBlock.map( { $0.serialized })]
         if let variable = self.variable {
             res["variable"] = variable
         }
         if let elseBlock = self.elseBlock {
             res["else"] = elseBlock.map( { $0.serialized })
+        }
+        return res
+    }
+}
+
+struct TitleToken: NutTokenProtocol {
+    let id = "title"
+
+    let expression: ExpressionToken
+
+    init(expression: ExpressionToken) {
+        self.expression = expression
+    }
+
+    var serialized: [String: Any] {
+        return ["id": id, "expression": expression.serialized]
+    }
+
+}
+
+struct ForInToken: NutTokenProtocol {
+    let id: String
+
+    let variable: String
+
+    let key: String?
+
+    let array: String
+
+    var body = [NutTokenProtocol]()
+
+    mutating func setBody(body: [NutTokenProtocol]) {
+        self.body = body
+    }
+
+    init(key: String? = nil, variable: String, array: String) {
+        if key == nil {
+            id = "for in Array"
+        } else {
+            id = "for in Dictionary"
+        }
+        self.key = key
+        self.variable = variable
+        self.array = array
+    }
+
+    var serialized: [String: Any] {
+        var res: [String: Any] = ["id": id, "variable": variable, "array": array, "body": body.map({ $0.serialized })]
+        if let key = self.key {
+            res["key"] = key
         }
         return res
     }
@@ -169,7 +205,7 @@ struct ElseToken: NutTokenProtocol {
         self.body = body
     }
 
-    var serialized: Any {
+    var serialized: [String: Any] {
         return ["id": "else"]
     }
 }
@@ -177,7 +213,7 @@ struct ElseToken: NutTokenProtocol {
 struct EndBlockToken: NutTokenProtocol {
     let id = "}"
 
-    var serialized: Any {
+    var serialized: [String: Any] {
         return ["id": id]
     }
 }

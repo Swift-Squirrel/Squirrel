@@ -1,5 +1,5 @@
 public protocol ViewProtocol {
-    func getContent() throws -> String
+    mutating func getContent() throws -> String
 
     init(name: String)
 }

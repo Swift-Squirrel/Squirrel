@@ -13,7 +13,9 @@ public protocol NutInterpreterProtocol {
 
     init(resources: Path, storage: Path)
 
-    func tokenize() throws -> String
+    func tokenize() throws -> [String: Any]
+
+    var jsonSerialized: String { get }
 
     func setContent(content: String)
 }
