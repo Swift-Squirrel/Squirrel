@@ -11,7 +11,7 @@ import Evaluation
 struct ExpressionToken: NutTokenProtocol {
     let id = "expression"
 
-    private let infix: String
+    let infix: String
 
     init?(infix: String) {
         self.infix = infix

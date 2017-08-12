@@ -6,6 +6,8 @@
 //
 //
 
+import Foundation
+
 protocol NutTokenProtocol {
     var id: String { get }
 
@@ -13,10 +15,26 @@ protocol NutTokenProtocol {
 
 }
 
+protocol NutViewProtocol: NutTokenProtocol {
+    var name: String { get }
+}
+
+protocol NutSubviewProtocol: NutViewProtocol {
+
+}
+
+protocol NutLayoutProtocol: NutViewProtocol {
+    
+}
+
+protocol NutHeadProtocol: NutTokenProtocol {
+
+}
+
 struct TextToken: NutTokenProtocol {
     let id = "text"
 
-    private let value: String
+    let value: String
 
     init(value: String) {
         self.value = value
@@ -142,7 +160,7 @@ struct ElseIfToken: NutTokenProtocol, IfTokenProtocol {
     }
 }
 
-struct TitleToken: NutTokenProtocol {
+struct TitleToken: NutHeadProtocol {
     let id = "title"
 
     let expression: ExpressionToken

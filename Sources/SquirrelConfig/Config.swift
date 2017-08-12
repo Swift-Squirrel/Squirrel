@@ -22,7 +22,6 @@ public class Config {
     private let _logFile: Path
     private let _resourcesDir: Path
     private let _viewsDir: Path
-    private let _views: Path
     private let _storage: Path
     private let _storageViews: Path
 
@@ -55,7 +54,7 @@ public class Config {
     }
 
     public var views: Path {
-        return _views
+        return _viewsDir
     }
 
     public static let sharedInstance = Config()
@@ -69,7 +68,6 @@ public class Config {
         _logFile = Path(components: [_logDir.description, logFileName])
         _resourcesDir = Path(components: [_serverRoot, "Resources"]).absolute()
         _viewsDir = Path(components: [_resourcesDir.string, "Views"])
-        _views = Path(components: [_viewsDir.string, "Views"])
         _storageViews = Path(components: [_storage.string, "Views"])
 
         _port = 8080
