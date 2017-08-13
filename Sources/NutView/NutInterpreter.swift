@@ -66,7 +66,7 @@ public class NutInterpreter: NutInterpreterProtocol {
             case let title as TitleToken:
                 res += try parse(title: title)
             default:
-                res += "UnknownToken<" + token.id + ">"
+                res += convertToSpecialCharacters(string: "UnknownToken<" + token.id + ">\n")
             }
         }
         return res
@@ -80,13 +80,34 @@ public class NutInterpreter: NutInterpreterProtocol {
                 res += try parse(expression: expression)
             case let forIn as ForInToken:
                 res += try parse(forIn: forIn)
+            case let ifToken as IfToken:
+                res += try parse(if: ifToken)
             case let text as TextToken:
                 res += text.value
             default:
-                res += "UnknownToken<" + token.id + ">"
+                res += convertToSpecialCharacters(string: "UnknownToken<" + token.id + ">\n")
             }
         }
         return res
+    }
+}
+
+
+// HTML escapes
+extension NutInterpreter {
+    fileprivate func convertToSpecialCharacters(string: String) -> String {
+        var newString = string
+        let char_dictionary = [
+            ("&amp;", "&"),
+            ("&lt;", "<"),
+            ("&gt;", ">"),
+            ("&quot;", "\""),
+            ("&apos;", "'")
+        ];
+        for (escaped_char, unescaped_char) in char_dictionary {
+            newString = newString.replacingOccurrences(of: unescaped_char, with: escaped_char, options: NSString.CompareOptions.literal, range: nil)
+        }
+        return newString
     }
 }
 
@@ -181,5 +202,36 @@ extension NutInterpreter {
         }
         data[forIn.variable] = prevValue
         return res
+    }
+
+    fileprivate func parse(if ifToken: IfToken) throws -> String {
+        let any: Any?
+        do {
+            any = try ifToken.condition.evaluate(with: data)
+        } catch let error as EvaluationError {
+            throw NutParserError(kind: .evaluationError(infix: ifToken.condition, message: error.description), row: ifToken.row)
+        }
+        if let variable = ifToken.variable {
+            if let value = any {
+                let prevValue = data[variable]
+                data[variable] = value
+                let res = try run(body: ifToken.thenBlock)
+                data[variable] = prevValue
+                return res
+            } else if let elseBlock = ifToken.elseBlock {
+                return try run(body: elseBlock)
+            }
+        } else {
+            if let condition = any as? Bool {
+                if condition {
+                    return try run(body: ifToken.thenBlock)
+                } else if let elseBlock = ifToken.elseBlock {
+                    return try run(body: elseBlock)
+                }
+            } else {
+                throw NutParserError(kind: .wrongValue(for: ifToken.id, expected: "<expression: Bool>", got: String(describing: any ?? "nil")), row: ifToken.row)
+            }
+        }
+        return ""
     }
 }

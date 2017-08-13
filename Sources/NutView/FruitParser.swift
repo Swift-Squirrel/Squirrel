@@ -18,7 +18,7 @@ struct FruitParser {
     func tokenize() -> ViewToken {
         let data = content.data(using: .utf8, allowLossyConversion: false)!
         let json = JSON(data: data)
-        let name = json["name"].stringValue
+        let name = json["fileName"].stringValue
         let body = parse(body: json["body"].arrayValue)
         let head: [NutHeadProtocol]
         if let headTokens = json["head"].array {
@@ -60,6 +60,20 @@ struct FruitParser {
                 body.append(forIn)
             case "expression":
                 body.append(parse(expression: token))
+            case "if":
+                var ifToken = IfToken(condition: token["condition"].stringValue, row: token["row"].intValue)
+                ifToken.setThen(body: parse(body: token["then"].arrayValue))
+                if let elseBlock = token["else"].array {
+                    ifToken.setElse(body: parse(body: elseBlock))
+                }
+                body.append(ifToken)
+            case "if let":
+                var ifToken = IfToken(variable: token["variable"].stringValue, condition: token["condition"].stringValue, row: token["row"].intValue)
+                ifToken.setThen(body: parse(body: token["then"].arrayValue))
+                if let elseBlock = token["else"].array {
+                    ifToken.setElse(body: parse(body: elseBlock))
+                }
+                body.append(ifToken)
             default:
                 break
             }

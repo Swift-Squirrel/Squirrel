@@ -103,7 +103,7 @@ class NutParser: NutParserProtocol {
                     tokens.append(contentsOf: try parseFor(text: current, row: row))
                 } else if current.hasPrefix("} else if ") {
                     tokens.append(contentsOf: try parseElseIf(text: current, row: row))
-                } else if current.hasPrefix("} else { ") {
+                } else if current.hasPrefix("} else { ") || current.hasPrefix("} else {\n") {
                     tokens.append(contentsOf: parseElse(text: current, row: row))
                 } else if current.hasPrefix("}") {
                     var text = current
@@ -123,7 +123,7 @@ class NutParser: NutParserProtocol {
             let reductedTokens = try doReduction(tokens: tokens)
 
             let tks = reductedTokens.reversed().map( { $0.serialized } )
-            var res: [String: Any] = ["body": tks]
+            var res: [String: Any] = ["body": tks, "fileName": name]
 
             var head = [[String: Any]]()
             var headTokens = [NutHeadProtocol]()
@@ -202,7 +202,12 @@ class NutParser: NutParserProtocol {
                         if let el = elseToken as? ElseToken {
                             ifToken.setElse(body: el.getBody())
                         } else if let el = elseToken as? ElseIfToken {
-                            var ifT = IfToken(condition: el.getCondition(), row: el.row)
+                            var ifT: IfToken
+                            if let variable = el.variable {
+                                ifT = IfToken(variable: variable, condition: el.getCondition(), row: el.row)
+                            } else {
+                                ifT = IfToken(condition: el.getCondition(), row: el.row)
+                            }
                             ifT.setThen(body: el.getThen())
                             if let elseBlock = el.getElse() {
                                 ifT.setElse(body: elseBlock)

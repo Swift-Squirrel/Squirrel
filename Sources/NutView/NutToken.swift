@@ -60,11 +60,11 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let row: Int
 
-    private let condition: String
+    let condition: String
 
-    private var thenBlock = [NutTokenProtocol]()
+    var thenBlock = [NutTokenProtocol]()
 
-    private var elseBlock: [NutTokenProtocol]? = nil
+    var elseBlock: [NutTokenProtocol]? = nil
 
     mutating func setThen(body: [NutTokenProtocol]) {
         self.thenBlock = body
@@ -74,7 +74,14 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
         self.elseBlock = body
     }
 
-    private let variable: String?
+    let variable: String?
+
+    init(variable: String, condition: String, row: Int) {
+        self.row = row
+        self.id = "if let"
+        self.variable = variable
+        self.condition = condition
+    }
 
     init(condition: String, row: Int) {
         self.row = row
@@ -137,7 +144,7 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
         self.elseBlock = body
     }
 
-    private let variable: String?
+    let variable: String?
 
     init(condition: String, row: Int) {
         self.row = row
