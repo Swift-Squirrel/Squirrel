@@ -18,6 +18,7 @@ struct FruitParser {
     func tokenize() -> ViewToken {
         let data = content.data(using: .utf8, allowLossyConversion: false)!
         let json = JSON(data: data)
+        let name = json["name"].stringValue
         let body = parse(body: json["body"].arrayValue)
         let head: [NutHeadProtocol]
         if let headTokens = json["head"].array {
@@ -26,7 +27,7 @@ struct FruitParser {
             head = []
         }
         
-        return ViewToken(head: head, body: body)
+        return ViewToken(name: name, head: head, body: body)
     }
 
     private func parse(head tokens: [JSON]) -> [NutHeadProtocol] {

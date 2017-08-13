@@ -30,25 +30,33 @@ public class NutInterpreter: NutInterpreterProtocol {
 
     public func resolve() throws -> String {
         let viewToken = try resolver.viewToken(for: "Views." + name)
-        var result = try run(body: viewToken.body)
-        if viewToken.head.count > 0 {
-            let headResult = try run(head: viewToken.head)
+        do {
+            var result = try run(body: viewToken.body)
+            if viewToken.head.count > 0 {
+                let headResult = try run(head: viewToken.head)
 
-            let headTag = Regex("<head>.*</head>")
-            if headTag.matches(result) {
-                result.replaceFirst(matching: "</head>", with: headResult + "</head>")
-            } else {
-                let bodyTag = Regex("<body>.*</body>")
-                if bodyTag.matches(result) {
-                    result.replaceFirst(matching: "<body>", with: "<head>\n" + headResult + "</head>\n<body>")
+                let headTag = Regex("<head>.*</head>")
+                if headTag.matches(result) {
+                    result.replaceFirst(matching: "</head>", with: headResult + "</head>")
                 } else {
-                    result = "<!DOCTYPE><html><head>\n" + headResult + "</head>\n<body>\n" + result + "\n</body>\n</html>"
+                    let bodyTag = Regex("<body>.*</body>")
+                    if bodyTag.matches(result) {
+                        result.replaceFirst(matching: "<body>", with: "<head>\n" + headResult + "</head>\n<body>")
+                    } else {
+                        result = "<!DOCTYPE><html><head>\n" + headResult + "</head>\n<body>\n" + result + "\n</body>\n</html>"
+                    }
                 }
+
             }
 
+            return result
+        } catch var error as NutParserError {
+            guard error.name == nil else {
+                throw error
+            }
+            error.name = viewToken.name
+            throw error
         }
-
-        return result
     }
 
     fileprivate func run(head: [NutHeadProtocol]) throws -> String {

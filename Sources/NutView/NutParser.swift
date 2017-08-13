@@ -12,6 +12,7 @@ import SquirrelJSONEncoding
 class NutParser: NutParserProtocol {
 
     private var content = ""
+    private let name: String
     private var serializedTokens: [String: Any] = [:]
 
     private var _jsonSerialized: String = ""
@@ -25,8 +26,9 @@ class NutParser: NutParserProtocol {
         static let separator = "\\"
     }
     
-    required init(content: String) {
+    required init(content: String, name: String) {
         self.content = content
+        self.name = name
     }
 
     private func makeSeparations() -> [String] {
@@ -75,67 +77,75 @@ class NutParser: NutParserProtocol {
         var tokens = [NutTokenProtocol]()
         var title: TitleToken? = nil
         var index = separated.count - 1
-        while index > 0 {
-            let row = getRow(array: separated.prefix(index))
-            let current = separated[index]
-            if current.hasPrefix("(") {
-                tokens.append(contentsOf: try parseExpression(text: current, row: row))
-            } else if current.hasPrefix("Title") {
-                let tks = try parseTitle(text: current, row: row)
-                guard let titleToken = (tks.last! as? TitleToken) else {
-                    throw NutParserError(
-                        kind: .unknownInternalError(commandName: "\\Title"),
-                        row: getRow(
-                            string: separated.prefix(index).joined(separator: "\\")
+        do {
+            while index > 0 {
+                let row = getRow(array: separated.prefix(index))
+                let current = separated[index]
+                if current.hasPrefix("(") {
+                    tokens.append(contentsOf: try parseExpression(text: current, row: row))
+                } else if current.hasPrefix("Title") {
+                    let tks = try parseTitle(text: current, row: row)
+                    guard let titleToken = (tks.last! as? TitleToken) else {
+                        throw NutParserError(
+                            kind: .unknownInternalError(commandName: "\\Title"),
+                            row: getRow(
+                                string: separated.prefix(index).joined(separator: "\\")
+                            )
                         )
-                    )
+                    }
+                    title = titleToken
+                    if tks.count == 2 { 
+                        tokens.append(tks.first!)
+                    }
+                } else if current.hasPrefix("if ") {
+                    tokens.append(contentsOf: try parseIf(text: current, row: row))
+                } else if current.hasPrefix("for ") {
+                    tokens.append(contentsOf: try parseFor(text: current, row: row))
+                } else if current.hasPrefix("} else if ") {
+                    tokens.append(contentsOf: try parseElseIf(text: current, row: row))
+                } else if current.hasPrefix("} else { ") {
+                    tokens.append(contentsOf: parseElse(text: current, row: row))
+                } else if current.hasPrefix("}") {
+                    var text = current
+                    text.remove(at: text.startIndex)
+                    tokens.append(TextToken(value: text))
+                    tokens.append(EndBlockToken(row: row))
+                } else {
+                    separated[index - 1] += current
+                    separated[index] = ""
                 }
-                title = titleToken
-                if tks.count == 2 { 
-                    tokens.append(tks.first!)
-                }
-            } else if current.hasPrefix("if ") {
-                tokens.append(contentsOf: try parseIf(text: current, row: row))
-            } else if current.hasPrefix("for ") {
-                tokens.append(contentsOf: try parseFor(text: current, row: row))
-            } else if current.hasPrefix("} else if ") {
-                tokens.append(contentsOf: try parseElseIf(text: current, row: row))
-            } else if current.hasPrefix("} else { ") {
-                tokens.append(contentsOf: try parseElse(text: current, row: row))
-            } else if current.hasPrefix("}") {
-                var text = current
-                text.remove(at: text.startIndex)
-                tokens.append(TextToken(value: text))
-                tokens.append(EndBlockToken(row: row))
-            } else {
-                separated[index - 1] += current
-                separated[index] = ""
+                index -= 1
             }
-            index -= 1
-        }
-        if separated.first! != "" {
-            tokens.append(TextToken(value: separated.first!))
-        }
+            if separated.first! != "" {
+                tokens.append(TextToken(value: separated.first!))
+            }
 
-        let reductedTokens = try doReduction(tokens: tokens)
+            let reductedTokens = try doReduction(tokens: tokens)
 
-        let tks = reductedTokens.reversed().map( { $0.serialized } )
-        var res: [String: Any] = ["body": tks]
+            let tks = reductedTokens.reversed().map( { $0.serialized } )
+            var res: [String: Any] = ["body": tks]
 
-        var head = [[String: Any]]()
-        var headTokens = [NutHeadProtocol]()
+            var head = [[String: Any]]()
+            var headTokens = [NutHeadProtocol]()
 
-        if let titleToken = title {
-            head.append(titleToken.serialized)
-            headTokens.append(titleToken)
+            if let titleToken = title {
+                head.append(titleToken.serialized)
+                headTokens.append(titleToken)
+            }
+            if head.count > 0 {
+                res["head"] = head
+            }
+            serializedTokens = res
+            _jsonSerialized = try! JSONCoding.encodeJSON(object: res)
+            let viewBody = ViewToken(name: name, head: headTokens, body: reductedTokens.reversed())
+            return viewBody
+        } catch var error as NutParserError {
+            guard error.name == nil else {
+                throw error
+            }
+            error.name = name
+            throw error
         }
-        if head.count > 0 {
-            res["head"] = head
-        }
-        serializedTokens = res
-        _jsonSerialized = try! JSONCoding.encodeJSON(object: res)
-        let viewBody = ViewToken(head: headTokens, body: reductedTokens.reversed())
-        return viewBody
     }
 
     private func doReduction(tokens originalTokens: [NutTokenProtocol]) throws -> [NutTokenProtocol] {

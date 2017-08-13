@@ -84,7 +84,7 @@ class NutResolver: NutResolverProtocol {
             vToken = parser.tokenize()
         } else {
             let content: String = try nut.read()
-            let parser = NutParser(content: content)
+            let parser = NutParser(content: content, name: nutName)
             vToken = try parser.tokenize()
 
             // TODO separated thread

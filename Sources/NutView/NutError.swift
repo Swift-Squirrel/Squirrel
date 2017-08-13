@@ -17,8 +17,8 @@ public struct NutParserError: Error, CustomStringConvertible {
         case wrongValue(for: String, expected: String, got: Any)
     }
     public let kind: ErrorKind
+    public var name: String? = nil
     public let row: Int
-//    public let column: UInt
     private let _description: String?
     public var description: String {
         var res = ""
@@ -28,7 +28,7 @@ public struct NutParserError: Error, CustomStringConvertible {
         case .unexpectedEnd(let reading):
             res = "Unexpected end of file while reading: \(reading)"
         case .syntaxError(let expected, let got):
-            res = "Syntax error\nexpected: \n\t" + expected.joined(separator: "\t\n") + "\nbut got: \n\t\(got)"
+            res = "Syntax error\nexpected: \n\t" + expected.flatMap( { "'" + $0 + "'" } ).joined(separator: "\n\t") + "\nbut got: \n\t'\(got)'"
         case .expressionError:
             res = "Expression error"
         case .evaluationError(let infix, let message):
@@ -37,6 +37,9 @@ public struct NutParserError: Error, CustomStringConvertible {
             res = "Missing value for \(name)"
         case .wrongValue(let name, let expected, let got):
             res = "Wrong value for \(name), expected: '\(expected)' but got '\(String(describing: got))'"
+        }
+        if let name = self.name {
+            res += "\nFile name: \(name)"
         }
         res += "\nRow:\(row)"
         if let desc = _description {

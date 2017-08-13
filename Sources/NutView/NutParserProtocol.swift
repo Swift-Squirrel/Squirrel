@@ -8,7 +8,7 @@
 
 protocol NutParserProtocol {
 
-    init(content: String)
+    init(content: String, name: String)
 
     func tokenize() throws -> ViewToken
 
