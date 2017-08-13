@@ -57,7 +57,7 @@ class ErrorHandler {
 
     func response(for error: Error) -> Response {
         guard let response = getErrorResponse(for: error) else {
-            let body = "Internal error has occured, nothing to handle it.".data(using: .utf8)!
+            let body = "Internal error has occured, nothing to handle it.\nError description:\n'\(String(describing: error))'".data(using: .utf8)!
             return Response(status: .internalError, body: body)
         }
         return response

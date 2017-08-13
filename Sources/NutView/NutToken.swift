@@ -15,7 +15,11 @@ protocol NutTokenProtocol {
 
 }
 
-protocol NutViewProtocol: NutTokenProtocol {
+protocol NutCommandTokenProtocol: NutTokenProtocol {
+    var row: Int { get }
+}
+
+protocol NutViewProtocol: NutCommandTokenProtocol {
     var name: String { get }
 }
 
@@ -27,7 +31,7 @@ protocol NutLayoutProtocol: NutViewProtocol {
     
 }
 
-protocol NutHeadProtocol: NutTokenProtocol {
+protocol NutHeadProtocol: NutCommandTokenProtocol {
 
 }
 
@@ -45,14 +49,16 @@ struct TextToken: NutTokenProtocol {
     }
 }
 
-protocol IfTokenProtocol: NutTokenProtocol {
-    init(condition: String)
+protocol IfTokenProtocol: NutCommandTokenProtocol {
+    init(condition: String, row: Int)
     mutating func setThen(body: [NutTokenProtocol])
     mutating func setElse(body: [NutTokenProtocol])
 }
 
-struct IfToken: NutTokenProtocol, IfTokenProtocol {
+struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
     let id: String
+
+    let row: Int
 
     private let condition: String
 
@@ -70,7 +76,8 @@ struct IfToken: NutTokenProtocol, IfTokenProtocol {
 
     private let variable: String?
 
-    init(condition: String) {
+    init(condition: String, row: Int) {
+        self.row = row
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
             //        guard separated.count == 4 else {
@@ -88,7 +95,7 @@ struct IfToken: NutTokenProtocol, IfTokenProtocol {
     }
 
     var serialized: [String: Any] {
-        var res: [String: Any] = ["id": id, "condition": condition, "then": thenBlock.map( { $0.serialized })]
+        var res: [String: Any] = ["id": id, "condition": condition, "then": thenBlock.map( { $0.serialized }), "row": row]
         if let variable = self.variable {
             res["variable"] = variable
         }
@@ -99,8 +106,10 @@ struct IfToken: NutTokenProtocol, IfTokenProtocol {
     }
 }
 
-struct ElseIfToken: NutTokenProtocol, IfTokenProtocol {
+struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
     let id: String
+
+    let row: Int
 
     private let condition: String
 
@@ -130,7 +139,8 @@ struct ElseIfToken: NutTokenProtocol, IfTokenProtocol {
 
     private let variable: String?
 
-    init(condition: String) {
+    init(condition: String, row: Int) {
+        self.row = row
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
             //        guard separated.count == 4 else {
@@ -149,7 +159,7 @@ struct ElseIfToken: NutTokenProtocol, IfTokenProtocol {
     }
 
     var serialized: [String: Any] {
-        var res: [String: Any] = ["id": id, "condition": condition, "then": thenBlock.map( { $0.serialized })]
+        var res: [String: Any] = ["id": id, "condition": condition, "then": thenBlock.map( { $0.serialized }), "row": row]
         if let variable = self.variable {
             res["variable"] = variable
         }
@@ -163,20 +173,25 @@ struct ElseIfToken: NutTokenProtocol, IfTokenProtocol {
 struct TitleToken: NutHeadProtocol {
     let id = "title"
 
+    let row: Int
+
     let expression: ExpressionToken
 
-    init(expression: ExpressionToken) {
+    init(expression: ExpressionToken, row: Int) {
+        self.row = row
         self.expression = expression
     }
 
     var serialized: [String: Any] {
-        return ["id": id, "expression": expression.serialized]
+        return ["id": id, "expression": expression.serialized, "row": row]
     }
 
 }
 
-struct ForInToken: NutTokenProtocol {
+struct ForInToken: NutCommandTokenProtocol {
     let id: String
+
+    let row: Int
 
     let variable: String
 
@@ -190,7 +205,8 @@ struct ForInToken: NutTokenProtocol {
         self.body = body
     }
 
-    init(key: String? = nil, variable: String, array: String) {
+    init(key: String? = nil, variable: String, array: String, row: Int) {
+        self.row = row
         if key == nil {
             id = "for in Array"
         } else {
@@ -202,7 +218,7 @@ struct ForInToken: NutTokenProtocol {
     }
 
     var serialized: [String: Any] {
-        var res: [String: Any] = ["id": id, "variable": variable, "array": array, "body": body.map({ $0.serialized })]
+        var res: [String: Any] = ["id": id, "variable": variable, "array": array, "body": body.map({ $0.serialized }), "row": row]
         if let key = self.key {
             res["key"] = key
         }
@@ -210,10 +226,16 @@ struct ForInToken: NutTokenProtocol {
     }
 }
 
-struct ElseToken: NutTokenProtocol {
+struct ElseToken: NutCommandTokenProtocol {
     let id = "else"
 
+    let row: Int
+
     private var body = [NutTokenProtocol]()
+
+    init(row: Int) {
+        self.row = row
+    }
 
     func getBody() -> [NutTokenProtocol] {
         return body
@@ -228,8 +250,10 @@ struct ElseToken: NutTokenProtocol {
     }
 }
 
-struct EndBlockToken: NutTokenProtocol {
+struct EndBlockToken: NutCommandTokenProtocol {
     let id = "}"
+
+    let row: Int
 
     var serialized: [String: Any] {
         return ["id": id]

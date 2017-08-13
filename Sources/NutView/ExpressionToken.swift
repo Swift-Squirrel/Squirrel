@@ -8,13 +8,16 @@
 
 import Evaluation
 
-struct ExpressionToken: NutTokenProtocol {
+struct ExpressionToken: NutCommandTokenProtocol {
     let id = "expression"
+
+    let row: Int
 
     let infix: String
 
-    init?(infix: String) {
+    init?(infix: String, row: Int) {
         self.infix = infix
+        self.row = row
 //        let eval = try! Evaluation(expression: infix)
         
     }

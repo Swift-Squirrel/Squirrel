@@ -82,6 +82,7 @@ public class NutInterpreter: NutInterpreterProtocol {
     }
 }
 
+// Head parsing
 extension NutInterpreter {
     fileprivate func parse(title: TitleToken) throws -> String {
         let expr = try parse(expression: title.expression)
@@ -89,6 +90,7 @@ extension NutInterpreter {
     }
 }
 
+// getValue
 extension NutInterpreter {
     fileprivate func unwrap(any: Any, ifNil: Any = "nil") -> Any {
 
@@ -131,23 +133,28 @@ extension NutInterpreter {
 
 }
 
+// Body parsing
 extension NutInterpreter {
     fileprivate func parse(expression: ExpressionToken) throws -> String {
-        let res = try expression.infix.evaluate(with: data)
-        return String(describing: unwrap(any: res ?? "nil"))
+        do {
+            let res = try expression.infix.evaluate(with: data)
+            return String(describing: unwrap(any: res ?? "nil"))
+        } catch let error as EvaluationError {
+            throw NutParserError(kind: .evaluationError(infix: expression.infix, message: error.description), row: expression.row)
+        }
     }
 
     fileprivate func parse(forIn: ForInToken) throws -> String {
         let prevValue = data[forIn.variable]
         var res = ""
         guard let arr = getValue(name: forIn.array, from: data) else {
-            throw NutError(kind: .missingValue(for: forIn.array))
+            throw NutParserError(kind: .missingValue(for: forIn.array), row: forIn.row)
 
         }
         if let keyName = forIn.key {
             let prevKey = data[keyName]
             guard let dic = arr as? [String: Any] else {
-                throw NutError(kind: .wrongValue(for: forIn.array, expected: "[String: Any]", got: arr))
+                throw NutParserError(kind: .wrongValue(for: forIn.array, expected: "[String: Any]", got: arr), row: forIn.row)
             }
             for (key, value) in dic {
                 data[forIn.variable] = value
@@ -157,7 +164,7 @@ extension NutInterpreter {
             data[keyName] = prevKey
         } else {
             guard let array = arr as? [Any] else {
-                throw NutError(kind: .wrongValue(for: forIn.array, expected: "[Any]", got: arr))
+                throw NutParserError(kind: .wrongValue(for: forIn.array, expected: "[Any]", got: arr), row: forIn.row)
             }
             for item in array {
                 data[forIn.variable] = unwrap(any: item)
@@ -167,9 +174,4 @@ extension NutInterpreter {
         data[forIn.variable] = prevValue
         return res
     }
-
-//    fileprivate func parse(title: TitleToken) throws -> String {
-//
-//    }
-
 }
