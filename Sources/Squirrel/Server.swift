@@ -26,11 +26,11 @@ open class Server {
     var listenSocket: Socket? = nil
     var connected = [Int32: Socket]()
     var acceptNewConnection = true
-    let serverRoot: String
+    let serverRoot: Path
 
     let responseManager = ResponseManager.sharedInstance
 
-    public init(port: UInt16 = Config.sharedInstance.port, serverRoot root: String = Config.sharedInstance.serverRoot) {
+    public init(port: UInt16 = Config.sharedInstance.port, serverRoot root: Path = Config.sharedInstance.serverRoot) {
         self.port = port
         self.serverRoot = root
 
@@ -130,9 +130,9 @@ open class Server {
             log.debug("Using handler")
             return handler
         }
-        let path = Path(Config.sharedInstance.webRoot + request.path).normalize()
+        let path = (Config.sharedInstance.webRoot + request.path).normalize()
 
-        guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot) else {
+        guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot.string) else {
             if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
                 log.debug("Using handler")
                 return handler
@@ -146,7 +146,7 @@ open class Server {
         }
 
         if path.isDirectory {
-            let index = Path(path.absolute().description + "/index.html")
+            let index = path + "/index.html"
             if index.exists {
                 return try Response(pathToFile: index).responeHandler()
             }

@@ -10,12 +10,10 @@ import Foundation
 import PathKit
 import SwiftyBeaver
 
-// TODO use PathKit
-
 public class Config {
-    private let _serverRoot: String
-    private let _webRoot: String
-    private let _cache: String
+    private let _serverRoot: Path
+    private let _webRoot: Path
+    private let _cache: Path
     private let _port: UInt16
     private let _isAllowedDirBrowsing: Bool
     private let _logDir: Path
@@ -33,13 +31,13 @@ public class Config {
         return _logFile
     }
 
-    public var serverRoot: String {
+    public var serverRoot: Path {
         return _serverRoot
     }
-    public var webRoot: String {
+    public var webRoot: Path {
         return _webRoot
     }
-    public var cache: String {
+    public var cache: Path {
         return _cache
     }
     public var port: UInt16 {
@@ -60,15 +58,15 @@ public class Config {
     public static let sharedInstance = Config()
 
     private init() {
-        _serverRoot = "/Users/Navel/Leo/Skola/3BIT/IBT/Squirrel"
-        _webRoot = _serverRoot + "/Public"
-        _cache = _serverRoot + "/Storage/Cache"
-        _storage = Path(components: [_serverRoot, "Storage"])
-        _logDir = Path(components: [_storage.string, "Logs"])
-        _logFile = Path(components: [_logDir.description, logFileName])
-        _resourcesDir = Path(components: [_serverRoot, "Resources"]).absolute()
-        _viewsDir = Path(components: [_resourcesDir.string, "Views"])
-        _storageViews = Path(components: [_storage.string, "Views"])
+        _serverRoot = Path().absolute()
+        _webRoot = _serverRoot + "Public"
+        _cache = _serverRoot + "Storage/Cache"
+        _storage = _serverRoot + "Storage"
+        _logDir = _storage + "Logs"
+        _logFile = _logDir + logFileName
+        _resourcesDir = _serverRoot + "Resources"
+        _viewsDir = _resourcesDir + "Views"
+        _storageViews = _storage + "Views"
 
         _port = 8080
         _isAllowedDirBrowsing = false
@@ -109,10 +107,10 @@ public class Config {
     }
 
     private func createDirectories() {
-        createDir(url: _logDir.description)
-        createDir(url: serverRoot)
-        createDir(url: webRoot)
+        createDir(path: _logDir)
+        createDir(path: serverRoot)
+        createDir(path: webRoot)
         createDir(path: storageViews)
-        createDir(url: cache)
+        createDir(path: cache)
     }
 }

@@ -65,8 +65,8 @@ class NutResolver: NutResolverProtocol {
         let nutName = name.components(separatedBy: ".").joined(separator: "/") + ".nut"
         let fruitName = name + ".fruit"
 
-        let fruit = Path(components: [Config.sharedInstance.storageViews.absolute().description, fruitName])
-        let nut = Path(components: [Config.sharedInstance.views.absolute().description, nutName])
+        let fruit = Config.sharedInstance.storageViews + fruitName
+        let nut = Config.sharedInstance.views + nutName
 
         guard nut.exists else {
             throw NutError(kind: .notExists(name: nutName))
