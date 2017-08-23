@@ -1,26 +1,52 @@
-// swift-tools-version:3.1
-
+// swift-tools-version:4.0
 import PackageDescription
 
 let package = Package(
     name: "Squirrel",
-    targets: [
-        Target(name: "App", dependencies: ["Squirrel"]),
-        Target(name: "Squirrel", dependencies: ["SquirrelView", "SquirrelConfig", "SquirrelJSONEncoding"]),
-        Target(name: "SquirrelView", dependencies: ["SquirrelJSONEncoding", "NutView"]),
-        Target(name: "NutView", dependencies: ["SquirrelConfig", "SquirrelJSONEncoding"])
-    ],
+    products: [
+        .executable(
+            name: "App",
+            targets: ["App"]),
+        .library(
+            name: "Squirrel",
+            targets: ["Squirrel"]),
+        ],
     dependencies: [
-        .Package(url: "https://github.com/IBM-Swift/BlueSocket", majorVersion: 0, minor: 12),
-        .Package(url: "https://github.com/sharplet/Regex.git", majorVersion: 1),
-        .Package(url: "https://github.com/tris-foundation/reflection.git", majorVersion: 0),
-        .Package(url: "https://github.com/LeoNavel/Evaluation.git", majorVersion: 0),
-        .Package(url: "https://github.com/LeoNavel/MySqlSwiftNative.git", majorVersion: 1, minor: 3),
-//        .Package(url: "https://github.com/tris-foundation/test.git", majorVersion: 0),
-        .Package(url: "https://github.com/SwiftyBeaver/SwiftyBeaver.git", majorVersion: 1),
-        .Package(url: "https://github.com/SwiftyJSON/SwiftyJSON.git", majorVersion: 3, minor: 1),
-        .Package(url: "https://github.com/LeoNavel/Squirrel-Connector.git", majorVersion: 0),
-        .Package(url: "https://github.com/kylef/PathKit.git", majorVersion: 0)
-    ]
-)
+        .package(url: "https://github.com/LeoNavel/Squirrel-Connector.git",  from: "0.2.0"),
+        .package(url: "https://github.com/kylef/PathKit.git",  from: "0.8.0"),
+        .package(url: "https://github.com/SwiftyBeaver/SwiftyBeaver.git",  from: "1.4.0"),
+        .package(url: "https://github.com/behrang/YamlSwift.git",  from: "3.4.0"),
+        .package(url: "https://github.com/LeoNavel/Evaluation.git",  from: "0.2.0"),
+        .package(url: "https://github.com/SwiftyJSON/SwiftyJSON.git",  from: "3.1.4"),
+        .package(url: "https://github.com/sharplet/Regex.git",  from: "1.1.0"),
+        .package(url: "https://github.com/IBM-Swift/BlueSocket", from: "0.12.61")
+        ],
+    targets: [
+        .target(
+            name: "App",
+            dependencies: ["Squirrel"]),
+        .target(
+            name: "Squirrel",
+            dependencies: ["SquirrelView", "SquirrelConfig", "SquirrelJSONEncoding", "Socket"]),
+        .target(
+            name: "SquirrelView",
+            dependencies: ["SquirrelJSONEncoding", "NutView"]),
+        .target(
+                name: "NutView",
+                dependencies: ["SquirrelConfig", "SquirrelJSONEncoding", "Evaluation", "SwiftyJSON", "Regex"]),
 
+        .target(
+            name: "SquirrelConfig",
+            dependencies: ["SquirrelConnector", "PathKit", "SwiftyBeaver", "Yaml"]),
+        .target(
+            name: "SquirrelJSONEncoding",
+            dependencies: ["SquirrelConnector"]),
+
+        .testTarget(
+            name: "SquirrelTests",
+            dependencies: ["Squirrel"]),
+        .testTarget(
+            name: "NutViewTests",
+            dependencies: ["NutView"]),
+        ]
+)

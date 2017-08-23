@@ -21,7 +21,7 @@ public struct View: ViewProtocol {
         self.interpreter = NutInterpreter(view: name, with: data)
     }
 
-    public init<T>(name: String, object: T?) throws {
+    public init<T>(name: String, with object: T?) throws {
         self.name = name
         if let object = object {
             guard let data = JSONCoding.encodeSerializeJSON(object: object) as? [String: Any] else {

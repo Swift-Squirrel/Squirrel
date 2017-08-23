@@ -19,9 +19,9 @@ public struct JSONCoding {
         let desc = Mirror(reflecting: object).description
         if desc.hasPrefix("Mirror for Array<") {
             var name = desc.components(separatedBy: "<")[1]
-            name = name.substring(to: name.index(before: name.endIndex)) + "s"
+            name = name[..<name.index(before: name.endIndex)] + "s"
 
-            let first = name.lowercased().substring(to: name.index(after: name.startIndex) )
+            let first = name.lowercased()[..<name.index(after: name.startIndex)]
             let rest = String(name.characters.dropFirst())
             name = "\(first)\(rest)"
             return encode(object: [name: object])

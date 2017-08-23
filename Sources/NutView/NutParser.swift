@@ -259,12 +259,11 @@ extension NutParser {
             if char == "{" && !inString && prevChar == " " {
                 let start = text.index(text.startIndex, offsetBy: 3)
                 let end = text.index(text.startIndex, offsetBy: charIndex)
-                let range = start..<end
 
-                let stm = text.substring(with: range)
+                let stm = String(text[start..<end])
 
                 let stringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
-                let text = text.substring(from: stringIndex)
+                let text = String(text[stringIndex...])
 
                 guard stm != "" else {
                     let expected = ["for <variable: Any> in <array: [Any]> {", "for (<key: String>, <value: Any>) in <dictionary: [String: Value> {"]
@@ -310,7 +309,7 @@ extension NutParser {
 
     fileprivate func parseTitle(text: String, row: Int) throws -> [NutTokenProtocol] {
         let stringIndex = text.index(text.startIndex, offsetBy: 5)
-        let text = text.substring(from: stringIndex)
+        let text = String(text[stringIndex...])
         let res = try parseExpression(text: text, row: row)
         if let expr = res.last! as? ExpressionToken {
             let titleToken = TitleToken(expression: expr, row: row)
@@ -325,7 +324,7 @@ extension NutParser {
 
     fileprivate func parseElseIf(text: String, row: Int) throws -> [NutTokenProtocol] {
         let stringIndex = text.index(text.startIndex, offsetBy: 7)
-        let text = text.substring(from: stringIndex)
+        let text = String(text[stringIndex...])
         let chars = Array(text.characters).map( { String(describing: $0) } )
         var prevChar = ""
         var inString = false
@@ -336,10 +335,10 @@ extension NutParser {
                 let end = text.index(text.startIndex, offsetBy: charIndex)
                 let range = start..<end
 
-                let condition = text.substring(with: range)
+                let condition = String(text[range])
 
                 let stringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
-                let text = text.substring(from: stringIndex)
+                let text = String(text[stringIndex...])
                 guard condition != "" else {
                     let expected = ["} else if <expression: Bool> {", "} else if let <variableName: Any> = <expression: Any?> {"]
                     throw NutParserError(kind: .syntaxError(expected: expected, got: text), row: row, description: "empty <expression>")
@@ -363,7 +362,7 @@ extension NutParser {
 
     fileprivate func parseElse(text: String, row: Int) -> [NutTokenProtocol] {
         let stringIndex = text.index(text.startIndex, offsetBy: 9)
-        let text = text.substring(from: stringIndex)
+        let text = String(text[stringIndex...])
         let elseToken = ElseToken(row: row)
         if text == "" {
             return [elseToken]
@@ -395,10 +394,10 @@ extension NutParser {
             throw NutParserError(kind: .syntaxError(expected: ["(<expression: Any>)"], got: text), row: row, description: "missing ')'")
         }
         let stringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
-        var expression = text.substring(to: stringIndex)
+        var expression = String(text[..<stringIndex])
         expression.remove(at: expression.startIndex)
         expression.remove(at: expression.index(before: expression.endIndex))
-        let text = text.substring(from: stringIndex)
+        let text = String(text[stringIndex...])
         if let expressionToken = ExpressionToken(infix: expression, row: row) {
             if text == "" {
                 return [expressionToken]
@@ -419,10 +418,10 @@ extension NutParser {
                 let end = text.index(text.startIndex, offsetBy: charIndex)
                 let range = start..<end
 
-                let condition = text.substring(with: range)
+                let condition = String(text[range])
 
                 let stringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
-                let text = text.substring(from: stringIndex)
+                let text = String(text[stringIndex...])
                 guard condition != "" else {
                     let expected = ["if <expression: Bool> {", "if let <variableName: Any> = <expression: Any?> {"]
                     throw NutParserError(kind: .syntaxError(expected: expected, got: text), row: row, description: "empty <expression>")
