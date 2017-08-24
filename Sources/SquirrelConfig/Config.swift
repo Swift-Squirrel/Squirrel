@@ -27,6 +27,7 @@ public class Config {
     private let _storage: Path
     private let _storageViews: Path
     private let _configFile: Path?
+    private let _assets: Path
 
     public let log = SwiftyBeaver.self
 
@@ -54,6 +55,10 @@ public class Config {
 
     public var storageViews: Path {
         return _storageViews
+    }
+
+    public var assets: Path {
+        return _assets
     }
 
     public var views: Path {
@@ -95,6 +100,7 @@ public class Config {
         _logDir = _storage + "Logs"
         _logFile = _logDir + logFileName
         _resourcesDir = _serverRoot + "Resources"
+        _assets = _serverRoot + "Assets"
         _viewsDir = _resourcesDir + "Views"
         _storageViews = _storage + "Views"
 
@@ -137,8 +143,6 @@ public class Config {
             throw ConfigError(kind: .canNotConnect(using: dbData))
         }
     }
-
-
 
     private func getDBData() throws -> DBCredentials {
         guard let configFile = _configFile else {
@@ -200,5 +204,6 @@ public class Config {
         createDir(path: webRoot)
         createDir(path: storageViews)
         createDir(path: cache)
+        createDir(path: assets)
     }
 }

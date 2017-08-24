@@ -44,6 +44,8 @@ open class Server {
     }
 
     public func run() throws {
+        try squirrelConfig.setConnector()
+
         let socket = try Socket.create()
 
         listenSocket = socket
@@ -130,14 +132,24 @@ open class Server {
             log.debug("Using handler")
             return handler
         }
-        let path = (Config.sharedInstance.webRoot + request.path).normalize()
+        let path: Path
+        if (Config.sharedInstance.webRoot + "Assets").isSymlink
+            && String(Path(request.path).normalize().string.split(separator: "/", maxSplits: 1).first!) == "Assets" {
+            var a = Path(request.path).normalize().string.split(separator: "/")
+            a.removeFirst()
 
-        guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot.string) else {
-            if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
-                log.debug("Using handler")
-                return handler
-            } else {
-                throw HTTPError(status: .notFound, description: "'/' is not handled")
+            path = (try (Config.sharedInstance.webRoot + "Assets").symlinkDestination() + a.joined(separator: "/")).normalize()
+
+        } else {
+            path = (Config.sharedInstance.webRoot + request.path).normalize()
+
+            guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot.string) else {
+                if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
+                    log.debug("Using handler")
+                    return handler
+                } else {
+                    throw HTTPError(status: .notFound, description: "'/' is not handled")
+                }
             }
         }
 
