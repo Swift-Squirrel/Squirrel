@@ -15,7 +15,6 @@ public struct JSONCoding {
     }
 
     public static func encodeSerializeJSON<T>(object: T) -> Any? {
-//        if let arr = object as? [Any] {
         let desc = Mirror(reflecting: object).description
         if desc.hasPrefix("Mirror for Array<") {
             var name = desc.components(separatedBy: "<")[1]
@@ -26,7 +25,7 @@ public struct JSONCoding {
             name = "\(first)\(rest)"
             return encode(object: [name: object])
         }
-        return object
+        return encode(object: object)
     }
     public static func encodeDataJSON<T>(object: T) throws -> Data {
         if let data = encodeSerializeJSON(object: object) {
@@ -108,6 +107,8 @@ public struct JSONCoding {
              is Bool,
              is String:
             obj = value
+        case let oid as ObjectId:
+            obj = oid.hexString
         case let v as Date:
             obj = v.timeIntervalSince1970.description
         case let v as [String: Any?]:

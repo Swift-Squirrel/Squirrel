@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum HTTPHeaders {
+public enum HTTPHeaders {
 
     enum HTTPProtocol: String {
         case http11 = "HTTP/1.1"
@@ -40,7 +40,7 @@ enum HTTPHeaders {
         }
     }
 
-    enum Method: String {
+    public enum Method: String {
         case post = "POST"
         case get = "GET"
         case put = "PUT"
@@ -50,7 +50,7 @@ enum HTTPHeaders {
     }
 }
 
-enum HTTPStatus: CustomStringConvertible {
+public enum HTTPStatus: CustomStringConvertible {
     // 2xx
     case ok
     case created(location: URL)
@@ -227,7 +227,7 @@ enum HTTPStatus: CustomStringConvertible {
     }
 
 
-    var description: String {
+    public var description: String {
         let code = self.code
         let message = self.message
         return "\(code) \(message)"

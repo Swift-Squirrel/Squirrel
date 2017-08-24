@@ -12,7 +12,7 @@ import SquirrelView
 import SquirrelJSONEncoding
 
 // JSON and HTML
-extension Response {
+public extension Response {
     convenience init(html path: Path) throws {
         try self.init(pathToFile: path)
         setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.html.rawValue)

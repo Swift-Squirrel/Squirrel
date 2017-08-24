@@ -31,7 +31,7 @@ public class Response {
         return (Array(body)).count
     }
 
-    init(status: HTTPStatus) {
+    public init(status: HTTPStatus) {
         self.status = status
 
         if let location = getLocationFor(status: status) {
@@ -52,7 +52,7 @@ public class Response {
         }
     }
 
-    convenience init(status: HTTPStatus = .ok, headers: [String: String] = [:], body: Data) {
+   public convenience init(status: HTTPStatus = .ok, headers: [String: String] = [:], body: Data) {
         self.init(status: status)
 
         self.body = body
@@ -80,7 +80,7 @@ public class Response {
         headers[key] = value
     }
 
-    init(pathToFile path: Path) throws {
+    public init(pathToFile path: Path) throws {
 
         status = .ok
 

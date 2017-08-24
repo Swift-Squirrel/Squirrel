@@ -41,14 +41,12 @@ public class NutInterpreter: NutInterpreterProtocol {
                 } else {
                     let bodyTag = Regex("<body>.*</body>")
                     if bodyTag.matches(result) {
-                        result.replaceFirst(matching: "<body>", with: "<head>\n" + headResult + "</head>\n<body>")
+                        result.replaceFirst(matching: "<body>", with: "<head>\n" + headResult + "\n</head>\n<body>")
                     } else {
-                        result = "<!DOCTYPE><html><head>\n" + headResult + "</head>\n<body>\n" + result + "\n</body>\n</html>"
+                        result = "<!DOCTYPE>\n<html>\n<head>\n" + headResult + "\n</head>\n<body>\n" + result + "\n</body>\n</html>"
                     }
                 }
-
             }
-
             return result
         } catch var error as NutParserError {
             guard error.name == nil else {

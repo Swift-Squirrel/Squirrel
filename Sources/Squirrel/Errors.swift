@@ -71,6 +71,11 @@ public struct HTTPError: Error, AsHTTPProtocol, CustomStringConvertible {
     let status: HTTPStatus
     public let description: String
 
+    public init(status: HTTPStatus, description: String = "") {
+        self.status = status
+        self.description = description
+    }
+
     public var asHTTPError: HTTPError {
         return self
     }

@@ -24,11 +24,11 @@ class NutViewTests: XCTestCase {
     }
 
     func testView() {
-        let arr: [String] = ["adin", "dva", "tri"]
-        let data: [String: Any] = ["posts": arr]
-        var view = try! View(name: "posts", object: data)
-        let res = try! view.getContent()
-        print(res)
+//        let arr: [String] = ["adin", "dva", "tri"]
+//        let data: [String: Any] = ["posts": arr]
+//        var view = try! View(name: "posts", with: data)
+//        let res = try! view.getContent()
+//        print(res)
     }
 
     func testExample() {
@@ -45,12 +45,4 @@ class NutViewTests: XCTestCase {
 
         //XCTAssertEqual(tokenized, ["a", "\\for a in b", "\\} ", "\\", "for a in c", "\\", "}", "\\"])
     }
-
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
-
 }
