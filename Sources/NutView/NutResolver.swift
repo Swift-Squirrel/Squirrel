@@ -101,14 +101,14 @@ class NutResolver: NutResolverProtocol {
 
 
         parsedNuts[name] = FruitInfo(name: name, viewToken: vToken, fruit: fruit, nut: nut)
-        try vToken.subviews.forEach { (subview) throws -> Void in
-            if parsedNuts[subview.name] == nil {
-                let _ = try viewToken(for: subview.name)
-            }
-        }
-        if let layoutName = vToken.layout?.name, parsedNuts[layoutName] == nil {
-            let _ = try viewToken(for: layoutName)
-        }
+//        try vToken.subviews.forEach { (subview) throws -> Void in
+//            if parsedNuts[subview.name] == nil {
+//                let _ = try viewToken(for: subview.name)
+//            }
+//        }
+//        if let layoutName = vToken.layout?.name, parsedNuts[layoutName] == nil {
+//            let _ = try viewToken(for: layoutName)
+//        }
         return vToken
     }
 }
