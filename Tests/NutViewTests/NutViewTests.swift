@@ -10,6 +10,22 @@ import XCTest
 @testable import NutView
 import SquirrelConfig
 import SquirrelView
+import SquirrelConnector
+
+struct Post: Model {
+    var id: ObjectId? = nil
+
+    init(title: String, body: String) {
+        self.title = title
+        self.body = body
+    }
+
+    var title: String
+    var body: String
+
+    var created = Date()
+    var modified = Date()
+}
 
 class NutViewTests: XCTestCase {
 
@@ -24,6 +40,16 @@ class NutViewTests: XCTestCase {
     }
 
     func testView() {
+        Connector.setConnector(host: "127.0.0.1")
+
+        let posts = try! Post.find()
+        do {
+            var view = try View(name: "Posts", with: posts)
+            let res = try view.getContent()
+            print(res)
+        } catch let error {
+            XCTFail("\(error)")
+        }
 //        let arr: [String] = ["adin", "dva", "tri"]
 //        let data: [String: Any] = ["posts": arr]
 //        var view = try! View(name: "posts", with: data)

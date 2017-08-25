@@ -12,7 +12,7 @@ let package = Package(
             targets: ["Squirrel"]),
         ],
     dependencies: [
-        .package(url: "https://github.com/LeoNavel/Squirrel-Connector.git",  from: "0.1.1"),
+        .package(url: "https://github.com/LeoNavel/Squirrel-Connector.git",  from: "0.1.2"),
         .package(url: "https://github.com/kylef/PathKit.git",  from: "0.8.0"),
         .package(url: "https://github.com/SwiftyBeaver/SwiftyBeaver.git",  from: "1.4.0"),
         .package(url: "https://github.com/behrang/YamlSwift.git",  from: "3.4.0"),
@@ -48,6 +48,6 @@ let package = Package(
             dependencies: ["Squirrel", "Test"]),
         .testTarget(
             name: "NutViewTests",
-            dependencies: ["NutView"]),
+            dependencies: ["NutView", "SquirrelConnector"]),
         ]
 )

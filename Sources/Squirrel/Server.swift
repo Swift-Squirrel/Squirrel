@@ -95,7 +95,7 @@ open class Server {
                     }
                 }
             } catch let error {
-                print("error: \(error)")
+                log.error("error: \(error)")
                 cont = false
             }
         } while cont

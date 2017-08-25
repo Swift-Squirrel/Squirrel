@@ -18,28 +18,41 @@ public protocol NutInterpreterProtocol {
 
 public class NutInterpreter: NutInterpreterProtocol {
     private let name: String
-    fileprivate var data: [String: Any]
+    private var data: [String: Any]
     private let resolver: NutResolverProtocol
+    private let viewName: String
 
     public required init(view name: String, with data: [String: Any]) {
         self.name = name
         self.data = data
         self.resolver = NutResolver.sharedInstance
+        viewName = "Views." + name
     }
 
 
     public func resolve() throws -> String {
-        let viewToken = try resolver.viewToken(for: "Views." + name)
+        let viewToken = try resolver.viewToken(for: viewName)
         do {
-            var result = try run(body: viewToken.body)
-            if viewToken.head.count > 0 {
-                let headResult = try run(head: viewToken.head)
+            var result: String
+            var heads: [NutHeadProtocol]
+            if let layoutToken = viewToken.layout {
+                let layout = try resolver.viewToken(for: layoutToken.name)
+                let res = try run(body: layout.body)
+                result = res.result
+                heads = layout.head + res.heads
+            } else {
+                let res = try run(body: viewToken.body)
+                result = res.result
+                heads = viewToken.head + res.heads
+            }
+            if heads.count > 0 {
+                let headResult = try run(head: heads)
 
-                let headTag = Regex("<head>.*</head>")
+                let headTag = Regex("[\\s\\S]*<head>[\\s\\S]*</head>[\\s\\S]*")
                 if headTag.matches(result) {
-                    result.replaceFirst(matching: "</head>", with: headResult + "</head>")
+                    result.replaceFirst(matching: "</head>", with: headResult + "\n</head>")
                 } else {
-                    let bodyTag = Regex("<body>.*</body>")
+                    let bodyTag = Regex("[\\s\\S]*<body>[\\s\\S]*</body>[\\s\\S]*")
                     if bodyTag.matches(result) {
                         result.replaceFirst(matching: "<body>", with: "<head>\n" + headResult + "\n</head>\n<body>")
                     } else {
@@ -70,23 +83,33 @@ public class NutInterpreter: NutInterpreterProtocol {
         return res
     }
 
-    fileprivate func run(body: [NutTokenProtocol]) throws -> String {
+    fileprivate func run(body: [NutTokenProtocol]) throws -> (result: String, heads: [NutHeadProtocol]) {
         var res = ""
+        var heads = [NutHeadProtocol]()
         for token in body {
             switch token {
             case let expression as ExpressionToken:
                 res += try parse(expression: expression)
             case let forIn as ForInToken:
-                res += try parse(forIn: forIn)
+                let res1 = try parse(forIn: forIn)
+                heads += res1.heads
+                res += res1.result
             case let ifToken as IfToken:
-                res += try parse(if: ifToken)
+                let res1 = try parse(if: ifToken)
+                heads += res1.heads
+                res += res1.result
             case let text as TextToken:
                 res += text.value
+            case is InsertViewToken:
+                let viewToken = try resolver.viewToken(for: viewName)
+                let res1 = try run(body: viewToken.body)
+                heads += viewToken.head + res1.heads
+                res += res1.result
             default:
                 res += convertToSpecialCharacters(string: "UnknownToken<" + token.id + ">\n")
             }
         }
-        return res
+        return (res, heads)
     }
 }
 
@@ -165,19 +188,21 @@ extension NutInterpreter {
     fileprivate func parse(expression: ExpressionToken) throws -> String {
         do {
             let res = try expression.infix.evaluate(with: data)
-            return String(describing: unwrap(any: res ?? "nil"))
+            let str = String(describing: unwrap(any: res ?? "nil"))
+            return convertToSpecialCharacters(string: str)
         } catch let error as EvaluationError {
             throw NutParserError(kind: .evaluationError(infix: expression.infix, message: error.description), row: expression.row)
         }
     }
 
-    fileprivate func parse(forIn: ForInToken) throws -> String {
-        let prevValue = data[forIn.variable]
-        var res = ""
+    fileprivate func parse(forIn: ForInToken) throws -> (result: String, heads: [NutHeadProtocol]) {
         guard let arr = getValue(name: forIn.array, from: data) else {
             throw NutParserError(kind: .missingValue(for: forIn.array), row: forIn.row)
 
         }
+        let prevValue = data[forIn.variable]
+        var res = ""
+        var heads = [NutHeadProtocol]()
         if let keyName = forIn.key {
             let prevKey = data[keyName]
             guard let dic = arr as? [String: Any] else {
@@ -186,7 +211,9 @@ extension NutInterpreter {
             for (key, value) in dic {
                 data[forIn.variable] = value
                 data[keyName] = key
-                res += try run(body: forIn.body)
+                let result = try run(body: forIn.body)
+                res += result.result
+                heads += result.heads
             }
             data[keyName] = prevKey
         } else {
@@ -195,14 +222,16 @@ extension NutInterpreter {
             }
             for item in array {
                 data[forIn.variable] = unwrap(any: item)
-                res += try run(body: forIn.body)
+                let result = try run(body: forIn.body)
+                res += result.result
+                heads += result.heads
             }
         }
         data[forIn.variable] = prevValue
-        return res
+        return (res, heads)
     }
 
-    fileprivate func parse(if ifToken: IfToken) throws -> String {
+    fileprivate func parse(if ifToken: IfToken) throws -> (result: String, heads: [NutHeadProtocol]) {
         let any: Any?
         do {
             any = try ifToken.condition.evaluate(with: data)
@@ -230,6 +259,6 @@ extension NutInterpreter {
                 throw NutParserError(kind: .wrongValue(for: ifToken.id, expected: "<expression: Bool>", got: String(describing: any ?? "nil")), row: ifToken.row)
             }
         }
-        return ""
+        return ("", [])
     }
 }

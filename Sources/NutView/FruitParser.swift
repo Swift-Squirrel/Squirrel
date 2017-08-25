@@ -26,8 +26,16 @@ struct FruitParser {
         } else {
             head = []
         }
+        let layout = json["layout"]
+        let layoutToken: LayoutToken?
+        if layout["id"].stringValue == "layout" {
+            let name = layout["name"].stringValue
+            layoutToken = LayoutToken(name: name, row: layout["row"].intValue)
+        } else {
+            layoutToken = nil
+        }
         
-        return ViewToken(name: name, head: head, body: body)
+        return ViewToken(name: name, head: head, body: body, layout: layoutToken)
     }
 
     private func parse(head tokens: [JSON]) -> [NutHeadProtocol] {
@@ -74,6 +82,8 @@ struct FruitParser {
                     ifToken.setElse(body: parse(body: elseBlock))
                 }
                 body.append(ifToken)
+            case "view":
+                body.append(InsertViewToken(row: token["row"].intValue))
             default:
                 break
             }
