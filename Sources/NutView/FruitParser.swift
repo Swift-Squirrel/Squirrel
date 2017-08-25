@@ -84,6 +84,8 @@ struct FruitParser {
                 body.append(ifToken)
             case "view":
                 body.append(InsertViewToken(row: token["row"].intValue))
+            case "subview":
+                body.append(SubviewToken(name: token["name"].stringValue, row: token["row"].intValue))
             default:
                 break
             }

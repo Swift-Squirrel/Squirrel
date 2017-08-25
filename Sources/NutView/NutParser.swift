@@ -93,6 +93,7 @@ class NutParser: NutParserProtocol {
         var tokens = [NutTokenProtocol]()
         var title: TitleToken? = nil
         var layout: LayoutToken? = nil
+        var subviews = [NutSubviewProtocol]()
         var index = separated.count - 1
         do {
             while index > 0 {
@@ -146,6 +147,18 @@ class NutParser: NutParserProtocol {
                         tokens.append(contentsOf: try parseExpression(text: current, row: row))
                     } else if current.hasPrefix("if ") {
                         tokens.append(contentsOf: try parseIf(text: current, row: row))
+                    } else if current.hasPrefix("Subview(\"") {
+                        let tks = try parseSubview(text: current, row: row)
+                        guard let subviewToken = (tks.last! as? SubviewToken) else {
+                            throw NutParserError(
+                                kind: .unknownInternalError(commandName: "\\Subview"),
+                                row: getRow(
+                                    string: separated.prefix(index).joined(separator: "\\")
+                                )
+                            )
+                        }
+                        subviews.append(subviewToken)
+                        tokens.append(contentsOf: tks)
                     } else if current.hasPrefix("for ") {
                         tokens.append(contentsOf: try parseFor(text: current, row: row))
                     } else if current.hasPrefix("} else if ") {
@@ -188,7 +201,7 @@ class NutParser: NutParserProtocol {
             }
             serializedTokens = res
             _jsonSerialized = try! JSONCoding.encodeJSON(object: res)
-            let viewBody = ViewToken(name: name, head: headTokens, body: reductedTokens.reversed(), layout: layout)
+            let viewBody = ViewToken(name: name, head: headTokens, body: reductedTokens.reversed(), layout: layout, subviews: subviews)
             return viewBody
         } catch var error as NutParserError {
             guard error.name == nil else {
@@ -412,6 +425,36 @@ extension NutParser {
             return [layoutToken]
         }
         return [TextToken(value: finalText), layoutToken]
+    }
+
+    private func parseSubview(text: String, row: Int) throws -> [NutTokenProtocol] {
+        let stringIndex = text.index(text.startIndex, offsetBy: 9)
+        let text = String(text[stringIndex...])
+        var inString = true
+        var prevChar = ""
+        var charIndex = 0
+        for char in text {
+            if char == ")" && prevChar == "\"" && !inString {
+                break
+            } else if char == "\"" && prevChar != "\\" {
+                inString = !inString
+            }
+            prevChar = String(char)
+            charIndex += 1
+        }
+        guard charIndex < text.count else {
+            throw NutParserError(kind: .syntaxError(expected: ["Subview(\"<name>\")"], got: text), row: row, description: "missing '\")'")
+        }
+        let finalStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
+        var name = String(text[..<finalStringIndex])
+        name.remove(at: name.index(before: name.endIndex))
+        name.remove(at: name.index(before: name.endIndex))
+        let finalText = String(text[finalStringIndex...])
+        let subviewToken = SubviewToken(name: "Subviews." + name, row: row)
+        if finalText == "" {
+            return [subviewToken]
+        }
+        return [TextToken(value: finalText), subviewToken]
     }
 
     fileprivate func parseElseIf(text: String, row: Int) throws -> [NutTokenProtocol] {

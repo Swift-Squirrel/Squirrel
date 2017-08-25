@@ -208,6 +208,23 @@ struct LayoutToken: NutLayoutProtocol {
     }
 }
 
+struct SubviewToken: NutSubviewProtocol {
+    var name: String
+
+    var row: Int
+
+    let id = "subview"
+
+    init(name: String, row: Int) {
+        self.row = row
+        self.name = name
+    }
+
+    var serialized: [String : Any] {
+        return ["id": id, "row": row, "name": name]
+    }
+}
+
 struct TitleToken: NutHeadProtocol {
     let id = "title"
 

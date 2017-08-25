@@ -105,6 +105,11 @@ public class NutInterpreter: NutInterpreterProtocol {
                 let res1 = try run(body: viewToken.body)
                 heads += viewToken.head + res1.heads
                 res += res1.result
+            case let subviewToken as SubviewToken:
+                let subview = try resolver.viewToken(for: subviewToken.name)
+                let res1 = try run(body: subview.body)
+                heads += subview.head + res1.heads
+                res += res1.result
             default:
                 res += convertToSpecialCharacters(string: "UnknownToken<" + token.id + ">\n")
             }
