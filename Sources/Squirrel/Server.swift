@@ -133,15 +133,14 @@ open class Server {
             return handler
         }
         let path: Path
-        if (Config.sharedInstance.webRoot + "Assets").isSymlink
-            && String(Path(request.path).normalize().string.split(separator: "/", maxSplits: 1).first!) == "Assets" {
+        if (Config.sharedInstance.webRoot + "Storage").isSymlink
+            && String(Path(request.path).normalize().string.split(separator: "/", maxSplits: 1).first!) == "Storage" {
             var a = Path(request.path).normalize().string.split(separator: "/")
             a.removeFirst()
-
-            path = (try (Config.sharedInstance.webRoot + "Assets").symlinkDestination() + a.joined(separator: "/")).normalize()
-
+            path = (Config.sharedInstance.publicStorage + a.joined(separator: "/")).normalize()
         } else {
-            path = (Config.sharedInstance.webRoot + request.path).normalize()
+            let requestPath = String(request.path.dropFirst())
+            path = (Config.sharedInstance.webRoot + requestPath).normalize()
 
             guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot.string) else {
                 if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
@@ -158,7 +157,7 @@ open class Server {
         }
 
         if path.isDirectory {
-            let index = path + "/index.html"
+            let index = path + "index.html"
             if index.exists {
                 return try Response(pathToFile: index).responeHandler()
             }

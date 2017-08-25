@@ -28,6 +28,7 @@ public class Config {
     private let _storageViews: Path
     private let _configFile: Path?
     private let _assets: Path
+    private let _publicStorage: Path
 
     public let log = SwiftyBeaver.self
 
@@ -65,6 +66,10 @@ public class Config {
         return _viewsDir
     }
 
+    public var publicStorage: Path {
+        return _publicStorage
+    }
+
     public static let sharedInstance = Config()
 
     private init() {
@@ -86,7 +91,6 @@ public class Config {
                 if let port = serv["port"].int {
                     _port = UInt16(port)
                 }
-
             } catch {
                 print("config.yaml is not valid, using default values")
             }
@@ -97,6 +101,7 @@ public class Config {
         _webRoot = _serverRoot + "Public"
         _cache = _serverRoot + "Storage/Cache"
         _storage = _serverRoot + "Storage"
+        _publicStorage = _storage + "Public"
         _logDir = _storage + "Logs"
         _logFile = _logDir + logFileName
         _resourcesDir = _serverRoot + "Resources"
@@ -205,5 +210,6 @@ public class Config {
         createDir(path: storageViews)
         createDir(path: cache)
         createDir(path: assets)
+        createDir(path: publicStorage)
     }
 }
