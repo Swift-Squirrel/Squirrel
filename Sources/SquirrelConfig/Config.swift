@@ -10,7 +10,7 @@ import Foundation
 import SquirrelConnector
 import PathKit
 import SwiftyBeaver
-import Yaml
+import Yams
 
 public let squirrelConfig = Config.sharedInstance
 
@@ -78,18 +78,21 @@ public class Config {
             _configFile = configFile
             do {
                 let content: String = try configFile.read()
-                let yaml = try Yaml.load(content)
-                let serv = yaml["server"]
-                if let serverRoot = serv["serverRoot"].string {
-                    let sr = Path(serverRoot).absolute()
-                    if sr.exists {
-                        _serverRoot = sr
-                    } else {
-                        print(sr.string + " does not exists using default server root")
-                    }
+                guard let yaml = try Yams.load(yaml: content) as? [String: Any] else {
+                    throw ConfigError(kind: .yamlSyntax)
                 }
-                if let port = serv["port"].int {
-                    _port = UInt16(port)
+                if let serv = yaml["server"] as? [String: Any] {
+                    if let serverRoot = serv["serverRoot"] as? String {
+                        let sr = Path(serverRoot).absolute()
+                        if sr.exists {
+                            _serverRoot = sr
+                        } else {
+                            print(sr.string + " does not exists using default server root")
+                        }
+                    }
+                    if let port = serv["port"] as? Int {
+                        _port = UInt16(port)
+                    }
                 }
             } catch {
                 print("config.yaml is not valid, using default values")
@@ -154,17 +157,19 @@ public class Config {
             throw ConfigError(kind: .missingConfigFile)
         }
         let content: String = try configFile.read()
-        let yaml = try Yaml.load(content)
-        guard let dbDataYaml = yaml["MongoDB"].dictionary else {
+        guard let yaml = try Yams.load(yaml: content) as? [String: Any] else {
+            throw ConfigError(kind: .yamlSyntax)
+        }
+        guard let dbDataYaml = yaml["MongoDB"] as? [String: Any] else {
             throw ConfigError(kind: .missingDBConfig)
         }
-        guard let host = dbDataYaml["host"]?.string else {
+        guard let host = dbDataYaml["host"] as? String else {
             throw ConfigError(kind: .missingValue(for: "host"))
         }
-        let dbname = dbDataYaml["dbname"]?.string ?? "squirrel"
-        let port = dbDataYaml["port"]?.int ?? 27017
+        let dbname = (dbDataYaml["dbname"] as? String) ?? "squirrel"
+        let port = (dbDataYaml["port"] as? Int) ?? 27017
         let user: DBCredentials.UserCredentails?
-        if let username = dbDataYaml["username"]?.string, let password = dbDataYaml["password"]?.string {
+        if let username = dbDataYaml["username"] as? String, let password = dbDataYaml["password"] as? String {
             user = DBCredentials.UserCredentails(username: username, password: password)
         } else {
             user = nil

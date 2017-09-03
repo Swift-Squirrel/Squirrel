@@ -12,6 +12,7 @@ struct ConfigError: Error, CustomStringConvertible {
         case missingDBConfig
         case missingValue(for: String)
         case canNotConnect(using: DBCredentials)
+        case yamlSyntax
     }
 
     let kind: ErrorKind
@@ -26,6 +27,8 @@ struct ConfigError: Error, CustomStringConvertible {
             return "Missing or invalid value for '\(`for`)'"
         case .canNotConnect(let cred):
             return "Can not connect to database using: '\(cred)'"
+        case .yamlSyntax:
+            return "Error when parsing yaml"
         }
     }
 
