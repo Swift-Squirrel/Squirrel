@@ -1,0 +1,54 @@
+version: 2.0
+jobs:
+  build:
+    docker:
+      - image: klembara/swift4:0.0.1
+      - image: mongo:3.4.4
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+            - build-cache-{{ .Branch }}
+            - build-cache
+      - run:
+          name: Build
+          command: |
+           swift package resolve
+           swift build
+      - save_cache:
+          key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+          paths:
+            - .build/
+            - Package.resolved
+
+  test:
+    docker:
+      - image: klembara/swift4:0.0.1
+      - image: mongo:3.4.4
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+            - build-cache-{{ .Branch }}
+            - build-cache
+      - run:
+          name: Run unit tests
+          command: |
+           swift test
+      - save_cache:
+          key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+          paths:
+            - .build/
+            - Package.resolved
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
+
