@@ -145,6 +145,10 @@ class NutParser: NutParserProtocol {
                 if cont {
                     if current.hasPrefix("(") {
                         tokens.append(contentsOf: try parseExpression(text: current, row: row))
+                    } else if current.hasPrefix("RawValue(") {
+                        tokens.append(contentsOf: try parseRawExpression(text: current, row: row))
+                    } else if current.hasPrefix("Date(") {
+                        tokens.append(contentsOf: try parseDate(text: current, row: row))
                     } else if current.hasPrefix("if ") {
                         tokens.append(contentsOf: try parseIf(text: current, row: row))
                     } else if current.hasPrefix("Subview(\"") {
@@ -314,6 +318,68 @@ class NutParser: NutParserProtocol {
 }
 
 extension NutParser {
+    private func parseDate(text: String, row: Int) throws -> [NutTokenProtocol] {
+        let stringIndex = text.index(text.startIndex, offsetBy: 5)
+        let text = String(text[stringIndex...])
+        let chars = text.map({ String(describing: $0) })
+        var prevChar = ""
+        var charIndex = 0
+        var inString = false
+        var formatIndex = 0
+        var date: ExpressionToken!
+        for char in chars {
+            if char == "," && !inString {
+                let finalStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
+                var dateString = String(text[..<finalStringIndex])
+                dateString.removeLast()
+                guard let datePom = ExpressionToken(infix: dateString, row: row) else {
+                    throw NutParserError(kind: .expressionError, row: row, description: "Could not resolve '\(dateString)'")
+                }
+                date = datePom
+                charIndex += 1
+                formatIndex = charIndex
+                continue
+            } else if char == "\"" && prevChar != "\\" {
+                inString = !inString
+            } else if char == ")" && !inString {
+                break
+            }
+            prevChar = char
+            charIndex += 1
+        }
+        guard charIndex < text.count else {
+            throw NutParserError(kind: .syntaxError(expected: ["Date(\"<name>\")"], got: text), row: row, description: "missing '\")'")
+        }
+        let format: ExpressionToken?
+        if formatIndex > 0 {
+            let formatStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
+            let formatIndex = text.index(text.startIndex, offsetBy: formatIndex)
+            let formatArg = String(text[formatIndex..<formatStringIndex])
+            guard formatArg.hasPrefix(" format: ") else {
+                throw NutParserError(kind: .syntaxError(expected: [" format: <expression: String>"], got: formatArg), row: row)
+            }
+            let formatOffset = formatArg.index(formatArg.startIndex, offsetBy: 9)
+            var formatExpr = String(formatArg[formatOffset...])
+            formatExpr.removeLast()
+            guard let formatPom = ExpressionToken(infix: formatExpr, row: row) else {
+                throw NutParserError(kind: .expressionError, row: row, description: "Could not resolve '\(formatExpr)'")
+            }
+            format = formatPom
+        } else {
+            format = nil
+            let dateStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
+            var dateString = String(text[..<dateStringIndex])
+            dateString.removeLast()
+            guard let datePom = ExpressionToken(infix: dateString, row: row) else {
+                throw NutParserError(kind: .expressionError, row: row, description: "Could not resolve '\(dateString)'")
+            }
+            date = datePom
+        }
+        let textIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
+        let textToken = TextToken(value: String(text[textIndex...]))
+        return [textToken, DateToken(date: date, format: format, row: row)]
+
+    }
     private func parseFor(text: String, row: Int) throws -> [NutTokenProtocol] {
         let chars = Array(text.characters).map( { String(describing: $0) } )
         var prevChar = ""
@@ -503,6 +569,44 @@ extension NutParser {
             return [elseToken]
         }
         return [TextToken(value: text), elseToken]
+    }
+
+    private func parseRawExpression(text: String, row: Int) throws -> [NutTokenProtocol] {
+        let text = String(text[text.index(text.startIndex, offsetBy: 8)...])
+        let chars = text.map({ String($0) })
+        var prevChar = ""
+        var inString = false
+        var charIndex = 0
+        var opened = 0
+        for char in chars {
+            if char == ")" && !inString {
+                opened -= 1
+                if opened == 0 {
+                    break
+                }
+            } else if char == "(" && !inString {
+                opened += 1
+            } else if char == "\"" && prevChar != "\\" {
+                inString = !inString
+            }
+            prevChar = char
+            charIndex += 1
+        }
+        guard opened == 0 else {
+            throw NutParserError(kind: .syntaxError(expected: ["RawValue(<expression: Any>)"], got: text), row: row, description: "missing ')'")
+        }
+        let stringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
+        var expression = String(text[..<stringIndex])
+        expression.remove(at: expression.startIndex)
+        expression.remove(at: expression.index(before: expression.endIndex))
+        let text1 = String(text[stringIndex...])
+        if let expressionToken = RawExpressionToken(infix: expression, row: row) {
+            if text1 == "" {
+                return [expressionToken]
+            }
+            return [TextToken(value: text1), expressionToken]
+        }
+        throw NutParserError(kind: .expressionError, row: row)
     }
 
     fileprivate func parseExpression(text: String, row: Int) throws -> [NutTokenProtocol] {

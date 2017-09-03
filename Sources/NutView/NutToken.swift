@@ -69,6 +69,33 @@ protocol IfTokenProtocol: NutCommandTokenProtocol {
     mutating func setElse(body: [NutTokenProtocol])
 }
 
+struct DateToken: NutCommandTokenProtocol {
+    let row: Int
+
+    let id = "date"
+
+    let date: ExpressionToken
+
+    let format: ExpressionToken
+
+    init(date: ExpressionToken, format: ExpressionToken? = nil, row: Int) {
+        self.date = date
+        self.row = row
+
+        if let format = format {
+            self.format = format
+        } else {
+            self.format = ExpressionToken(infix: "\"MMM dd yyyy\"", row: row)!
+        }
+    }
+
+    var serialized: [String : Any] {
+        return ["id": id, "date": date.serialized, "format": format.serialized]
+    }
+
+
+}
+
 struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
     let id: String
 

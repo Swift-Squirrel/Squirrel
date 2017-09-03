@@ -58,6 +58,15 @@ struct FruitParser {
             switch token["id"].stringValue {
             case "text":
                 body.append(TextToken(value: token["value"].stringValue))
+            case "date":
+                let date = parse(expression: token["date"])
+                let format: ExpressionToken?
+                if token["format"].exists() {
+                    format = parse(expression: token["format"])
+                } else {
+                    format = nil
+                }
+                body.append(DateToken(date: date, format: format, row: token["row"].intValue))
             case "for in Array":
                 var forIn = ForInToken(variable: token["variable"].stringValue, array: token["array"].stringValue, row: token["row"].intValue)
                 forIn.setBody(body: parse(body: token["body"].arrayValue))
@@ -68,6 +77,8 @@ struct FruitParser {
                 body.append(forIn)
             case "expression":
                 body.append(parse(expression: token))
+            case "raw expression":
+                body.append(parse(rawExpression: token))
             case "if":
                 var ifToken = IfToken(condition: token["condition"].stringValue, row: token["row"].intValue)
                 ifToken.setThen(body: parse(body: token["then"].arrayValue))
@@ -95,5 +106,8 @@ struct FruitParser {
 
     private func parse(expression token: JSON) -> ExpressionToken {
         return ExpressionToken(infix: token["infix"].stringValue, row: token["row"].intValue)!
+    }
+    private func parse(rawExpression token: JSON) -> RawExpressionToken {
+        return RawExpressionToken(infix: token["infix"].stringValue, row: token["row"].intValue)!
     }
 }
