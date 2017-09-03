@@ -4,9 +4,9 @@ import PackageDescription
 let package = Package(
     name: "Squirrel",
     products: [
-        .executable(
+        /*.executable(
             name: "App",
-            targets: ["App"]),
+            targets: ["App"]),*/
         .library(
             name: "Squirrel",
             targets: ["Squirrel"]),
@@ -23,9 +23,9 @@ let package = Package(
         .package(url: "https://github.com/tris-foundation/test.git", from: "0.4.3")
         ],
     targets: [
-        .target(
+        /*.target(
             name: "App",
-            dependencies: ["Squirrel"]),
+            dependencies: ["Squirrel"]),*/
         .target(
             name: "Squirrel",
             dependencies: ["SquirrelView", "SquirrelConfig", "SquirrelJSONEncoding", "Socket"]),
@@ -45,9 +45,6 @@ let package = Package(
 
         .testTarget(
             name: "SquirrelTests",
-            dependencies: ["Squirrel", "Test"]),
-        .testTarget(
-            name: "NutViewTests",
-            dependencies: ["NutView", "SquirrelConnector"]),
+            dependencies: ["Squirrel", "Test"])
         ]
 )
