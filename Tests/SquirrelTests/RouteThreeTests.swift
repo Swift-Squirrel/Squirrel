@@ -79,16 +79,6 @@ class RouteThreeTests: XCTestCase {
         handlerExists(for: .put, in: "/web/images/51/dsa")
         handlerExists(for: .put, in: "/web/images/asd/41")
         handlerExists(for: .put, in: "/web/images/5161/51")
-//        assertNoThrow({
-//            try acceptableError {
-//                [weak self] in
-//                guard let strongSelf = self else {
-//                    return
-//                }
-//                assertThrowsError(try strongSelf.rootNode.addNode(routes: ["/", "web", "images", ":ida", ":a"], method: .put, handler: strongSelf.handler), "Route with dynamic values doen not block new with same dynamic values order")
-//            }
-//        })
-
         acceptableError() {
             [weak self] in
             guard let strongSelf = self else {
@@ -160,11 +150,6 @@ class RouteThreeTests: XCTestCase {
         let three = RouteTree()
         three.add(route: "/web/index", forMethod: .get, handler: handler)
         assertThrowsError(try three.findHandler(for: .get, in: "web"))
-//        assertNoThrow({
-//            try acceptableError {
-//                assertNoThrow(try three.findHandler(for: .get, in: "/web"))
-//            }
-//        })
         acceptableError() {
             assertNoThrow(try three.findHandler(for: .get, in: "/web"))
         }
