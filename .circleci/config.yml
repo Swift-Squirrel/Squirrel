@@ -30,7 +30,6 @@ jobs:
             - Package.resolved
       - persist_to_workspace:
           root: .build
-          # Must be relative path from root
           paths:
             - checkouts
             - dependencies-state.json
