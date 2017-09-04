@@ -10,7 +10,7 @@ import Foundation
 import SquirrelConnector
 import PathKit
 import SwiftyBeaver
-import Yaml
+import Yams
 
 public let squirrelConfig = Config.sharedInstance
 
@@ -27,6 +27,8 @@ public class Config {
     private let _storage: Path
     private let _storageViews: Path
     private let _configFile: Path?
+    private let _assets: Path
+    private let _publicStorage: Path
 
     public let log = SwiftyBeaver.self
 
@@ -56,8 +58,16 @@ public class Config {
         return _storageViews
     }
 
+    public var assets: Path {
+        return _assets
+    }
+
     public var views: Path {
         return _viewsDir
+    }
+
+    public var publicStorage: Path {
+        return _publicStorage
     }
 
     public static let sharedInstance = Config()
@@ -68,20 +78,22 @@ public class Config {
             _configFile = configFile
             do {
                 let content: String = try configFile.read()
-                let yaml = try Yaml.load(content)
-                let serv = yaml["server"]
-                if let serverRoot = serv["serverRoot"].string {
-                    let sr = Path(serverRoot).absolute()
-                    if sr.exists {
-                        _serverRoot = sr
-                    } else {
-                        print(sr.string + " does not exists using default server root")
+                guard let yaml = try Yams.load(yaml: content) as? [String: Any] else {
+                    throw ConfigError(kind: .yamlSyntax)
+                }
+                if let serv = yaml["server"] as? [String: Any] {
+                    if let serverRoot = serv["serverRoot"] as? String {
+                        let sr = Path(serverRoot).absolute()
+                        if sr.exists {
+                            _serverRoot = sr
+                        } else {
+                            print(sr.string + " does not exists using default server root")
+                        }
+                    }
+                    if let port = serv["port"] as? Int {
+                        _port = UInt16(port)
                     }
                 }
-                if let port = serv["port"].int {
-                    _port = UInt16(port)
-                }
-
             } catch {
                 print("config.yaml is not valid, using default values")
             }
@@ -92,9 +104,11 @@ public class Config {
         _webRoot = _serverRoot + "Public"
         _cache = _serverRoot + "Storage/Cache"
         _storage = _serverRoot + "Storage"
+        _publicStorage = _storage + "Public"
         _logDir = _storage + "Logs"
         _logFile = _logDir + logFileName
         _resourcesDir = _serverRoot + "Resources"
+        _assets = _serverRoot + "Assets"
         _viewsDir = _resourcesDir + "Views"
         _storageViews = _storage + "Views"
 
@@ -138,24 +152,24 @@ public class Config {
         }
     }
 
-
-
     private func getDBData() throws -> DBCredentials {
         guard let configFile = _configFile else {
             throw ConfigError(kind: .missingConfigFile)
         }
         let content: String = try configFile.read()
-        let yaml = try Yaml.load(content)
-        guard let dbDataYaml = yaml["MongoDB"].dictionary else {
+        guard let yaml = try Yams.load(yaml: content) as? [String: Any] else {
+            throw ConfigError(kind: .yamlSyntax)
+        }
+        guard let dbDataYaml = yaml["MongoDB"] as? [String: Any] else {
             throw ConfigError(kind: .missingDBConfig)
         }
-        guard let host = dbDataYaml["host"]?.string else {
+        guard let host = dbDataYaml["host"] as? String else {
             throw ConfigError(kind: .missingValue(for: "host"))
         }
-        let dbname = dbDataYaml["dbname"]?.string ?? "squirrel"
-        let port = dbDataYaml["port"]?.int ?? 27017
+        let dbname = (dbDataYaml["dbname"] as? String) ?? "squirrel"
+        let port = (dbDataYaml["port"] as? Int) ?? 27017
         let user: DBCredentials.UserCredentails?
-        if let username = dbDataYaml["username"]?.string, let password = dbDataYaml["password"]?.string {
+        if let username = dbDataYaml["username"] as? String, let password = dbDataYaml["password"] as? String {
             user = DBCredentials.UserCredentails(username: username, password: password)
         } else {
             user = nil
@@ -200,5 +214,7 @@ public class Config {
         createDir(path: webRoot)
         createDir(path: storageViews)
         createDir(path: cache)
+        createDir(path: assets)
+        createDir(path: publicStorage)
     }
 }

@@ -107,6 +107,8 @@ public class Response {
                 setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.jpeg.rawValue)
             case "png":
                 setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.png.rawValue)
+            case "svg":
+                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.svg.rawValue)
 
             case "css":
                 setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.css.rawValue)

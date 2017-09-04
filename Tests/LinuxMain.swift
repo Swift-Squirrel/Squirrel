@@ -1,6 +1,8 @@
 import XCTest
-@testable import MicrosTests
+@testable import SquirrelTests
 
 XCTMain([
-    testCase(MicrosTests.allTests),
+    testCase(SquirrelTests.allTests),
+    testCase(RouteThreeTests.allTests),
+    testCase(JSONCodingTests.allTests)
 ])

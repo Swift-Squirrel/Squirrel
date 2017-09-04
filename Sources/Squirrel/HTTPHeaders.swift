@@ -25,6 +25,7 @@ public enum HTTPHeaders {
         enum Image: String {
             case png = "image/png"
             case jpeg = "image/jpeg"
+            case svg = "image/svg+xml"
         }
 
         enum Text: String {

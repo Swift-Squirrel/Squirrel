@@ -6,7 +6,7 @@
 //
 //
 
-import SwiftyJSON
+import SquirrelJSONEncoding
 
 struct FruitParser {
     private let content: String
@@ -16,8 +16,7 @@ struct FruitParser {
     }
 
     func tokenize() -> ViewToken {
-        let data = content.data(using: .utf8, allowLossyConversion: false)!
-        let json = JSON(data: data)
+        let json = try! JSON(string: content)
         let name = json["fileName"].stringValue
         let body = parse(body: json["body"].arrayValue)
         let head: [NutHeadProtocol]
@@ -26,8 +25,16 @@ struct FruitParser {
         } else {
             head = []
         }
+        let layout = json["layout"]
+        let layoutToken: LayoutToken?
+        if layout["id"].stringValue == "layout" {
+            let name = layout["name"].stringValue
+            layoutToken = LayoutToken(name: name, row: layout["row"].intValue)
+        } else {
+            layoutToken = nil
+        }
         
-        return ViewToken(name: name, head: head, body: body)
+        return ViewToken(name: name, head: head, body: body, layout: layoutToken)
     }
 
     private func parse(head tokens: [JSON]) -> [NutHeadProtocol] {
@@ -74,6 +81,10 @@ struct FruitParser {
                     ifToken.setElse(body: parse(body: elseBlock))
                 }
                 body.append(ifToken)
+            case "view":
+                body.append(InsertViewToken(row: token["row"].intValue))
+            case "subview":
+                body.append(SubviewToken(name: token["name"].stringValue, row: token["row"].intValue))
             default:
                 break
             }

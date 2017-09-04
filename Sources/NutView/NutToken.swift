@@ -49,6 +49,20 @@ struct TextToken: NutTokenProtocol {
     }
 }
 
+struct InsertViewToken: NutCommandTokenProtocol {
+    var row: Int
+
+    let id = "view"
+
+    init(row: Int) {
+        self.row = row
+    }
+
+    var serialized: [String: Any] {
+        return ["id": id, "row": row]
+    }
+}
+
 protocol IfTokenProtocol: NutCommandTokenProtocol {
     init(condition: String, row: Int)
     mutating func setThen(body: [NutTokenProtocol])
@@ -177,6 +191,40 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
     }
 }
 
+struct LayoutToken: NutLayoutProtocol {
+    let id = "layout"
+
+    let row: Int
+
+    let name: String
+
+    init(name: String, row: Int) {
+        self.row = row
+        self.name = name
+    }
+
+    var serialized: [String: Any] {
+        return ["id": id, "name": name, "row": row]
+    }
+}
+
+struct SubviewToken: NutSubviewProtocol {
+    var name: String
+
+    var row: Int
+
+    let id = "subview"
+
+    init(name: String, row: Int) {
+        self.row = row
+        self.name = name
+    }
+
+    var serialized: [String : Any] {
+        return ["id": id, "row": row, "name": name]
+    }
+}
+
 struct TitleToken: NutHeadProtocol {
     let id = "title"
 
@@ -192,7 +240,6 @@ struct TitleToken: NutHeadProtocol {
     var serialized: [String: Any] {
         return ["id": id, "expression": expression.serialized, "row": row]
     }
-
 }
 
 struct ForInToken: NutCommandTokenProtocol {

@@ -44,6 +44,8 @@ open class Server {
     }
 
     public func run() throws {
+        try squirrelConfig.setConnector()
+
         let socket = try Socket.create()
 
         listenSocket = socket
@@ -93,7 +95,7 @@ open class Server {
                     }
                 }
             } catch let error {
-                print("error: \(error)")
+                log.error("error: \(error)")
                 cont = false
             }
         } while cont
@@ -130,14 +132,23 @@ open class Server {
             log.debug("Using handler")
             return handler
         }
-        let path = (Config.sharedInstance.webRoot + request.path).normalize()
+        let path: Path
+        if (Config.sharedInstance.webRoot + "Storage").isSymlink
+            && String(Path(request.path).normalize().string.split(separator: "/", maxSplits: 1).first!) == "Storage" {
+            var a = Path(request.path).normalize().string.split(separator: "/")
+            a.removeFirst()
+            path = (Config.sharedInstance.publicStorage + a.joined(separator: "/")).normalize()
+        } else {
+            let requestPath = String(request.path.dropFirst())
+            path = (Config.sharedInstance.webRoot + requestPath).normalize()
 
-        guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot.string) else {
-            if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
-                log.debug("Using handler")
-                return handler
-            } else {
-                throw HTTPError(status: .notFound, description: "'/' is not handled")
+            guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot.string) else {
+                if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
+                    log.debug("Using handler")
+                    return handler
+                } else {
+                    throw HTTPError(status: .notFound, description: "'/' is not handled")
+                }
             }
         }
 
@@ -146,7 +157,7 @@ open class Server {
         }
 
         if path.isDirectory {
-            let index = path + "/index.html"
+            let index = path + "index.html"
             if index.exists {
                 return try Response(pathToFile: index).responeHandler()
             }

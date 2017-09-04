@@ -11,7 +11,6 @@ import SquirrelConnector
 
 public struct JSONCoding {
     private init() {
-
     }
 
     public static func encodeSerializeJSON<T>(object: T) -> Any? {
