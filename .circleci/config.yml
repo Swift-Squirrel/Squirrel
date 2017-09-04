@@ -37,7 +37,7 @@ jobs:
       - run:
           name: Run unit tests
           command: |
-           swift test
+            swift test --parallel
       - save_cache:
           key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
           paths:
