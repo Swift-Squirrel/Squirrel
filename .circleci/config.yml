@@ -65,14 +65,15 @@ workflows:
   resolve_build_and_test:
     jobs:
       - resolve
-      - build_debug:
-          requires:
-            -resolve
-      - build_release:
-          requires:
-            -resolve
+      # - build_debug:
+      #     requires:
+      #       -resolve
+      # - build_release:
+      #     requires:
+      #       -resolve
       - test:
           requires:
-            - build_debug
-            - build_release
+            -resolve
+            # - build_debug
+            # - build_release
 
