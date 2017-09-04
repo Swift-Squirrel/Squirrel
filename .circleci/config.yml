@@ -1,11 +1,16 @@
-defaults: &defaults
+default_docker: &default_docker
   docker:
     - image: klembara/swift4:0.0.1
+
+test_docker: &test_docker
+  docker:
+    - image: klembara/swift4:0.0.1
+    - image: mongo:3.4.4
 
 version: 2.0
 jobs:
   resolve:
-    <<: *defaults
+    <<: *default_docker
     steps:
       - checkout
       - restore_cache:
@@ -32,7 +37,7 @@ jobs:
             - repositories/
 
   build_debug:
-    <<: *defaults
+    <<: *default_docker
     steps:
       - checkout
       - attach_workspace:
@@ -42,7 +47,7 @@ jobs:
           command: swift build
 
   build_release:
-    <<: *defaults
+    <<: *default_docker
     steps:
       - checkout
       - attach_workspace:
@@ -52,9 +57,7 @@ jobs:
           command: swift build
 
   test:
-    <<: *defaults
-    docker:
-      - image: mongo:3.4.4
+    <<: *test_docker
     steps:
       - checkout
       - attach_workspace:
