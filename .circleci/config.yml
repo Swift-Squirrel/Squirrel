@@ -1,4 +1,8 @@
-defaults: &defaults
+default_docker: &default_docker
+  docker:
+    - image: klembara/swift4:0.0.1
+
+test_docker: &test_docker
   docker:
     - image: klembara/swift4:0.0.1
     - image: mongo:3.4.4
@@ -6,7 +10,7 @@ defaults: &defaults
 version: 2.0
 jobs:
   resolve:
-    <<: *defaults
+    <<: *default_docker
     steps:
       - checkout
       - restore_cache:
@@ -15,7 +19,7 @@ jobs:
             - build-cache-{{ .Branch }}
             - build-cache
       - run:
-          name: Build
+          name: Resolve
           command: |
            swift package resolve
            swift package update
@@ -28,30 +32,31 @@ jobs:
           root: .build
           paths:
             - checkouts
-            - repositories
             - dependencies-state.json
+            - repositories/
+
+  build_debug:
+    <<: *default_docker
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .build
+      - run:
+          name: Build for debug
+          command: swift build
 
   build_release:
-    <<: *defaults
+    <<: *default_docker
     steps:
       - checkout
       - attach_workspace:
           at: .build
       - run:
-          name: Build
-          command: swift build -c release
-
-  build_build:
-    <<: *defaults
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .build
-      - run:
-          name: Build
+          name: Build for release
           command: swift build
+
   test:
-    <<: *defaults
+    <<: *test_docker
     steps:
       - checkout
       - attach_workspace:
@@ -62,17 +67,16 @@ jobs:
 
 workflows:
   version: 2
-  build_and_test:
+  resolve_build_test:
     jobs:
       - resolve
       - build_debug:
           requires:
-            -resolve
+            - resolve
       - build_release:
           requires:
-            -resolve
+            - resolve
       - test:
           requires:
             - build_debug
             - build_release
-
