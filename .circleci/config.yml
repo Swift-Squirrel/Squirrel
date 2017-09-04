@@ -1,9 +1,12 @@
+defaults: &defaults
+  docker:
+    - image: klembara/swift4:0.0.1
+    - image: mongo:3.4.4
+
 version: 2.0
 jobs:
-  build:
-    docker:
-      - image: klembara/swift4:0.0.1
-      - image: mongo:3.4.4
+  resolve:
+    <<: *defaults
     steps:
       - checkout
       - restore_cache:
@@ -16,40 +19,60 @@ jobs:
           command: |
            swift package resolve
            swift package update
-           swift build
       - save_cache:
           key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
           paths:
             - .build/
             - Package.resolved
+      - persist_to_workspace:
+          root: .build
+          paths:
+            - checkouts
+            - repositories
+            - dependencies-state.json
 
-  test:
-    docker:
-      - image: klembara/swift4:0.0.1
-      - image: mongo:3.4.4
+  build_release:
+    <<: *defaults
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
-            - build-cache-{{ .Branch }}
-            - build-cache
+      - attach_workspace:
+          at: .build
+      - run:
+          name: Build
+          command: swift build -c release
+
+  build_build:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .build
+      - run:
+          name: Build
+          command: swift build
+  test:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .build
       - run:
           name: Run unit tests
-          command: |
-            swift test --parallel
-      - save_cache:
-          key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
-          paths:
-            - .build/
-            - Package.resolved
+          command: swift test --parallel
 
 workflows:
   version: 2
   build_and_test:
     jobs:
-      - build
+      - resolve
+      - build_debug:
+          requires:
+            -resolve
+      - build_release:
+          requires:
+            -resolve
       - test:
           requires:
-            - build
+            - build_debug
+            - build_release
 
