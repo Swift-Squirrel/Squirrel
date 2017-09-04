@@ -5,7 +5,7 @@ defaults: &defaults
 
 version: 2.0
 jobs:
-  build:
+  resolve:
     <<: *defaults
     steps:
       - checkout
@@ -46,10 +46,10 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - build
+      - resolve
       - build_debug:
           requires:
-            - build
+            - resolve
       - test:
           requires:
             - build_debug
