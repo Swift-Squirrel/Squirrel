@@ -1,7 +1,6 @@
 defaults: &defaults
   docker:
     - image: klembara/swift4:0.0.1
-    - image: mongo:3.4.4
 
 version: 2.0
 jobs:
@@ -54,6 +53,8 @@ jobs:
 
   test:
     <<: *defaults
+    docker:
+      - image: mongo:3.4.4
     steps:
       - checkout
       - attach_workspace:
