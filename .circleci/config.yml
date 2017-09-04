@@ -15,7 +15,7 @@ jobs:
             - build-cache-{{ .Branch }}
             - build-cache
       - run:
-          name: Build
+          name: Resolve
           command: |
            swift package resolve
            swift package update
@@ -33,14 +33,21 @@ jobs:
           name: Build for debug
           command: swift build
 
+  build_release:
+    <<: *defaults
+    steps:
+      - checkout
+      - run:
+          name: Build for release
+          command: swift build
+
   test:
     <<: *defaults
     steps:
       - checkout
       - run:
           name: Run unit tests
-          command: |
-            swift test --parallel
+          command: swift test --parallel
 
 workflows:
   version: 2
@@ -50,6 +57,10 @@ workflows:
       - build_debug:
           requires:
             - resolve
+      - build_release:
+          requires:
+            - resolve
       - test:
           requires:
             - build_debug
+            - build_release
