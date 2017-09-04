@@ -6,7 +6,7 @@
 //
 //
 
-import SwiftyJSON
+import SquirrelJSONEncoding
 
 struct FruitParser {
     private let content: String
@@ -16,8 +16,7 @@ struct FruitParser {
     }
 
     func tokenize() -> ViewToken {
-        let data = content.data(using: .utf8, allowLossyConversion: false)!
-        let json = JSON(data: data)
+        let json = try! JSON(string: content)
         let name = json["fileName"].stringValue
         let body = parse(body: json["body"].arrayValue)
         let head: [NutHeadProtocol]

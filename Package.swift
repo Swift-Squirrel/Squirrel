@@ -17,7 +17,6 @@ let package = Package(
         .package(url: "https://github.com/SwiftyBeaver/SwiftyBeaver.git",  from: "1.4.0"),
         .package(url: "https://github.com/jpsim/Yams.git",  from: "0.3.5"),
         .package(url: "https://github.com/LeoNavel/Evaluation.git",  from: "0.2.0"),
-        .package(url: "https://github.com/SwiftyJSON/SwiftyJSON.git",  from: "3.1.4"),
         .package(url: "https://github.com/sharplet/Regex.git",  from: "1.1.0"),
         .package(url: "https://github.com/IBM-Swift/BlueSocket", from: "0.12.61"),
         .package(url: "https://github.com/tris-foundation/test.git", from: "0.4.3")
@@ -34,7 +33,7 @@ let package = Package(
             dependencies: ["SquirrelJSONEncoding", "NutView"]),
         .target(
                 name: "NutView",
-                dependencies: ["SquirrelConfig", "SquirrelJSONEncoding", "Evaluation", "SwiftyJSON", "Regex"]),
+                dependencies: ["SquirrelConfig", "SquirrelJSONEncoding", "Evaluation", "Regex"]),
 
         .target(
             name: "SquirrelConfig",
