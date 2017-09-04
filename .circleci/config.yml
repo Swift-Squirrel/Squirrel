@@ -62,7 +62,7 @@ jobs:
 
 workflows:
   version: 2
-  build_and_test:
+  resolve_build_and_test:
     jobs:
       - resolve
       - build_debug:
