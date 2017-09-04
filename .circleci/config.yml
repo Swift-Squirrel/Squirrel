@@ -19,12 +19,19 @@ jobs:
           command: |
            swift package resolve
            swift package update
-           swift build
       - save_cache:
           key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
           paths:
             - .build/
             - Package.resolved
+
+  build_debug:
+    <<: *defaults
+    steps:
+      - checkout
+      - run:
+          name: Build for debug
+          command: swift build
 
   test:
     <<: *defaults
@@ -40,6 +47,9 @@ workflows:
   build_and_test:
     jobs:
       - build
-      - test:
+      - build_debug:
           requires:
             - build
+      - test:
+          requires:
+            - build_debug
