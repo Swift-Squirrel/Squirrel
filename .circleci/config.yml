@@ -15,6 +15,7 @@ jobs:
           name: Build
           command: |
            swift package resolve
+           swift package update
            swift build
       - save_cache:
           key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
