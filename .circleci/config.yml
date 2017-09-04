@@ -41,7 +41,7 @@ jobs:
           name: Build
           command: swift build -c release
 
-  build_build:
+  build_debug:
     <<: *defaults
     steps:
       - checkout
