@@ -16,6 +16,7 @@ class RouteThreeTests: XCTestCase {
     let rootNode = RouteNode(route: "/")
 
     override func setUp() {
+        super.setUp()
         log.removeAllDestinations()
     }
 
