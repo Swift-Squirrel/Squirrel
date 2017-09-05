@@ -75,8 +75,27 @@ class JSONCodingTests: XCTestCase {
         }
     }
 
+    func testObjArr() {
+        let users = [
+            User(id: 1, name: "Tom", age: 10),
+            User(id: 2, name: "Ben", age: 12),
+            User(id: 3, name: "Jenny", age: 9)
+        ]
+
+        guard let jsonData = JSONCoding.encodeSerializeJSON(object: users) as? [String: Any] else {
+            XCTFail()
+            return
+        }
+
+        XCTAssert(jsonData.count == 1)
+        XCTAssertNotNil(jsonData["users"])
+
+        // TODO beter encode
+    }
+
     static var allTests = [
         ("testEncodeJSON", testEncodeJSON),
         ("testJSONValidity", testJSONValidity),
+        ("testObjArr", testObjArr)
     ]
 }

@@ -43,6 +43,9 @@ let package = Package(
             dependencies: ["SquirrelConnector"]),
 
         .testTarget(
+            name: "JSONCodingTests",
+            dependencies: ["SquirrelJSONEncoding", "Test"]),
+        .testTarget(
             name: "SquirrelTests",
             dependencies: ["Squirrel", "Test"])
         ]
