@@ -13,7 +13,7 @@ class JSONTests: XCTestCase {
 
     private struct JSONS {
         static let simple = "{\"id\":1,\"name\":\"Thom\",\"age\":21}"
-        static let oneSubstruct = "{\"a\":3,\"c\":{\"a\":\"SubStruct\"}}"
+        static let oneSubstruct = "{\"a\":3,\"c\":{\"a\":\"SubStruct\",\"double\":3.1,\"bool\":true}}"
         static let medium = """
                     {\"books\":{\"book\":[{\"title\":\"CPP\",\"author\":\"Milton\",\"year\":\"2008\",
                     \"price\":\"456.00\"},{\"title\":\"JAVA\",\"author\":\"Gilson\",\"year\":\"2002\",
@@ -88,6 +88,8 @@ class JSONTests: XCTestCase {
         XCTAssert(json["id"].intValue == root["id"]?.intValue)
         XCTAssert(json["name"].stringValue == root["name"]?.stringValue)
         XCTAssert(json["age"].intValue == root["age"]?.intValue)
+
+        XCTAssert(root1 == root)
     }
 
     func testArray() {
@@ -108,7 +110,9 @@ class JSONTests: XCTestCase {
 
         XCTAssert(arr.first!["title"].stringValue == "CPP")
 
-        // TODO subscript
+        XCTAssert(json["books"]["book"][0]["title"] == JSON(from: "CPP"))
+        XCTAssert(json["books"]["book"][-1].isNil)
+        XCTAssert(json["books"]["book"][1000].isNil)
     }
 
     func testString() {
@@ -150,6 +154,44 @@ class JSONTests: XCTestCase {
         XCTAssert(name.intValue == 0)
     }
 
+    func testDouble() {
+        guard let json = (try? JSON(string: JSONS.oneSubstruct))?.dictionaryValue["c"] else {
+            fail()
+            return
+        }
+
+        let double = json["double"]
+        XCTAssert(double.double == double.doubleValue)
+        XCTAssert(double.doubleValue == 3.1)
+
+        let notExists = json["notExists"]
+        XCTAssert(notExists.double == nil)
+        XCTAssert(notExists.doubleValue == 0.0)
+
+        let a = json["a"]
+        XCTAssert(a.double == nil)
+        XCTAssert(a.doubleValue == 0.0)
+    }
+
+    func testBool() {
+        guard let json = (try? JSON(string: JSONS.oneSubstruct))?.dictionaryValue["c"] else {
+            fail()
+            return
+        }
+
+        let bool = json["bool"]
+        XCTAssert(bool.bool == bool.boolValue)
+        XCTAssert(bool.boolValue == true)
+
+        let notExists = json["notExists"]
+        XCTAssert(notExists.bool == nil)
+        XCTAssert(notExists.boolValue == false)
+
+        let double = json["double"]
+        XCTAssert(double.bool == nil)
+        XCTAssert(double.boolValue == false)
+    }
+
     func testNilJSON() {
         let json = JSON(from: nil)
 
@@ -171,13 +213,35 @@ class JSONTests: XCTestCase {
         XCTAssert(!arr.arrayValue.first!["title"].isEmpty)
     }
 
+    func testEq() {
+        guard let json1 = try? JSON(string: JSONS.medium) else {
+            fail()
+            return
+        }
+        guard let json2 = try? JSON(string: JSONS.medium) else {
+            fail()
+            return
+        }
+        guard let json3 = try? JSON(string: JSONS.oneSubstruct) else {
+            fail()
+            return
+        }
+
+        XCTAssert(json1 == json2)
+        XCTAssert(json1 != json3)
+        XCTAssert(json2 != json3)
+    }
+
     static let allTests = [
         ("testConstructors", testConstructors),
         ("testDictionary", testDictionary),
         ("testArray", testArray),
         ("testString", testString),
         ("testInt", testInt),
+        ("testDouble", testDouble),
+        ("testBool", testBool),
         ("testNilJSON", testNilJSON),
         ("testIsEmpty", testIsEmpty),
+        ("testEq", testEq),
     ]
 }

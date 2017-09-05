@@ -19,10 +19,6 @@ public struct JSON {
     public init(from data: Any?) {
         self.data = data
     }
-
-
-
-
 }
 
 public extension JSON {
@@ -81,6 +77,19 @@ public extension JSON {
     public var arrayValue: [JSON] {
         return array ?? []
     }
+
+    public subscript(index: Int) -> JSON {
+        guard index >= 0 else {
+            return JSON(from: nil)
+        }
+        guard let arr = array else {
+            return JSON(from: nil)
+        }
+        guard index < arr.count else {
+            return JSON(from: nil)
+        }
+        return arr[index]
+    }
 }
 
 extension JSON {
@@ -94,6 +103,34 @@ extension JSON {
 
     public var intValue: Int {
         return int ?? 0
+    }
+}
+
+extension JSON {
+    public var double: Double? {
+        guard let data = self.data else {
+            return nil
+        }
+
+        return data as? Double
+    }
+
+    public var doubleValue: Double {
+        return double ?? 0.0
+    }
+}
+
+extension JSON {
+    public var bool: Bool? {
+        guard let data = self.data else {
+            return nil
+        }
+
+        return data as? Bool
+    }
+
+    public var boolValue: Bool {
+        return bool ?? false
     }
 }
 
@@ -112,6 +149,60 @@ extension JSON {
             return arr.isEmpty
         case let dic as [String: Any]:
             return dic.isEmpty
+        default:
+            return false
+        }
+    }
+}
+
+extension JSON: Equatable {
+    public static func ==(lhs: JSON, rhs: JSON) -> Bool {
+        if lhs.data == nil && rhs.data == nil {
+            return true
+        }
+
+        guard let ldata = lhs.data else {
+            return false
+        }
+
+        guard let rdata = rhs.data else {
+            return false
+        }
+        switch ldata {
+        case let bool as Bool:
+            return bool == rdata as? Bool
+        case let int as Int:
+            return int == rdata as? Int
+        case let double as Double:
+            return double == rdata as? Double
+        case let string as String:
+            return string == rdata as? String
+        case is [Any]:
+            let larr = lhs.arrayValue
+            let rarr = rhs.arrayValue
+            guard larr.count == rarr.count else {
+                return false
+            }
+            for index in 0..<larr.count {
+                guard larr[index] == rarr[index] else {
+                    return false
+                }
+            }
+            return true
+        case is [String: Any]:
+            let ldir = lhs.dictionaryValue
+            let rdir = rhs.dictionaryValue
+
+            guard rdir.count == ldir.count else {
+                return false
+            }
+
+            for (key, value) in ldir {
+                guard rdir[key] == value else {
+                    return false
+                }
+            }
+            return true
         default:
             return false
         }
