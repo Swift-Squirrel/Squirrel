@@ -20,7 +20,7 @@ public struct JSONCoding {
             name = name[..<name.index(before: name.endIndex)] + "s"
 
             let first = name.lowercased()[..<name.index(after: name.startIndex)]
-            let rest = String(name.characters.dropFirst())
+            let rest = String(name.dropFirst())
             name = "\(first)\(rest)"
             return encode(object: [name: object])
         }

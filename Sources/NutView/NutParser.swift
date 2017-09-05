@@ -70,7 +70,7 @@ class NutParser: NutParserProtocol {
 
     private func getRow(string: String) -> Int {
         var rowIndex: Int = 1
-        string.characters.forEach({ (char) in
+        string.forEach({ (char) in
             if char == "\n" {
                 rowIndex += 1
             }
@@ -315,7 +315,7 @@ class NutParser: NutParserProtocol {
 
 extension NutParser {
     private func parseFor(text: String, row: Int) throws -> [NutTokenProtocol] {
-        let chars = Array(text.characters).map( { String(describing: $0) } )
+        let chars = text.map( { String(describing: $0) } )
         var prevChar = ""
         var inString = false
         var charIndex = 0
@@ -342,7 +342,7 @@ extension NutParser {
                     array = separated[3]
                 } else if separated.count == 6 && separated[3] == "in"
                     && separated[1].hasPrefix("(") && separated[1].hasSuffix(",") && separated[2].hasSuffix(")")
-                    && separated[1].characters.count > 2 && separated[2].characters.count > 1 {
+                    && separated[1].count > 2 && separated[2].count > 1 {
                     key = separated[1]
                     key!.remove(at: key!.startIndex)
                     key!.remove(at: key!.index(before: key!.endIndex))
@@ -460,7 +460,7 @@ extension NutParser {
     fileprivate func parseElseIf(text: String, row: Int) throws -> [NutTokenProtocol] {
         let stringIndex = text.index(text.startIndex, offsetBy: 7)
         let text = String(text[stringIndex...])
-        let chars = Array(text.characters).map( { String(describing: $0) } )
+        let chars = text.map( { String(describing: $0) } )
         var prevChar = ""
         var inString = false
         var charIndex = 0
@@ -506,7 +506,7 @@ extension NutParser {
     }
 
     fileprivate func parseExpression(text: String, row: Int) throws -> [NutTokenProtocol] {
-        let chars = Array(text.characters).map( { String(describing: $0) })
+        let chars = text.map( { String(describing: $0) })
         var prevChar = ""
         var inString = false
         var charIndex = 0
@@ -543,7 +543,7 @@ extension NutParser {
     }
 
     fileprivate func parseIf(text: String, row: Int) throws -> [NutTokenProtocol] {
-        let chars = Array(text.characters).map( { String(describing: $0) } )
+        let chars = text.map( { String(describing: $0) } )
         var prevChar = ""
         var inString = false
         var charIndex = 0
