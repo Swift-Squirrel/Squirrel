@@ -413,7 +413,7 @@ extension NutParser {
                     key!.remove(at: key!.startIndex)
                     key!.remove(at: key!.index(before: key!.endIndex))
                     variable = separated[2]
-                    variable.remove(at: variable.endIndex)
+                    variable = String(variable.dropLast())
                     array = separated[4]
                 } else {
                     let expected = ["for <variable: Any> in <array: [Any]> {", "for (<key: String>, <value: Any>) in <dictionary: [String: Value> {"]

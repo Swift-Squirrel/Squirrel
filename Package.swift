@@ -33,11 +33,11 @@ let package = Package(
             dependencies: ["SquirrelJSONEncoding", "NutView"]),
         .target(
             name: "NutView",
-            dependencies: ["SquirrelConfig", "SquirrelJSONEncoding", "Evaluation", "Regex"]),
+            dependencies: ["SquirrelJSONEncoding", "Evaluation", "Regex"]),
 
         .target(
             name: "SquirrelConfig",
-            dependencies: ["SquirrelConnector", "PathKit", "SwiftyBeaver", "Yams"]),
+            dependencies: ["SquirrelConnector", "PathKit", "SwiftyBeaver", "NutView", "Yams"]),
         .target(
             name: "SquirrelJSONEncoding",
             dependencies: ["SquirrelConnector"]),

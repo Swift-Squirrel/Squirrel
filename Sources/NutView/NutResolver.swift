@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import SquirrelConfig
 import PathKit
 
 protocol NutResolverProtocol {
@@ -61,8 +60,8 @@ class NutResolver: NutResolverProtocol {
         let nutName = name.components(separatedBy: ".").joined(separator: "/") + ".nut"
         let fruitName = name + ".fruit"
 
-        let fruit = Config.sharedInstance.storageViews + fruitName
-        let nut = Config.sharedInstance.views + nutName
+        let fruit = NutConfig.fruits + fruitName
+        let nut = NutConfig.nuts + nutName
 
         guard nut.exists else {
             throw NutError(kind: .notExists(name: nutName))
