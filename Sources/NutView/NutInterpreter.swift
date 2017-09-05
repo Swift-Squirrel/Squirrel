@@ -90,6 +90,8 @@ public class NutInterpreter: NutInterpreterProtocol {
             switch token {
             case let expression as ExpressionToken:
                 res += try parse(expression: expression)
+            case let expression as RawExpressionToken:
+                res += try parse(rawExpression: expression)
             case let forIn as ForInToken:
                 let res1 = try parse(forIn: forIn)
                 heads += res1.heads
@@ -100,6 +102,8 @@ public class NutInterpreter: NutInterpreterProtocol {
                 res += res1.result
             case let text as TextToken:
                 res += text.value
+            case let date as DateToken:
+                res += try parse(date: date)
             case is InsertViewToken:
                 let viewToken = try resolver.viewToken(for: viewName)
                 let res1 = try run(body: viewToken.body)
@@ -190,6 +194,16 @@ extension NutInterpreter {
 
 // Body parsing
 extension NutInterpreter {
+    private func parse(rawExpression expression: RawExpressionToken) throws -> String {
+        do {
+            let res = try expression.infix.evaluate(with: data)
+            let str = String(describing: unwrap(any: res ?? "nil"))
+            return str
+        } catch let error as EvaluationError {
+            throw NutParserError(kind: .evaluationError(infix: expression.infix, message: error.description), row: expression.row)
+        }
+    }
+
     fileprivate func parse(expression: ExpressionToken) throws -> String {
         do {
             let res = try expression.infix.evaluate(with: data)
@@ -198,6 +212,18 @@ extension NutInterpreter {
         } catch let error as EvaluationError {
             throw NutParserError(kind: .evaluationError(infix: expression.infix, message: error.description), row: expression.row)
         }
+    }
+
+    private func parse(date dateToken: DateToken) throws -> String {
+        let dateStr = try parse(expression: dateToken.date)
+        guard let dateMiliseconds = Double(dateStr) else {
+            throw NutParserError(kind: .wrongValue(for: "Date(_:format:)", expected: "Double", got: dateStr), row: dateToken.date.row)
+        }
+        let formatStr = try parse(expression: dateToken.format)
+        let date = Date(timeIntervalSince1970: dateMiliseconds)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = formatStr
+        return dateFormatter.string(from: date)
     }
 
     fileprivate func parse(forIn: ForInToken) throws -> (result: String, heads: [NutHeadProtocol]) {
