@@ -134,7 +134,7 @@ extension JSON {
     }
 }
 
-extension JSON {
+public extension JSON {
     var isNil: Bool {
         return data == nil
     }

@@ -60,7 +60,7 @@ struct FruitParser {
             case "date":
                 let date = parse(expression: token["date"])
                 let format: ExpressionToken?
-                if token["format"].exists() {
+                if !token["format"].isNil {
                     format = parse(expression: token["format"])
                 } else {
                     format = nil
