@@ -22,16 +22,6 @@ class JSONTests: XCTestCase {
                     """
     }
 
-    override func setUp() {
-        super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-    
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        super.tearDown()
-    }
-
     func testConstructors() {
         XCTAssertThrowsError(try JSON(string: "}" + JSONS.simple))
         XCTAssertThrowsError(try JSON(string: "}" + JSONS.oneSubstruct))
@@ -180,4 +170,14 @@ class JSONTests: XCTestCase {
         XCTAssert(json["smth"].isEmpty)
         XCTAssert(!arr.arrayValue.first!["title"].isEmpty)
     }
+
+    static let allTests = [
+        ("testConstructors", testConstructors),
+        ("testDictionary", testDictionary),
+        ("testArray", testArray),
+        ("testString", testString),
+        ("testInt", testInt),
+        ("testNilJSON", testNilJSON),
+        ("testIsEmpty", testIsEmpty),
+    ]
 }
