@@ -90,7 +90,7 @@ struct DateToken: NutCommandTokenProtocol {
     }
 
     var serialized: [String : Any] {
-        return ["id": id, "date": date.serialized, "format": format.serialized]
+        return ["id": id, "date": date.serialized, "format": format.serialized, "row": row]
     }
 
 
@@ -327,7 +327,7 @@ struct ElseToken: NutCommandTokenProtocol {
     }
 
     var serialized: [String: Any] {
-        return ["id": "else"]
+        return ["id": "else", "row": row]
     }
 }
 
@@ -337,6 +337,6 @@ struct EndBlockToken: NutCommandTokenProtocol {
     let row: Int
 
     var serialized: [String: Any] {
-        return ["id": id]
+        return ["id": id, "row": row]
     }
 }

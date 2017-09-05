@@ -14,6 +14,10 @@ protocol NutResolverProtocol {
     func viewToken(for name: String) throws -> ViewToken
 }
 
+fileprivate func getModificationDate(for path: Path) -> Date? {
+    return (try? FileManager.default.attributesOfItem(atPath: path.string))?[FileAttributeKey.modificationDate] as? Date
+}
+
 class NutResolver: NutResolverProtocol {
 
     private init() { }
@@ -47,14 +51,6 @@ class NutResolver: NutResolverProtocol {
 
             return fruitModif > nutModif
         }
-
-        private func getModificationDate(for path: Path) -> Date? {
-            return (try? FileManager.default.attributesOfItem(atPath: path.string))?[FileAttributeKey.modificationDate] as? Date
-        }
-    }
-
-    private func getModificationDate(for path: Path) -> Date? {
-        return (try? FileManager.default.attributesOfItem(atPath: path.string))?[FileAttributeKey.modificationDate] as? Date
     }
 
     func viewToken(for name: String) throws -> ViewToken {
@@ -99,16 +95,7 @@ class NutResolver: NutResolverProtocol {
             try? fruit.write(serialized)
         }
 
-
         parsedNuts[name] = FruitInfo(name: name, viewToken: vToken, fruit: fruit, nut: nut)
-//        try vToken.subviews.forEach { (subview) throws -> Void in
-//            if parsedNuts[subview.name] == nil {
-//                let _ = try viewToken(for: subview.name)
-//            }
-//        }
-//        if let layoutName = vToken.layout?.name, parsedNuts[layoutName] == nil {
-//            let _ = try viewToken(for: layoutName)
-//        }
         return vToken
     }
 }

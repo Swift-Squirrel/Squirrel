@@ -4,6 +4,7 @@ import XCTest
 
 XCTMain([
     testCase(RouteThreeTests.allTests),
+    testCase(NutViewTests.allTests),
     testCase(JSONCodingTests.allTests),
     testCase(JSONTests.allTests)
 ])
