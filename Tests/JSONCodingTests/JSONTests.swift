@@ -242,6 +242,6 @@ class JSONTests: XCTestCase {
         ("testBool", testBool),
         ("testNilJSON", testNilJSON),
         ("testIsEmpty", testIsEmpty),
-        ("testEq", testEq),
+        ("testEq", testEq)
     ]
 }

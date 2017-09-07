@@ -38,7 +38,6 @@ class NutParserTests: XCTestCase {
         XCTAssert(viewToken.head.count == 1)
         XCTAssertNil(viewToken.layout)
         XCTAssert(viewToken.name == "Views/Post.nut")
-        XCTAssert(viewToken.subviews.count == 0)
 
         guard let serialized = try? JSON(string: parser.jsonSerialized) else {
             XCTFail()
@@ -85,7 +84,6 @@ class NutParserTests: XCTestCase {
         XCTAssert(viewToken.head.count == 0)
         XCTAssertNil(viewToken.layout)
         XCTAssert(viewToken.name == "Layouts/Default.nut")
-        XCTAssert(viewToken.subviews.count == 3)
 
         guard let serialized = try? JSON(string: parser.jsonSerialized) else {
             XCTFail()
@@ -114,6 +112,7 @@ class NutParserTests: XCTestCase {
         }
         XCTAssert(serialized["body"][0]["id"].stringValue == "text")
         XCTAssert(serialized["body"][0]["value"].stringValue == "dmth \\unknwon()", "expecting 'dmth \\unknwon()' but got '\(serialized["body"][0]["value"].stringValue)'")
+
     }
 
     func testCommentedCommand() {
@@ -148,7 +147,7 @@ class NutParserTests: XCTestCase {
             \\} else if let notNil = posts {
                 doefja e
             \\}
-            \\if let asd = Tom ?? 1 {
+            \\if let asd = Tom {
                 dfe
             \\} else {
                 ds
@@ -176,17 +175,16 @@ class NutParserTests: XCTestCase {
         XCTAssert(viewToken.head.count == 0)
         XCTAssertNil(viewToken.layout)
         XCTAssert(viewToken.name == "Subviews/Smt.nut")
-        XCTAssert(viewToken.subviews.count == 1)
 
         guard let serialized = try? JSON(string: parser.jsonSerialized) else {
             XCTFail()
             return
         }
         let expexted = try! JSON(string: """
-            {"body":[{"id":"text","value":"dasd alm ak po\\n"},{"date":{"id":"expression","infix":"date","row":2},"format":{"id":"expression","infix":"\\"MMM dd yyyy\\"","row":2},"row":2,"id":"date"},{"id":"text","value":" oid\\n"},{"row":3,"id":"if","condition":"true ","then":[{"id":"text","value":"\\n    asd a "},{"date":{"id":"expression","infix":"date1","row":4},"format":{"id":"expression","infix":"\\"m\\" + years","row":4},"row":4,"id":"date"},{"id":"text","value":" asda\\n"}]},{"id":"text","value":"\\n"},{"row":6,"else":[{"row":8,"else":[{"variable":"notNil","row":10,"id":"if let","condition":"posts ","then":[{"id":"text","value":"\\n    doefja e\\n"}]}],"id":"if","condition":"true == true ","then":[{"id":"text","value":"\\n    "},{"id":"expression","infix":"true","row":9},{"id":"text","value":"\\n"}]}],"id":"if","condition":"1 + 3 == 4 ","then":[{"id":"text","value":"\\n    true\\n"}]},{"id":"text","value":"\\n"},{"variable":"asd","row":13,"else":[{"id":"text","value":"    ds\\n    "},{"id":"subview","name":"Subviews.Map","row":17},{"id":"text","value":"\\n"}],"id":"if let","condition":"Tom ?? 1 ","then":[{"id":"text","value":"\\n    dfe\\n"}]},{"id":"text","value":"\\n\\n"},{"variable":"post","row":20,"id":"for in Array","array":"posts","body":[{"id":"text","value":"\\n    "},{"id":"raw expression","infix":"post.body","row":21},{"id":"text","value":"\\n"}]},{"id":"text","value":"\\n"},{"variable":"value","row":23,"id":"for in Dictionary","array":"dictionary","body":[{"id":"text","value":"\\n    "},{"id":"expression","infix":"key + \\" \\" + value","row":24},{"id":"text","value":"\\n"}],"key":"key"},{"id":"text","value":"\\npdso a"}],"fileName":"Subviews\\/Smt.nut"}
+            {"body":[{"id":"text","value":"dasd alm ak po\\n"},{"date":{"id":"expression","infix":"date","row":2},"format":{"id":"expression","infix":"\\"MMM dd yyyy\\"","row":2},"row":2,"id":"date"},{"id":"text","value":" oid\\n"},{"row":3,"id":"if","condition":"true ","then":[{"id":"text","value":"\\n    asd a "},{"date":{"id":"expression","infix":"date1","row":4},"format":{"id":"expression","infix":"\\"m\\" + years","row":4},"row":4,"id":"date"},{"id":"text","value":" asda\\n"}]},{"id":"text","value":"\\n"},{"row":6,"else":[{"row":8,"else":[{"variable":"notNil","row":10,"id":"if let","condition":"posts ","then":[{"id":"text","value":"\\n    doefja e\\n"}]}],"id":"if","condition":"true == true ","then":[{"id":"text","value":"\\n    "},{"id":"expression","infix":"true","row":9},{"id":"text","value":"\\n"}]}],"id":"if","condition":"1 + 3 == 4 ","then":[{"id":"text","value":"\\n    true\\n"}]},{"id":"text","value":"\\n"},{"variable":"asd","row":13,"else":[{"id":"text","value":"    ds\\n    "},{"id":"subview","name":"Subviews.Map","row":17},{"id":"text","value":"\\n"}],"id":"if let","condition":"Tom ","then":[{"id":"text","value":"\\n    dfe\\n"}]},{"id":"text","value":"\\n\\n"},{"variable":"post","row":20,"id":"for in Array","array":"posts","body":[{"id":"text","value":"\\n    "},{"id":"raw expression","infix":"post.body","row":21},{"id":"text","value":"\\n"}]},{"id":"text","value":"\\n"},{"variable":"value","row":23,"id":"for in Dictionary","array":"dictionary","body":[{"id":"text","value":"\\n    "},{"id":"expression","infix":"key + \\" \\" + value","row":24},{"id":"text","value":"\\n"}],"key":"key"},{"id":"text","value":"\\npdso a"}],"fileName":"Subviews\\/Smt.nut"}
             """)
 
-        XCTAssert(serialized == expexted, parser.jsonSerialized)
+        XCTAssertEqual(serialized, expexted)
     }
 
     func testViewCommands() {
@@ -208,7 +206,6 @@ class NutParserTests: XCTestCase {
         XCTAssert(viewToken.head.count == 1)
         XCTAssertNotNil(viewToken.layout)
         XCTAssert(viewToken.name == "Views/Smt.nut")
-        XCTAssert(viewToken.subviews.count == 0)
 
         guard let serialized = try? JSON(string: parser.jsonSerialized) else {
             XCTFail()
@@ -240,7 +237,6 @@ class NutParserTests: XCTestCase {
         XCTAssert(viewToken.head.count == 0)
         XCTAssertNil(viewToken.layout)
         XCTAssert(viewToken.name == "Layouts/Smt.nut")
-        XCTAssert(viewToken.subviews.count == 0)
 
         guard let serialized = try? JSON(string: parser.jsonSerialized) else {
             XCTFail()
@@ -252,7 +248,6 @@ class NutParserTests: XCTestCase {
 
         XCTAssert(serialized == expexted, parser.jsonSerialized)
     }
-    
 
     static let allTests = [
         ("testSimpleParse", testSimpleParse),

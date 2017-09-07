@@ -127,7 +127,11 @@ class TokenTests: XCTestCase {
     }
 
     func testIf() {
-        var token = IfToken(condition: "b == true", row: 12)
+        guard IfToken(condition: "b == true", row: 12) != nil else {
+            XCTFail()
+            return
+        }
+        var token = IfToken(condition: "b == true", row: 12)!
 
         XCTAssert(token.condition == "b == true")
         XCTAssert(token.elseBlock == nil)
@@ -152,9 +156,13 @@ class TokenTests: XCTestCase {
         XCTAssert(serialized == expected)
 
         // next
-        token = IfToken(condition: "let b = true", row: 11)
+        guard IfToken(condition: "let b = true ", row: 11) != nil else {
+            XCTFail()
+            return
+        }
+        token = IfToken(condition: "let b = true ", row: 11)!
 
-        XCTAssert(token.condition == "true")
+        XCTAssert(token.condition == "true ")
         XCTAssert(token.elseBlock == nil)
         XCTAssert(token.id == "if let")
         XCTAssert(token.variable == "b")
@@ -163,7 +171,7 @@ class TokenTests: XCTestCase {
 
         serialized = JSON(from: token.serialized)
         expected = try! JSON(string: """
-            {"id": "if let","condition":"true","then":[],"row":11,"variable":"b"}
+            {"id": "if let","condition":"true ","then":[],"row":11,"variable":"b"}
             """)
 
         XCTAssert(serialized == expected)
@@ -171,7 +179,7 @@ class TokenTests: XCTestCase {
         token.setElse(body: [NutTokenProtocol]())
         serialized = JSON(from: token.serialized)
         expected = try! JSON(string: """
-            {"id": "if let","condition":"true","then":[],"row":11,"variable":"b", "else": []}
+            {"id": "if let","condition":"true ","then":[],"row":11,"variable":"b", "else": []}
             """)
         XCTAssertNotNil(token.elseBlock)
         XCTAssert(serialized == expected)
@@ -203,9 +211,13 @@ class TokenTests: XCTestCase {
     }
 
     func testElseIf() {
-        var token = ElseIfToken(condition: "a == 21", row: 2)
+        guard ElseIfToken(condition: "a == 21 ", row: 2) != nil else {
+            XCTFail()
+            return
+        }
+        var token = ElseIfToken(condition: "a == 21 ", row: 2)!
 
-        XCTAssert(token.getCondition() == "a == 21")
+        XCTAssert(token.getCondition() == "a == 21 ")
         XCTAssert(token.id == "else if")
         XCTAssert(token.getElse() == nil)
         XCTAssert(token.getThen().count == 0)
@@ -214,7 +226,7 @@ class TokenTests: XCTestCase {
 
         var serialized = JSON(from: token.serialized)
         var expected = try! JSON(string: """
-            {"id":"else if","condition":"a == 21","then":[],"row":2}
+            {"id":"else if","condition":"a == 21 ","then":[],"row":2}
             """)
         XCTAssert(serialized == expected)
 
@@ -222,13 +234,17 @@ class TokenTests: XCTestCase {
         XCTAssertNotNil(token.getElse())
         serialized = JSON(from: token.serialized)
         expected = try! JSON(string: """
-            {"id":"else if","condition":"a == 21","then":[],"row":2,"else":[]}
+            {"id":"else if","condition":"a == 21 ","then":[],"row":2,"else":[]}
             """)
         XCTAssert(serialized == expected)
 
-        token = ElseIfToken(condition: "let b = a == 21", row: 21)
+        guard ElseIfToken(condition: "let b = a ", row: 21) != nil else {
+            XCTFail()
+            return
+        }
+        token = ElseIfToken(condition: "let b = a ", row: 21)!
 
-        XCTAssert(token.getCondition() == "a == 21")
+        XCTAssert(token.getCondition() == "a ")
         XCTAssert(token.id == "else if let")
         XCTAssert(token.getElse() == nil)
         XCTAssert(token.getThen().count == 0)
@@ -237,7 +253,7 @@ class TokenTests: XCTestCase {
 
         serialized = JSON(from: token.serialized)
         expected = try! JSON(string: """
-            {"id":"else if let","condition":"a == 21","then":[],"row":21,"variable":"b"}
+            {"id":"else if let","condition":"a ","then":[],"row":21,"variable":"b"}
             """)
         XCTAssert(serialized == expected)
 
@@ -245,9 +261,11 @@ class TokenTests: XCTestCase {
         XCTAssertNotNil(token.getElse())
         serialized = JSON(from: token.serialized)
         expected = try! JSON(string: """
-            {"id":"else if let","condition":"a == 21","then":[],"row":21,"variable":"b","else":[]}
+            {"id":"else if let","condition":"a ","then":[],"row":21,"variable":"b","else":[]}
             """)
         XCTAssert(serialized == expected)
+
+        // TODO
     }
 
     func testLayout() {

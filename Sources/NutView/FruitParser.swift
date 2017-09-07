@@ -79,7 +79,7 @@ struct FruitParser {
             case "raw expression":
                 body.append(parse(rawExpression: token))
             case "if":
-                var ifToken = IfToken(condition: token["condition"].stringValue, row: token["row"].intValue)
+                var ifToken = IfToken(condition: token["condition"].stringValue, row: token["row"].intValue)!
                 ifToken.setThen(body: parse(body: token["then"].arrayValue))
                 if let elseBlock = token["else"].array {
                     ifToken.setElse(body: parse(body: elseBlock))

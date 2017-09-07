@@ -10,11 +10,14 @@ public struct NutParserError: Error, CustomStringConvertible {
     public enum ErrorKind {
         case unknownInternalError(commandName: String)
         case unexpectedEnd(reading: String)
+        case unexpectedBlockEnd
         case syntaxError(expected: [String], got: String)
         case expressionError
         case missingValue(for: String)
         case evaluationError(infix: String, message: String)
         case wrongValue(for: String, expected: String, got: Any)
+        case wrongSimpleVariable(name: String, in: String)
+        case wrongChainedVariable(name: String, in: String)
     }
     public let kind: ErrorKind
     public var name: String? = nil
@@ -37,6 +40,12 @@ public struct NutParserError: Error, CustomStringConvertible {
             res = "Missing value for \(name)"
         case .wrongValue(let name, let expected, let got):
             res = "Wrong value for \(name), expected: '\(expected)' but got '\(String(describing: got))'"
+        case .wrongSimpleVariable(let name, let command):
+            res = "Variable name '\(name)' in '\(command)' does not match regular expression '[a-zA-Z][a-zA-Z0-9]*'"
+        case .wrongChainedVariable(let name, let command):
+            res = "Variable name '\(name)' in '\(command)' does not match regular expression '[a-zA-Z][a-zA-Z0-9]*(\\.[a-zA-Z][a-zA-Z0-9]*)*'"
+        case .unexpectedBlockEnd:
+            res = "Unexpected '\\}'"
         }
         if let name = self.name {
             res += "\nFile name: \(name)"

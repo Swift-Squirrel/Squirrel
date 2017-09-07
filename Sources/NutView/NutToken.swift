@@ -64,7 +64,7 @@ struct InsertViewToken: NutCommandTokenProtocol {
 }
 
 protocol IfTokenProtocol: NutCommandTokenProtocol {
-    init(condition: String, row: Int)
+    init?(condition: String, row: Int)
     mutating func setThen(body: [NutTokenProtocol])
     mutating func setElse(body: [NutTokenProtocol])
 }
@@ -124,13 +124,13 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
         self.condition = condition
     }
 
-    init(condition: String, row: Int) {
+    init?(condition: String, row: Int) {
         self.row = row
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
-            //        guard separated.count == 4 else {
-            //            return [] // TODO
-            //        }
+            guard separated.count == 5 else {
+                return nil
+            }
             variable = separated[1]
             separated.removeFirst(3)
             self.condition = separated.joined(separator: " ")
@@ -187,13 +187,13 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let variable: String?
 
-    init(condition: String, row: Int) {
+    init?(condition: String, row: Int) {
         self.row = row
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
-            //        guard separated.count == 4 else {
-            //            return [] // TODO
-            //        }
+            guard separated.count == 5 else {
+                return nil
+            }
             variable = separated[1]
             separated.removeFirst(3)
             self.condition = separated.joined(separator: " ")
