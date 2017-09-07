@@ -5,8 +5,9 @@ import XCTest
 
 XCTMain([
     testCase(RouteThreeTests.allTests),
-    testCase(NutViewTests.allTests),
+    testCase(TokenTests.allTests),
     testCase(NutParserTests.allTests),
+    testCase(NutParserErrors.allTests),
     testCase(FruitParserTests.allTests),
     testCase(JSONCodingTests.allTests),
     testCase(JSONTests.allTests)
