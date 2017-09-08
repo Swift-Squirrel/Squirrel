@@ -430,7 +430,6 @@ class NutParserErrors: XCTestCase {
         XCTAssertTrue(checkError(for: content, expect: expect), "Unexpected '\\}'")
     }
 
-
     private func checkError(for content: String, expect: NutParserError) -> Bool {
         let parser = NutParser(content: content, name: "Views/Main.nut")
 

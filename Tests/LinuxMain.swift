@@ -11,6 +11,8 @@ XCTMain([
     testCase(NutParserErrors.allTests),
     testCase(FruitParserTests.allTests),
     testCase(NutResolverTests.allTests),
+    testCase(InterpreterTests.allTests),
+    testCase(ViewTests.allTests),
     testCase(JSONCodingTests.allTests),
     testCase(JSONTests.allTests)
 ])
