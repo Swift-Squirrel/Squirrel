@@ -49,33 +49,33 @@ class NutParserErrors: XCTestCase {
         let name = "Views/Main.nut"
         var content = "\n\\if {"
         let expected = ["if <expression: Bool> {", "if let <variableName: Any> = <expression: Any?> {"]
-        var expect = NutParserError(kind: .syntaxError(expected: expected, got: ""), row: 2, description: "empty <expression>")
+        var expect = NutParserError(kind: .syntaxError(expected: expected, got: "if {"), row: 2, description: "empty <expression>")
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Empty condition")
 
         content = "\n\n\n\n\\if let { \\}"
-        expect = NutParserError(kind: .syntaxError(expected: expected, got: " "), row: 5)
+        expect = NutParserError(kind: .syntaxError(expected: expected, got: "if let {"), row: 5, description: "empty <expression>")
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Empty condition")
 
         content = "\n\n\n\n\\if let asd = pom + 2 { \\}"
-        expect = NutParserError(kind: .syntaxError(expected: expected, got: " "), row: 5)
+        expect = NutParserError(kind: .syntaxError(expected: expected, got: "if let asd = pom + 2 {"), row: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Non nil value")
 
         content = "\n\n\n\n\\if let asd as = { \\}"
-        expect = NutParserError(kind: .syntaxError(expected: expected, got: " "), row: 5)
+        expect = NutParserError(kind: .syntaxError(expected: expected, got: "if let asd as = {"), row: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Wrong param order")
 
         content = "\n\n\n\n\\if let = asd as { \\}"
-        expect = NutParserError(kind: .syntaxError(expected: expected, got: " "), row: 5)
+        expect = NutParserError(kind: .syntaxError(expected: expected, got: "if let = asd as {"), row: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Wrong param order")
 
 
         content = "\n\n\n\n\\if let asd == par { \\}"
-        expect = NutParserError(kind: .syntaxError(expected: expected, got: " "), row: 5)
+        expect = NutParserError(kind: .syntaxError(expected: expected, got: "if let asd == par {"), row: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Missing '='")
 
@@ -94,43 +94,43 @@ class NutParserErrors: XCTestCase {
         let name = "Views/Main.nut"
         var content = "\n\\} else if {"
         let expected = ["} else if <expression: Bool> {", "} else if let <variableName: Any> = <expression: Any?> {"]
-        var expect = NutParserError(kind: .syntaxError(expected: expected, got: ""), row: 2, description: "empty <expression>")
+        var expect = NutParserError(kind: .syntaxError(expected: expected, got: "} else if {"), row: 2, description: "empty <expression>")
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Empty condition")
 
         content = "\n\n\n\n\\} else if let { \\}"
-        expect = NutParserError(kind: .syntaxError(expected: expected, got: " "), row: 5)
+        expect = NutParserError(kind: .syntaxError(expected: expected, got: "} else if let {"), row: 5, description: "empty <expression>")
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Empty condition")
 
         content = "\n\n\n\n\\} else if let asd = pom + 2 { \\}"
-        expect = NutParserError(kind: .syntaxError(expected: expected, got: " "), row: 5)
+        expect = NutParserError(kind: .syntaxError(expected: expected, got: "} else if let asd = pom + 2 {"), row: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Non nil value")
 
         content = "\n\n\n\n\\} else if let asd as = { \\}"
-        expect = NutParserError(kind: .syntaxError(expected: expected, got: " "), row: 5)
+        expect = NutParserError(kind: .syntaxError(expected: expected, got: "} else if let asd as = {"), row: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Wrong param order")
 
         content = "\n\n\n\n\\} else if let = asd as { \\}"
-        expect = NutParserError(kind: .syntaxError(expected: expected, got: " "), row: 5)
+        expect = NutParserError(kind: .syntaxError(expected: expected, got: "} else if let = asd as {"), row: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Wrong param order")
 
 
         content = "\n\n\n\n\\} else if let asd == par { \\}"
-        expect = NutParserError(kind: .syntaxError(expected: expected, got: " "), row: 5)
+        expect = NutParserError(kind: .syntaxError(expected: expected, got: "} else if let asd == par {"), row: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Missing '='")
 
         content = "\n\n\n\n\\} else if par \\}"
-        expect = NutParserError(kind: .syntaxError(expected: expected, got: "if par "), row: 5, description: "'{' not found")
+        expect = NutParserError(kind: .syntaxError(expected: expected, got: "} else if par "), row: 5, description: "'{' not found")
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Wrong param order")
 
         content = "\n\n\n\n\\} else if let asd as = \\}"
-        expect = NutParserError(kind: .syntaxError(expected: expected, got: "if let asd as = "), row: 5, description: "'{' not found")
+        expect = NutParserError(kind: .syntaxError(expected: expected, got: "} else if let asd as = "), row: 5, description: "'{' not found")
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "Wrong param order")
     }
@@ -215,37 +215,37 @@ class NutParserErrors: XCTestCase {
         content = "\n\n\n\n\\for (ds,as) in blah {"
         expect = NutParserError(kind: .syntaxError(expected: expected, got: " (ds,as) in blah "), row: 5)
         expect.name = name
-        XCTAssertTrue(checkError(for: content, expect: expect), "for ds (ds,as) blah {")
+        XCTAssertTrue(checkError(for: content, expect: expect), "for (ds,as) in blah {")
 
         content = "\n\n\n\n\\for ds,as in blah {"
         expect = NutParserError(kind: .syntaxError(expected: expected, got: " ds,as in blah "), row: 5)
         expect.name = name
-        XCTAssertTrue(checkError(for: content, expect: expect), "for ds ds,as blah {")
+        XCTAssertTrue(checkError(for: content, expect: expect), "for ds,as in blah {")
 
         content = "\n\n\n\n\\for (ds,as in blah {"
         expect = NutParserError(kind: .syntaxError(expected: expected, got: " (ds,as in blah "), row: 5)
         expect.name = name
-        XCTAssertTrue(checkError(for: content, expect: expect), "for ds (ds,as blah {")
+        XCTAssertTrue(checkError(for: content, expect: expect), "for (ds,as in blah {")
 
         content = "\n\n\n\n\\for ds,as) in blah {"
         expect = NutParserError(kind: .syntaxError(expected: expected, got: " ds,as) in blah "), row: 5)
         expect.name = name
-        XCTAssertTrue(checkError(for: content, expect: expect), "for ds ds,as) blah {")
+        XCTAssertTrue(checkError(for: content, expect: expect), "for ds,as) in blah {")
 
         content = "\n\n\n\n\\for ds, as in blah {"
         expect = NutParserError(kind: .syntaxError(expected: expected, got: " ds, as in blah "), row: 5)
         expect.name = name
-        XCTAssertTrue(checkError(for: content, expect: expect), "for ds ds, as blah {")
+        XCTAssertTrue(checkError(for: content, expect: expect), "for ds, as in blah {")
 
         content = "\n\n\n\n\\for (ds, as in blah {"
         expect = NutParserError(kind: .syntaxError(expected: expected, got: " (ds, as in blah "), row: 5)
         expect.name = name
-        XCTAssertTrue(checkError(for: content, expect: expect), "for ds (ds, as blah {")
+        XCTAssertTrue(checkError(for: content, expect: expect), "for (ds, as in blah {")
 
         content = "\n\n\n\n\\for ds, as) in blah {"
         expect = NutParserError(kind: .syntaxError(expected: expected, got: " ds, as) in blah "), row: 5)
         expect.name = name
-        XCTAssertTrue(checkError(for: content, expect: expect), "for ds ds, as) blah {")
+        XCTAssertTrue(checkError(for: content, expect: expect), "for ds, as) in blah {")
     }
 
     func testExpressionErrors() {

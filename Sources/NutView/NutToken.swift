@@ -128,7 +128,10 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
         self.row = row
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
-            guard separated.count == 5 else {
+            guard separated.count == 4 else {
+                return nil
+            }
+            guard separated[2] == "=" else {
                 return nil
             }
             variable = separated[1]
@@ -159,7 +162,7 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let row: Int
 
-    private let condition: String
+    let condition: String
 
     private var thenBlock = [NutTokenProtocol]()
 
@@ -191,7 +194,10 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
         self.row = row
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
-            guard separated.count == 5 else {
+            guard separated.count == 4 else {
+                return nil
+            }
+            guard separated[2] == "=" else {
                 return nil
             }
             variable = separated[1]
