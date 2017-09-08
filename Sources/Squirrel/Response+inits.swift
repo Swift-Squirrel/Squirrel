@@ -54,7 +54,6 @@ public extension Response {
 
 extension Response {
     convenience init(view: ViewProtocol) throws {
-        var view = view
         let content = try view.getContent()
         try self.init(html: content)
     }

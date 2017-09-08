@@ -17,7 +17,7 @@ class InterpreterTests: XCTestCase {
     private let created: Date = {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MMM dd yyyy"
-        dateFormatter.timeZone = NSTimeZone(name: "UTC") as TimeZone!
+        dateFormatter.timeZone = TimeZone(abbreviation: "UTC")!
         let date = dateFormatter.date(from: "Sep 08 2017")!
         return date
     }()
