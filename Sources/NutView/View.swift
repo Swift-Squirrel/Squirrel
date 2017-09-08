@@ -7,7 +7,6 @@
 //
 
 import SquirrelJSONEncoding
-import NutView
 
 public struct View: ViewProtocol {
 

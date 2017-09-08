@@ -27,10 +27,7 @@ let package = Package(
             dependencies: ["Squirrel"]),*/
         .target(
             name: "Squirrel",
-            dependencies: ["SquirrelView", "SquirrelConfig", "SquirrelJSONEncoding", "Socket"]),
-        .target(
-            name: "SquirrelView",
-            dependencies: ["SquirrelJSONEncoding", "NutView"]),
+            dependencies: ["NutView", "SquirrelConfig", "SquirrelJSONEncoding", "Socket"]),
         .target(
             name: "NutView",
             dependencies: ["SquirrelJSONEncoding", "Evaluation", "Regex"]),
@@ -50,6 +47,9 @@ let package = Package(
             dependencies: ["Squirrel", "Test"]),
         .testTarget(
             name: "NutViewTests",
+            dependencies: ["NutView"]),
+        .testTarget(
+            name: "NutViewIntegrationTests",
             dependencies: ["NutView"])
-        ]
+    ]
 )

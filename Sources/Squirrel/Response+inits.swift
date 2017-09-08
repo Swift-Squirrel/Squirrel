@@ -8,7 +8,7 @@
 
 import Foundation
 import PathKit
-import SquirrelView
+import NutView
 import SquirrelJSONEncoding
 
 // JSON and HTML
