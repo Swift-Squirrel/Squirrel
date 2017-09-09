@@ -9,10 +9,18 @@
 import Foundation
 import SquirrelConnector
 
+/// JSON Coding struct
 public struct JSONCoding {
     private init() {
     }
 
+    /// Encode object to JSON Any?
+    ///
+    /// - Note: If object is array this will return Dictionary with one key value pair
+    ///     where key is plural of object type and value is given object
+    ///
+    /// - Parameter object: object to serialize
+    /// - Returns: result of serializing
     public static func encodeSerializeJSON<T>(object: T) -> Any? {
         let desc = Mirror(reflecting: object).description
         if desc.hasPrefix("Mirror for Array<") {
@@ -26,6 +34,12 @@ public struct JSONCoding {
         }
         return encode(object: object)
     }
+
+    /// Encode object to JSON as Data
+    ///
+    /// - Parameter object: Object to serialize
+    /// - Returns: Data representation of JSON
+    /// - Throws: `JSONError`
     public static func encodeDataJSON<T>(object: T) throws -> Data {
         if let data = encodeSerializeJSON(object: object) {
             return try dataSerialization(data: data)
@@ -34,7 +48,7 @@ public struct JSONCoding {
         }
     }
 
-    static private func dataSerialization(data: Any) throws -> Data {
+    private static func dataSerialization(data: Any) throws -> Data {
         if let theJSONData = try? JSONSerialization.data(
             withJSONObject: data,
             options: []
@@ -45,10 +59,18 @@ public struct JSONCoding {
         }
     }
 
+    /// Check if given JSON is valid
+    ///
+    /// - Parameter json: json to check
+    /// - Returns: If valid
     public static func isValid(json: String) -> Bool {
         return toJSON(json: json) != nil
     }
 
+    /// Convert JSON as String to Any?
+    ///
+    /// - Parameter string: json to decode
+    /// - Returns: Representation of JSON
     public static func toJSON(json string: String) -> Any? {
         guard let data = string.data(using: .utf8, allowLossyConversion: false) else {
             return false
@@ -56,6 +78,11 @@ public struct JSONCoding {
         return try? JSONSerialization.jsonObject(with: data, options: .mutableContainers)
     }
 
+    /// Encode object to String JSON
+    ///
+    /// - Parameter object: Object to encode
+    /// - Returns: String representation of JSON from given object
+    /// - Throws: JSONError
     public static func encodeJSON<T>(object: T) throws -> String {
         let theJSONData = try encodeDataJSON(object: object)
         if let theJSONText = String(data: theJSONData, encoding: .utf8) {

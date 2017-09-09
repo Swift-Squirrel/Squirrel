@@ -10,49 +10,84 @@ import Foundation
 
 // swiftlint:disable nesting
 
+/// HTTP Headers
 public enum HTTPHeaders {
 
-    enum HTTPProtocol: String {
+    /// HTTP protocol types
+    ///
+    /// - http11: HTTP/1.1
+    public enum HTTPProtocol: String {
         case http11 = "HTTP/1.1"
     }
-    static let contentLength = "Content-Length"
-    static let location = "Location"
-    static let wwwAuthenticate = "WWW-Authenticate"
-    static let retryAfter = "Retry-After"
-    static let allow = "Allow"
+    /// `Content-Length`
+    public static let contentLength = "Content-Length"
+    /// `Location`
+    public static let location = "Location"
+    /// `Authenticate`
+    public static let wwwAuthenticate = "WWW-Authenticate"
+    /// `Retry`
+    public static let retryAfter = "Retry-After"
+    /// `Allow`
+    public static let allow = "Allow"
 
-    enum ContentType {
-        static let contentType = "Content-Type"
+    /// Content type
+    public enum ContentType {
+        /// `Content-Type`
+        public static let contentType = "Content-Type"
 
-        enum Image: String {
+        /// Image
+        ///
+        /// - png: `image/png`
+        /// - jpeg: `image/jpeg`
+        /// - svg: `image/svg+xml`
+        public enum Image: String {
             case png = "image/png"
             case jpeg = "image/jpeg"
             case svg = "image/svg+xml"
         }
 
-        enum Text: String {
+        /// Textx
+        ///
+        /// - html: `text/html`
+        /// - plain: `text/plain`
+        /// - css: `text/css`
+        public enum Text: String {
             case html = "text/html"
             case plain = "text/plain"
             case css = "text/css"
         }
 
-        enum Application: String {
+        /// Application
+        ///
+        /// - js: `application/javascript`
+        /// - json: `application/json`
+        /// - formUrlencoded: `application/x-www-form-urlencoded`
+        public enum Application: String {
             case js = "application/javascript"
             case json = "application/json"
             case formUrlencoded = "application/x-www-form-urlencoded"
         }
     }
 
+    /// HTTP Method
+    ///
+    /// - post: POST
+    /// - get: GET
+    /// - put: PUT
+    /// - delete: DELETE
+    /// - head: HEAD
+    /// - option: OPTIONS
     public enum Method: String {
         case post = "POST"
         case get = "GET"
         case put = "PUT"
         case delete = "DELETE"
         case head = "HEAD"
-        case option = "OPTION"
+        case options = "OPTIONS"
     }
 }
 
+/// HTTP Statuses
 public enum HTTPStatus: CustomStringConvertible {
     // 2xx
     case ok
@@ -92,7 +127,8 @@ public enum HTTPStatus: CustomStringConvertible {
     case serviceUnavailable(retryAfter: String)
     case httpVersionUnsupported
 
-    var message: String {
+    /// HTTP status message
+    public var message: String {
         switch self {
         case .ok:
             return "OK"
@@ -161,7 +197,8 @@ public enum HTTPStatus: CustomStringConvertible {
 
     }
 
-    var code: UInt {
+    /// HTTP status code
+    public var code: UInt {
         switch self {
         case .ok:
             return 200
@@ -230,6 +267,7 @@ public enum HTTPStatus: CustomStringConvertible {
     }
 
 
+    /// Description
     public var description: String {
         let code = self.code
         let message = self.message

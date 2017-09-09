@@ -11,7 +11,7 @@ import PathKit
 import NutView
 import SquirrelJSONEncoding
 
-// JSON and HTML
+// MARK: - JSON and HTML
 public extension Response {
     convenience init(html path: Path) throws {
         try self.init(pathToFile: path)

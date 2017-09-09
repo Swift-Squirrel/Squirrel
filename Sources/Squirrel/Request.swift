@@ -9,6 +9,7 @@
 import Foundation
 import Regex
 
+/// Request class
 open class Request {
 
     private var requestType = ""

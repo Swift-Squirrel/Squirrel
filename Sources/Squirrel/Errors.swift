@@ -21,12 +21,16 @@ import SquirrelJSONEncoding
 //    }
 //}
 
+// TODO nutview errors
+
 extension JSONError: AsHTTPProtocol {
+    /// JSONError as HTTP error
     public var asHTTPError: HTTPError {
         return HTTPError(status: .internalError, description: message)
     }
 }
 
+/// Data errors
 public struct DataError: Error, AsHTTPProtocol {
     enum ErrorKind {
         case dataEncodingError
@@ -62,20 +66,29 @@ public struct DataError: Error, AsHTTPProtocol {
         return msg
     }
 
+    /// HTTPError representation
     public var asHTTPError: HTTPError {
         return HTTPError(status: .internalError, description: message)
     }
 }
 
+/// HTTP error
 public struct HTTPError: Error, AsHTTPProtocol, CustomStringConvertible {
     let status: HTTPStatus
+    /// Description of error
     public let description: String
 
+    /// Construct HTTPError with given code and description
+    ///
+    /// - Parameters:
+    ///   - status: HTTP Status code
+    ///   - description: Error description
     public init(status: HTTPStatus, description: String = "") {
         self.status = status
         self.description = description
     }
 
+    /// Returns self
     public var asHTTPError: HTTPError {
         return self
     }
@@ -101,7 +114,7 @@ struct RouteError: Error, CustomStringConvertible {
 
 }
 
-public struct RequestError: Error, AsHTTPProtocol {
+struct RequestError: Error, AsHTTPProtocol {
     enum ErrorKind {
         case unseparatableHead
         case parseError(string: String, expectations: String)
@@ -145,7 +158,7 @@ public struct RequestError: Error, AsHTTPProtocol {
         return msg
     }
 
-    public var asHTTPError: HTTPError {
+    var asHTTPError: HTTPError {
         switch kind {
         case .unseparatableHead:
             return HTTPError(status: .badRequest, description: "Can not separate head of request")

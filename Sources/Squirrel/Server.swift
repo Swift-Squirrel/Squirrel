@@ -19,6 +19,7 @@ import PathKit
 import NutView
 import SquirrelConfig
 
+/// Server class
 open class Server {
 
     private let port: UInt16
@@ -30,6 +31,11 @@ open class Server {
 
     let responseManager = ResponseManager.sharedInstance
 
+    /// Construct server
+    ///
+    /// - Parameters:
+    ///   - port: Port for HTTP requests
+    ///   - root: Root directory of server
     public init(
         port: UInt16 = Config.sharedInstance.port,
         serverRoot root: Path = Config.sharedInstance.serverRoot) {
@@ -46,6 +52,9 @@ open class Server {
         listenSocket?.close()
     }
 
+    /// Run server and start to listen on given `port` from `init(port:root:)`
+    ///
+    /// - Throws: <#throws value description#>
     public func run() throws {
         try squirrelConfig.setConnector()
 

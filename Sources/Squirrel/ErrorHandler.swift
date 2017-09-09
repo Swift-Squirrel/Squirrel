@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Error handler protocol
 public protocol ErrorHandlerProtocol {
     func getResponse(for error: Error) -> Response?
 }
@@ -30,7 +31,9 @@ struct BasicErrors: ErrorHandlerProtocol {
     }
 }
 
-class ErrorHandler {
+/// Error handler singleton class
+public class ErrorHandler {
+    /// Singleton instance
     public static let sharedInstance = ErrorHandler()
 
     private init() {
@@ -38,6 +41,9 @@ class ErrorHandler {
     }
     private var handlers = [ErrorHandlerProtocol]()
 
+    /// Add error hanler as firt in array of erro handlers
+    ///
+    /// - Parameter handler: handler to insert
     public func addErrorHandler(handler: ErrorHandlerProtocol) {
         handlers.insert(handler, at: 0)
     }

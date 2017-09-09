@@ -13,7 +13,8 @@ typealias ResponseHandler = ((Request) -> Response)
 
 typealias AnyResponseHandler = ((Request) throws -> Any)
 
-public class Response {
+/// <#Description#>
+open class Response {
 
     private let routeTree = RouteTree()
 
@@ -27,10 +28,14 @@ public class Response {
 
     private var body = Data()
 
+    /// Body length
     var bodyLenght: Int {
         return (Array(body)).count
     }
 
+    /// Construct response with HTTP status
+    ///
+    /// - Parameter status: HTTP Status
     public init(status: HTTPStatus) {
         self.status = status
 
@@ -52,6 +57,12 @@ public class Response {
         }
     }
 
+   /// Construct response with HTTP status, headers and body
+   ///
+   /// - Parameters:
+   ///   - status: HTTP Status
+   ///   - headers: HTTP Headers
+   ///   - body: HTTP Body
    public convenience init(status: HTTPStatus = .ok, headers: [String: String] = [:], body: Data) {
         self.init(status: status)
 
@@ -76,12 +87,22 @@ public class Response {
         }
     }
 
-    func setHeader(for key: String, to value: String) {
+    /// Set HTTP Header
+    ///
+    /// - Parameters:
+    ///   - key: Header Key
+    ///   - value: Header Value
+    public func setHeader(for key: String, to value: String) {
         headers[key] = value
     }
 
     // swiftlint:disable cyclomatic_complexity
     // swiftlint:disable function_body_length
+
+    /// Construct from file
+    ///
+    /// - Parameter path: File path
+    /// - Throws: `HTTPError`
     public init(pathToFile path: Path) throws {
 
         status = .ok

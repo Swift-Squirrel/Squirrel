@@ -6,7 +6,21 @@
 //
 //
 
+/// Nut parser errors
 public struct NutParserError: Error, CustomStringConvertible {
+    /// Error kinds
+    ///
+    /// - unknownInternalError: Something unexpected happened
+    /// - unexpectedEnd: Parser expect specific token but EOF found
+    /// - unexpectedBlockEnd: Parser does not expect '\}'
+    /// - syntaxError: Syntax error
+    /// - expressionError: Error while evaluating expression
+    /// - missingValue: Missing value for variable
+    /// - evaluationError: Error while evaluating expression
+    /// - wrongValue: Parser expect different type of fiven value
+    /// - wrongSimpleVariable: Parser expect common variable name `[a-zA-Z][a-zA-Z0-9]*`
+    /// - wrongChainedVariable: Parser expect dot convention variable name
+    ///    `[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9]*)*`
     public enum ErrorKind {
         case unknownInternalError(commandName: String)
         case unexpectedEnd(reading: String)
@@ -19,10 +33,14 @@ public struct NutParserError: Error, CustomStringConvertible {
         case wrongSimpleVariable(name: String, in: String)
         case wrongChainedVariable(name: String, in: String)
     }
+    /// Kind of error
     public let kind: ErrorKind
+    /// Name of file
     public var name: String? = nil
+    /// row of error
     public let row: Int
     private let _description: String?
+    /// Description
     public var description: String {
         var res = ""
         switch kind {
@@ -73,13 +91,19 @@ public struct NutParserError: Error, CustomStringConvertible {
     }
 }
 
+/// Error struct for common errors in NutView
 public struct NutError: Error, CustomStringConvertible {
+    /// Error kinds
+    ///
+    /// - notExists: File does not exists
     public enum ErrorKind {
         case notExists(name: String)
     }
 
+    /// Kind of error
     public let kind: ErrorKind
     private let _description: String?
+    /// Description
     public var description: String {
         var res = ""
         switch kind {
