@@ -7,7 +7,6 @@
 //
 
 import SquirrelJSONEncoding
-import NutView
 
 public struct View: ViewProtocol {
 
@@ -34,7 +33,7 @@ public struct View: ViewProtocol {
         interpreter = NutInterpreter(view: name, with: data)
     }
 
-    public mutating func getContent() throws -> String {
+    public func getContent() throws -> String {
         return try interpreter.resolve()
     }
 }

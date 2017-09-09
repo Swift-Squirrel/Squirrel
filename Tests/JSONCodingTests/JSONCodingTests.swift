@@ -33,7 +33,12 @@ class JSONCodingTests: XCTestCase {
         assertNoThrow(try JSONCoding.encodeJSON(object: user))
 
         if let result = try? JSONCoding.encodeJSON(object: user) {
-            assertEqual(result, "{\"id\":1,\"name\":\"Thom\",\"age\":21}")
+            assertEqual(result.count, "{\"id\":1,\"name\":\"Thom\",\"age\":21}".count)
+            assert(result.contains("\"id\":1"))
+            assert(result.contains("\"name\":\"Thom\""))
+            assert(result.contains("\"age\":21"))
+            assert(result.hasPrefix("{"))
+            assert(result.hasSuffix("}"))
         }
 
         let ss = TestS1.SubStruct1(a: "SubStruct")
@@ -41,7 +46,11 @@ class JSONCodingTests: XCTestCase {
         assertNoThrow(try JSONCoding.encodeJSON(object: s1))
 
         if let result = try? JSONCoding.encodeJSON(object: s1) {
-            assertEqual(result, "{\"a\":3,\"c\":{\"a\":\"SubStruct\"}}","got: \(result)")
+            assertEqual(result.count, "{\"a\":3,\"c\":{\"a\":\"SubStruct\"}}".count,"got: \(result)")
+            assert(result.contains("\"a\":3"))
+            assert(result.contains("\"c\":{\"a\":\"SubStruct\"}"))
+            assert(result.hasPrefix("{"))
+            assert(result.hasSuffix("}"))
         }
     }
 
@@ -60,9 +69,33 @@ class JSONCodingTests: XCTestCase {
             var result = JSONCoding.isValid(json: json)
             assertTrue(result, "Error on valid json with index \(i)!")
 
-            result = JSONCoding.isValid(json: json + "}")
+            result = JSONCoding.isValid(json: "}" + json)
             assertFalse(result, "Error on invalid json with index \(i)!")
             i += 1
         }
     }
+
+    func testObjArr() {
+        let users = [
+            User(id: 1, name: "Tom", age: 10),
+            User(id: 2, name: "Ben", age: 12),
+            User(id: 3, name: "Jenny", age: 9)
+        ]
+
+        guard let jsonData = JSONCoding.encodeSerializeJSON(object: users) as? [String: Any] else {
+            XCTFail()
+            return
+        }
+
+        XCTAssert(jsonData.count == 1)
+        XCTAssertNotNil(jsonData["users"])
+
+        // TODO beter encode
+    }
+
+    static var allTests = [
+        ("testEncodeJSON", testEncodeJSON),
+        ("testJSONValidity", testJSONValidity),
+        ("testObjArr", testObjArr)
+    ]
 }

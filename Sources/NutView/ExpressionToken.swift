@@ -23,6 +23,26 @@ struct ExpressionToken: NutCommandTokenProtocol {
     }
 
     var serialized: [String: Any] {
-        return ["id": id, "infix": infix]
+        return ["id": id, "infix": infix, "row": row]
     }
 }
+
+struct RawExpressionToken: NutCommandTokenProtocol {
+    let id = "raw expression"
+
+    let row: Int
+
+    let infix: String
+
+    init?(infix: String, row: Int) {
+        self.infix = infix
+        self.row = row
+        //        let eval = try! Evaluation(expression: infix)
+
+    }
+
+    var serialized: [String: Any] {
+        return ["id": id, "infix": infix, "row": row]
+    }
+}
+

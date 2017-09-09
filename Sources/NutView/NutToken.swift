@@ -64,9 +64,36 @@ struct InsertViewToken: NutCommandTokenProtocol {
 }
 
 protocol IfTokenProtocol: NutCommandTokenProtocol {
-    init(condition: String, row: Int)
+    init?(condition: String, row: Int)
     mutating func setThen(body: [NutTokenProtocol])
     mutating func setElse(body: [NutTokenProtocol])
+}
+
+struct DateToken: NutCommandTokenProtocol {
+    let row: Int
+
+    let id = "date"
+
+    let date: ExpressionToken
+
+    let format: ExpressionToken
+
+    init(date: ExpressionToken, format: ExpressionToken? = nil, row: Int) {
+        self.date = date
+        self.row = row
+
+        if let format = format {
+            self.format = format
+        } else {
+            self.format = ExpressionToken(infix: "\"MMM dd yyyy\"", row: row)!
+        }
+    }
+
+    var serialized: [String : Any] {
+        return ["id": id, "date": date.serialized, "format": format.serialized, "row": row]
+    }
+
+
 }
 
 struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
@@ -97,13 +124,16 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
         self.condition = condition
     }
 
-    init(condition: String, row: Int) {
+    init?(condition: String, row: Int) {
         self.row = row
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
-            //        guard separated.count == 4 else {
-            //            return [] // TODO
-            //        }
+            guard separated.count == 4 else {
+                return nil
+            }
+            guard separated[2] == "=" else {
+                return nil
+            }
             variable = separated[1]
             separated.removeFirst(3)
             self.condition = separated.joined(separator: " ")
@@ -132,7 +162,7 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let row: Int
 
-    private let condition: String
+    let condition: String
 
     private var thenBlock = [NutTokenProtocol]()
 
@@ -160,13 +190,16 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let variable: String?
 
-    init(condition: String, row: Int) {
+    init?(condition: String, row: Int) {
         self.row = row
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
-            //        guard separated.count == 4 else {
-            //            return [] // TODO
-            //        }
+            guard separated.count == 4 else {
+                return nil
+            }
+            guard separated[2] == "=" else {
+                return nil
+            }
             variable = separated[1]
             separated.removeFirst(3)
             self.condition = separated.joined(separator: " ")
@@ -300,7 +333,7 @@ struct ElseToken: NutCommandTokenProtocol {
     }
 
     var serialized: [String: Any] {
-        return ["id": "else"]
+        return ["id": "else", "row": row]
     }
 }
 
@@ -310,6 +343,6 @@ struct EndBlockToken: NutCommandTokenProtocol {
     let row: Int
 
     var serialized: [String: Any] {
-        return ["id": id]
+        return ["id": id, "row": row]
     }
 }
