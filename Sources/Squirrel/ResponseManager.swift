@@ -27,7 +27,11 @@ class ResponseManager {
         }
     }
 
-    public func route<T>(get url: String, handler: @escaping (Request, T) throws -> Any) where T: Decodable {
+    public func route<T>(
+        get url: String,
+        handler: @escaping (Request, T) throws -> Any)
+        where T: Decodable {
+
         let closure: AnyResponseHandler = {
             [unowned self] (req: Request) in
             let converted = try self.convertParameters(request: req, object: T.self)
@@ -50,7 +54,11 @@ class ResponseManager {
         route(method: .post, url: url, handler: handler)
     }
 
-    public func route<T>(post url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
+    public func route<T>(
+        post url: String,
+        handler: @escaping (T) throws -> Any)
+        where T: Decodable {
+
         let closure: AnyResponseHandler = {
             [unowned self] (req: Request) in
             let converted = try self.convertParameters(request: req, object: T.self)
@@ -61,15 +69,19 @@ class ResponseManager {
 
 
     // CONVERTIONS
-    private func convertParameters<T>(request: Request, object: T.Type) throws -> T where T: Decodable {
+    private func convertParameters<T>(
+        request: Request,
+        object: T.Type)
+        throws -> T where T: Decodable {
+
         var values = request.getURLParameters()
         for (k, v) in request.postParameters {
-            if(values[k] == nil) {
+            if values[k] == nil {
                 values[k] = v
             }
         }
-        for (k,v) in request.getParameters {
-            if(values[k] == nil) {
+        for (k, v) in request.getParameters {
+            if values[k] == nil {
                 values[k] = v
             }
         }
@@ -78,12 +90,18 @@ class ResponseManager {
             let jsonData = try JSONSerialization.data(withJSONObject: values)
             return try jsonDecoder.decode(object, from: jsonData)
         } catch {
-            throw HTTPError(status: .badRequest, description: "Wrong parameters type or missing parameters")
+            throw HTTPError(
+                status: .badRequest,
+                description: "Wrong parameters type or missing parameters")
         }
     }
 
 
-    private func route(method: HTTPHeaders.Method, url: String, handler: @escaping AnyResponseHandler) {
+    private func route(
+        method: HTTPHeaders.Method,
+        url: String,
+        handler: @escaping AnyResponseHandler) {
+
         routeTree.add(route: url, forMethod: method, handler: handler)
     }
 

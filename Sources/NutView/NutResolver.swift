@@ -14,7 +14,10 @@ protocol NutResolverProtocol {
 }
 
 fileprivate func getModificationDate(for path: Path) -> Date? {
-    return (try? FileManager.default.attributesOfItem(atPath: path.string))?[FileAttributeKey.modificationDate] as? Date
+    guard let attributes = try? FileManager.default.attributesOfItem(atPath: path.string) else {
+        return nil
+    }
+    return attributes[FileAttributeKey.modificationDate] as? Date
 }
 
 class NutResolver: NutResolverProtocol {
@@ -82,7 +85,6 @@ class NutResolver: NutResolverProtocol {
             let parser = NutParser(content: content, name: nutName)
             vToken = try parser.tokenize()
 
-            // TODO separated thread
             let serialized = parser.jsonSerialized
             if fruit.exists {
                 if let cnt: String = try? fruit.read() {

@@ -19,7 +19,6 @@ struct ExpressionToken: NutCommandTokenProtocol {
         self.infix = infix
         self.row = row
 //        let eval = try! Evaluation(expression: infix)
-        
     }
 
     var serialized: [String: Any] {
@@ -45,4 +44,3 @@ struct RawExpressionToken: NutCommandTokenProtocol {
         return ["id": id, "infix": infix, "row": row]
     }
 }
-

@@ -34,7 +34,7 @@ public struct JSONCoding {
         }
     }
 
-    static private func dataSerialization(data: Any) throws -> Data{
+    static private func dataSerialization(data: Any) throws -> Data {
         if let theJSONData = try? JSONSerialization.data(
             withJSONObject: data,
             options: []
@@ -74,7 +74,7 @@ public struct JSONCoding {
         if object is Primitive {
             return object
         } else if let arr = object as? [Any] {
-            return arr.map( { encode(object: $0 ) } )
+            return arr.map({ encode(object: $0 ) })
         } else if let dic = object as? [String: Any] {
             for (k, v) in dic {
                 res[k] = encode(object: v)

@@ -156,7 +156,10 @@ public extension JSON {
 }
 
 extension JSON: Equatable {
+    // swiftlint:disable cyclomatic_complexity
+    // swiftlint:disable operator_whitespace
     public static func ==(lhs: JSON, rhs: JSON) -> Bool {
+
         if lhs.data == nil && rhs.data == nil {
             return true
         }
@@ -207,4 +210,6 @@ extension JSON: Equatable {
             return false
         }
     }
+    // swiftlint:enable cyclomatic_complexity
+    // swiftlint:enable operator_whitespace
 }

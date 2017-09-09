@@ -80,6 +80,8 @@ public class Response {
         headers[key] = value
     }
 
+    // swiftlint:disable cyclomatic_complexity
+    // swiftlint:disable function_body_length
     public init(pathToFile path: Path) throws {
 
         status = .ok
@@ -101,29 +103,49 @@ public class Response {
                     to: HTTPHeaders.ContentType.Application.json.rawValue
                 )
             case "js":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Application.js.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Application.js.rawValue)
 
             case "jpg", "jpeg":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.jpeg.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Image.jpeg.rawValue)
             case "png":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.png.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Image.png.rawValue)
             case "svg":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.svg.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Image.svg.rawValue)
 
             case "css":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.css.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Text.css.rawValue)
             case "html":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.html.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Text.html.rawValue)
             case "txt":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.plain.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Text.plain.rawValue)
             default:
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.plain.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Text.plain.rawValue)
             }
         } else {
             // TODO
-            setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.plain.rawValue)
+            setHeader(
+                for: HTTPHeaders.ContentType.contentType,
+                to: HTTPHeaders.ContentType.Text.plain.rawValue)
         }
     }
+    // swiftlint:enable cyclomatic_complexity
+    // swiftlint:enable function_body_length
 
     func responeHandler() -> ResponseHandler {
         return {

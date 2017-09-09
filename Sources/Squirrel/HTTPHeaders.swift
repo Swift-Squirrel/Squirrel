@@ -8,6 +8,8 @@
 
 import Foundation
 
+// swiftlint:disable nesting
+
 public enum HTTPHeaders {
 
     enum HTTPProtocol: String {
@@ -234,3 +236,4 @@ public enum HTTPStatus: CustomStringConvertible {
         return "\(code) \(message)"
     }
 }
+// swiftlint:enable nesting

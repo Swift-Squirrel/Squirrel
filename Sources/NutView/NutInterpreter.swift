@@ -54,9 +54,12 @@ class NutInterpreter: NutInterpreterProtocol {
                 } else {
                     let bodyTag = Regex("[\\s\\S]*<body>[\\s\\S]*</body>[\\s\\S]*")
                     if bodyTag.matches(result) {
-                        result.replaceFirst(matching: "<body>", with: "<head>\n" + headResult + "\n</head>\n<body>")
+                        result.replaceFirst(
+                            matching: "<body>",
+                            with: "<head>\n" + headResult + "\n</head>\n<body>")
                     } else {
-                        result = "<!DOCTYPE>\n<html>\n<head>\n" + headResult + "\n</head>\n<body>\n" + result + "\n</body>\n</html>"
+                        result = "<!DOCTYPE>\n<html>\n<head>\n" + headResult
+                            + "\n</head>\n<body>\n" + result + "\n</body>\n</html>"
                     }
                 }
             }
@@ -83,7 +86,9 @@ class NutInterpreter: NutInterpreterProtocol {
         return res
     }
 
-    fileprivate func run(body: [NutTokenProtocol]) throws -> (result: String, heads: [NutHeadProtocol]) {
+    fileprivate func run(body: [NutTokenProtocol])
+        throws -> (result: String, heads: [NutHeadProtocol]) {
+
         var res = ""
         var heads = [NutHeadProtocol]()
         for token in body {
@@ -133,9 +138,13 @@ extension NutInterpreter {
             ("&gt;", ">"),
             ("&quot;", "\""),
             ("&apos;", "'")
-        ];
+        ]
         for (escaped_char, unescaped_char) in char_dictionary {
-            newString = newString.replacingOccurrences(of: unescaped_char, with: escaped_char, options: NSString.CompareOptions.literal, range: nil)
+            newString = newString.replacingOccurrences(
+                of: unescaped_char,
+                with: escaped_char,
+                options: NSString.CompareOptions.literal,
+                range: nil)
         }
         return newString
     }
@@ -200,7 +209,9 @@ extension NutInterpreter {
             let str = String(describing: unwrap(any: res ?? "nil"))
             return str
         } catch let error as EvaluationError {
-            throw NutParserError(kind: .evaluationError(infix: expression.infix, message: error.description), row: expression.row)
+            throw NutParserError(
+                kind: .evaluationError(infix: expression.infix, message: error.description),
+                row: expression.row)
         }
     }
 
@@ -210,14 +221,18 @@ extension NutInterpreter {
             let str = String(describing: unwrap(any: res ?? "nil"))
             return convertToSpecialCharacters(string: str)
         } catch let error as EvaluationError {
-            throw NutParserError(kind: .evaluationError(infix: expression.infix, message: error.description), row: expression.row)
+            throw NutParserError(
+                kind: .evaluationError(infix: expression.infix, message: error.description),
+                row: expression.row)
         }
     }
 
     private func parse(date dateToken: DateToken) throws -> String {
         let dateStr = try parse(expression: dateToken.date)
         guard let dateMiliseconds = Double(dateStr) else {
-            throw NutParserError(kind: .wrongValue(for: "Date(_:format:)", expected: "Double", got: dateStr), row: dateToken.date.row)
+            throw NutParserError(
+                kind: .wrongValue(for: "Date(_:format:)", expected: "Double", got: dateStr),
+                row: dateToken.date.row)
         }
         let formatStr = try parse(expression: dateToken.format)
         let date = Date(timeIntervalSince1970: dateMiliseconds)
@@ -237,7 +252,9 @@ extension NutInterpreter {
         if let keyName = forIn.key {
             let prevKey = data[keyName]
             guard let dic = arr as? [String: Any] else {
-                throw NutParserError(kind: .wrongValue(for: forIn.array, expected: "[String: Any]", got: arr), row: forIn.row)
+                throw NutParserError(
+                    kind: .wrongValue(for: forIn.array, expected: "[String: Any]", got: arr),
+                    row: forIn.row)
             }
             for (key, value) in dic {
                 data[forIn.variable] = value
@@ -249,7 +266,9 @@ extension NutInterpreter {
             data[keyName] = prevKey
         } else {
             guard let array = arr as? [Any] else {
-                throw NutParserError(kind: .wrongValue(for: forIn.array, expected: "[Any]", got: arr), row: forIn.row)
+                throw NutParserError(
+                    kind: .wrongValue(for: forIn.array, expected: "[Any]", got: arr),
+                    row: forIn.row)
             }
             for item in array {
                 data[forIn.variable] = unwrap(any: item)
@@ -262,12 +281,16 @@ extension NutInterpreter {
         return (res, heads)
     }
 
-    fileprivate func parse(if ifToken: IfToken) throws -> (result: String, heads: [NutHeadProtocol]) {
+    fileprivate func parse(if ifToken: IfToken)
+        throws -> (result: String, heads: [NutHeadProtocol]) {
+
         let any: Any?
         do {
             any = try ifToken.condition.evaluate(with: data)
         } catch let error as EvaluationError {
-            throw NutParserError(kind: .evaluationError(infix: ifToken.condition, message: error.description), row: ifToken.row)
+            throw NutParserError(
+                kind: .evaluationError(infix: ifToken.condition, message: error.description),
+                row: ifToken.row)
         }
         if let variable = ifToken.variable {
             if let value = any {
@@ -287,7 +310,12 @@ extension NutInterpreter {
                     return try run(body: elseBlock)
                 }
             } else {
-                throw NutParserError(kind: .wrongValue(for: ifToken.id, expected: "<expression: Bool>", got: String(describing: any ?? "nil")), row: ifToken.row)
+                throw NutParserError(
+                    kind: .wrongValue(
+                        for: ifToken.id,
+                        expected: "<expression: Bool>",
+                        got: String(describing: any ?? "nil")),
+                    row: ifToken.row)
             }
         }
         return ("", [])

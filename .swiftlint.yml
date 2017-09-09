@@ -1,9 +1,28 @@
-included: # paths to include during linting. `--path` is ignored if present.
-    - Sources
+included:
+  - Sources
+
 excluded:
-    - "Sources/ResponseManager+addRoutes.swift"
-    - Sources/HTTPHeaders.swift
+  - "Sources/App"
+  - "Sources/ResponseManager+addRoutes.swift"
+  - Sources/HTTPHeaders.swift
+
+disabled_rules:
+  - conditional_binding_cascade
+  - todo
+
+#custom_rules:
+#  missing_docs:
+#    included: ".*.swift"
+#    regex: '(?:\n[ \t]*)(?!\/\/\/)(?:\/\/)?[^\n\/@]*(?:\n[ \t]*@\S+)*\n[ \t]*(?:public|open)'
+#    name: "Missing Docs"
+#    message: "Types, properties and methods with public or open access level should be documented."
+#    severity: warning
+
+variable_name:
+  excluded:
+    - id
+
 line_length:
-    - 120 # warning
-    - 160 # error
+  - 100 # warning
+  - 130 # error
 

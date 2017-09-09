@@ -60,14 +60,16 @@ open class Request {
             throw RequestError(
                 kind: .parseError(
                     string: row,
-                    expectations: "String has to be separatable into exactly three parts divided by ' '."
+                    expectations: "String has to be separatable into "
+                        + "exactly three parts divided by ' '."
                 )
             )
         }
 
-
         guard let fullpath = URL(string: components[1]) else {
-            throw RequestError(kind: .parseError(string: components[1], expectations: "Has to be parsable as URL."))
+            throw RequestError(kind: .parseError(
+                string: components[1],
+                expectations: "Has to be parsable as URL."))
         }
         _fullpath = fullpath
         _path = URL(string: fullpath.path)!
@@ -92,7 +94,6 @@ open class Request {
                     expectations: "Header row has to be separatable by ': ' to two parts"
                     ))
             }
-
             headers[pomArray[0].lowercased()] = pomArray[1]
         }
 
@@ -120,14 +121,18 @@ open class Request {
 
     private func parsePostRequest() throws {
         guard let contentType = getHeader(for: HTTPHeaders.ContentType.contentType) else {
-            throw HTTPError(status: .unsupportedMediaType, description: "Missing \(HTTPHeaders.ContentType.contentType)")
+            throw HTTPError(
+                status: .unsupportedMediaType,
+                description: "Missing \(HTTPHeaders.ContentType.contentType)")
         }
 
         switch contentType {
         case HTTPHeaders.ContentType.Application.formUrlencoded.rawValue:
             try parseURLEncoded(body: rawBody.data(using: .utf8)!) // TODO not as string
         default:
-            throw HTTPError(status: .unsupportedMediaType, description: "Unsupported \(HTTPHeaders.ContentType.contentType)")
+            throw HTTPError(
+                status: .unsupportedMediaType,
+                description: "Unsupported \(HTTPHeaders.ContentType.contentType)")
         }
     }
 

@@ -10,12 +10,13 @@ import SquirrelJSONEncoding
 
 struct FruitParser {
     private let content: String
-    
+
     init(content: String) {
         self.content = content
     }
 
     func tokenize() -> ViewToken {
+        // swiftlint:disable:next force_try
         let json = try! JSON(string: content)
         let name = json["fileName"].stringValue
         let body = parse(body: json["body"].arrayValue)
@@ -33,7 +34,7 @@ struct FruitParser {
         } else {
             layoutToken = nil
         }
-        
+
         return ViewToken(name: name, head: head, body: body, layout: layoutToken)
     }
 
@@ -51,6 +52,8 @@ struct FruitParser {
         return head
     }
 
+    // swiftlint:disable function_body_length
+    // swiftlint:disable cyclomatic_complexity
     private func parse(body tokens: [JSON]) -> [NutTokenProtocol] {
         var body = [NutTokenProtocol]()
         tokens.forEach({ (token) in
@@ -67,11 +70,20 @@ struct FruitParser {
                 }
                 body.append(DateToken(date: date, format: format, row: token["row"].intValue))
             case "for in Array":
-                var forIn = ForInToken(variable: token["variable"].stringValue, array: token["array"].stringValue, row: token["row"].intValue)
+                var forIn = ForInToken(
+                    variable: token["variable"].stringValue,
+                    array: token["array"].stringValue,
+                    row: token["row"].intValue)
+
                 forIn.setBody(body: parse(body: token["body"].arrayValue))
                 body.append(forIn)
             case "for in Dictionary":
-                var forIn = ForInToken(key: token["key"].stringValue, variable: token["variable"].stringValue, array: token["array"].stringValue, row: token["row"].intValue)
+                var forIn = ForInToken(
+                    key: token["key"].stringValue,
+                    variable: token["variable"].stringValue,
+                    array: token["array"].stringValue,
+                    row: token["row"].intValue)
+
                 forIn.setBody(body: parse(body: token["body"].arrayValue))
                 body.append(forIn)
             case "expression":
@@ -79,14 +91,21 @@ struct FruitParser {
             case "raw expression":
                 body.append(parse(rawExpression: token))
             case "if":
-                var ifToken = IfToken(condition: token["condition"].stringValue, row: token["row"].intValue)!
+                var ifToken = IfToken(
+                    condition: token["condition"].stringValue,
+                    row: token["row"].intValue)!
+
                 ifToken.setThen(body: parse(body: token["then"].arrayValue))
                 if let elseBlock = token["else"].array {
                     ifToken.setElse(body: parse(body: elseBlock))
                 }
                 body.append(ifToken)
             case "if let":
-                var ifToken = IfToken(variable: token["variable"].stringValue, condition: token["condition"].stringValue, row: token["row"].intValue)
+                var ifToken = IfToken(
+                    variable: token["variable"].stringValue,
+                    condition: token["condition"].stringValue,
+                    row: token["row"].intValue)
+
                 ifToken.setThen(body: parse(body: token["then"].arrayValue))
                 if let elseBlock = token["else"].array {
                     ifToken.setElse(body: parse(body: elseBlock))
@@ -95,13 +114,17 @@ struct FruitParser {
             case "view":
                 body.append(InsertViewToken(row: token["row"].intValue))
             case "subview":
-                body.append(SubviewToken(name: token["name"].stringValue, row: token["row"].intValue))
+                body.append(SubviewToken(
+                    name: token["name"].stringValue,
+                    row: token["row"].intValue))
             default:
                 break
             }
         })
         return body
     }
+    // swiftlint:enable function_body_length
+    // swiftlint:enable cyclomatic_complexity
 
     private func parse(expression token: JSON) -> ExpressionToken {
         return ExpressionToken(infix: token["infix"].stringValue, row: token["row"].intValue)!

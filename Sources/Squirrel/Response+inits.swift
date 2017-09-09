@@ -15,15 +15,19 @@ import SquirrelJSONEncoding
 public extension Response {
     convenience init(html path: Path) throws {
         try self.init(pathToFile: path)
-        setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.html.rawValue)
+        setHeader(
+            for: HTTPHeaders.ContentType.contentType,
+            to: HTTPHeaders.ContentType.Text.html.rawValue)
     }
 
     convenience init(html: String) throws {
-        guard let data = html.data(using: .utf8) else { 
+        guard let data = html.data(using: .utf8) else {
             throw DataError(kind: .dataCodingError(string: html))
         }
         self.init(
-            headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
+            headers: [
+                HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue
+            ],
             body: data
         )
     }
@@ -31,7 +35,10 @@ public extension Response {
     convenience init<T>(object: T) throws {
         let data = try JSONCoding.encodeDataJSON(object: object)
         self.init(
-            headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Application.json.rawValue],
+            headers: [
+                HTTPHeaders.ContentType.contentType:
+                    HTTPHeaders.ContentType.Application.json.rawValue
+            ],
             body: data
         )
     }
@@ -46,7 +53,10 @@ public extension Response {
         }
 
         self.init(
-            headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Application.json.rawValue],
+            headers: [
+                HTTPHeaders.ContentType.contentType:
+                    HTTPHeaders.ContentType.Application.json.rawValue
+            ],
             body: data
         )
     }

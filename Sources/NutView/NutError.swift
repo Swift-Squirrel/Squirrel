@@ -31,7 +31,13 @@ public struct NutParserError: Error, CustomStringConvertible {
         case .unexpectedEnd(let reading):
             res = "Unexpected end of file while reading: \(reading)"
         case .syntaxError(let expected, let got):
-            res = "Syntax error\nexpected: \n\t" + expected.flatMap( { "'" + $0 + "'" } ).joined(separator: "\n\t") + "\nbut got: \n\t'\(got)'"
+            res = """
+                Syntax error
+                expected:
+                    \(expected.flatMap({ "'" + $0 + "'" }).joined(separator: "\n\t"))
+                but got:
+                    '\(got)'
+                """
         case .expressionError:
             res = "Expression error"
         case .evaluationError(let infix, let message):
@@ -39,11 +45,14 @@ public struct NutParserError: Error, CustomStringConvertible {
         case .missingValue(let name):
             res = "Missing value for \(name)"
         case .wrongValue(let name, let expected, let got):
-            res = "Wrong value for \(name), expected: '\(expected)' but got '\(String(describing: got))'"
+            res = "Wrong value for \(name), expected: '\(expected)' "
+                + "but got '\(String(describing: got))'"
         case .wrongSimpleVariable(let name, let command):
-            res = "Variable name '\(name)' in '\(command)' does not match regular expression '[a-zA-Z][a-zA-Z0-9]*'"
+            res = "Variable name '\(name)' in '\(command)' does not match "
+                + "regular expression '[a-zA-Z][a-zA-Z0-9]*'"
         case .wrongChainedVariable(let name, let command):
-            res = "Variable name '\(name)' in '\(command)' does not match regular expression '[a-zA-Z][a-zA-Z0-9]*(\\.[a-zA-Z][a-zA-Z0-9]*)*'"
+            res = "Variable name '\(name)' in '\(command)' does not match "
+                + "regular expression '[a-zA-Z][a-zA-Z0-9]*(\\.[a-zA-Z][a-zA-Z0-9]*)*'"
         case .unexpectedBlockEnd:
             res = "Unexpected '\\}'"
         }

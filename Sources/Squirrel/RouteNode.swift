@@ -24,7 +24,12 @@ class RouteNode {
         self.route = route
     }
 
-    func addNode(routes: [String], method: HTTPHeaders.Method, handler: @escaping AnyResponseHandler) throws {
+    func addNode(
+        routes: [String],
+        method: HTTPHeaders.Method,
+        handler: @escaping AnyResponseHandler)
+        throws {
+
         guard routes.count > 0, let firstElem = routes.first else {
             log.error("Fatal error in adding routes, routes variable is empty")
             throw RouteError(kind: .addNodeError)
@@ -73,7 +78,11 @@ class RouteNode {
         }
     }
 
-    private func setDefault(method: HTTPHeaders.Method, handler: @escaping AnyResponseHandler) throws {
+    private func setDefault(
+        method: HTTPHeaders.Method,
+        handler: @escaping AnyResponseHandler)
+        throws {
+
         guard defaultHandlers[method] == nil else {
             throw RouteError(kind: .methodHandlerOverwrite)
         }
@@ -87,7 +96,9 @@ class RouteNode {
         values[method] = handler
     }
 
-    func findHandler(for method: HTTPHeaders.Method, in routes: [String]) throws -> AnyResponseHandler? {
+    func findHandler(for method: HTTPHeaders.Method, in routes: [String])
+        throws -> AnyResponseHandler? {
+
         guard routes.count > 0 else {
             return nil
         }
@@ -99,7 +110,9 @@ class RouteNode {
                 }
                 var methods: [HTTPHeaders.Method] = values.keys.flatMap({ $0 })
                 methods.append(contentsOf: defaultHandlers.keys.flatMap({ $0 }))
-                throw HTTPError(status: .notAllowed(allowed: methods), description: "Method is not allowed")
+                throw HTTPError(
+                    status: .notAllowed(allowed: methods),
+                    description: "Method is not allowed")
             }
             return handler
         }
@@ -107,7 +120,9 @@ class RouteNode {
         rs.remove(at: 0)
         for child in childrens {
             if child.route == rs.first! {
-                guard let handler = try child.findHandler(for: method, in: rs) ?? defaultHandlers[method] else {
+                guard let handler = try child.findHandler(for: method, in: rs)
+                    ?? defaultHandlers[method] else {
+
                     throw HTTPError(status: .notFound, description: "Not Found")
                 }
                 return handler

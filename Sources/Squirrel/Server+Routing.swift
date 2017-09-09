@@ -17,7 +17,9 @@ extension Server {
         responseManager.route(get: url, handler: handler)
     }
 
-    public func route<T>(get url: String, handler: @escaping (Request, T) throws -> Any) where T: Decodable{
+    public func route<T>(get url: String, handler: @escaping (Request, T) throws -> Any)
+        where T: Decodable {
+
         responseManager.route(get: url, handler: handler)
     }
 
@@ -25,7 +27,9 @@ extension Server {
         responseManager.route(get: url, handler: handler)
     }
 
-    public func route<T>(post url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
+    public func route<T>(post url: String, handler: @escaping (T) throws -> Any)
+        where T: Decodable {
+
         responseManager.route(post: url, handler: handler)
     }
 }

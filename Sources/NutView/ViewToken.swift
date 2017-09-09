@@ -12,7 +12,11 @@ struct ViewToken {
     let body: [NutTokenProtocol]
     let layout: NutLayoutProtocol?
 
-    init(name: String, head: [NutHeadProtocol] = [], body: [NutTokenProtocol], layout: NutLayoutProtocol? = nil) {
+    init(name: String,
+         head: [NutHeadProtocol] = [],
+         body: [NutTokenProtocol],
+         layout: NutLayoutProtocol? = nil) {
+
         self.name = name
         self.head = head
         self.body = body

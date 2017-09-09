@@ -7,8 +7,10 @@
 
 import PathKit
 
+/// Configuration class with *nut* and *fruit* directories
 public struct NutConfig {
     private init() {}
+
     public static var fruits = Path().absolute() + "Fruits"
 
     public static var nuts = Path().absolute() + "Nuts"
