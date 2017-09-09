@@ -23,12 +23,12 @@ class NutResolverTests: XCTestCase {
             NutConfig.fruits = Path() + "Tests/NutViewIntegrationTests/Resources/Fruits"
             NutConfig.nuts = Path() + "Tests/NutViewIntegrationTests/Resources/Nuts"
         #endif
-        try? NutConfig.fruits.mkpath()
+//        try? NutConfig.fruits.mkpath()
     }
     
     override func tearDown() {
         super.tearDown()
-        NutConfig.clearFruits(removeRootDirectory: true)
+//        NutConfig.clearFruits(removeRootDirectory: true)
     }
 
     func testSuccessResolingPosts() {
