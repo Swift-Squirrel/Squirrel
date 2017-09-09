@@ -55,12 +55,12 @@ class ViewTests: XCTestCase {
             NutConfig.nuts = Path() + "Tests/NutViewIntegrationTests/Resources/Nuts"
             expectedHTMLs = Path() + "Tests/NutViewIntegrationTests/Resources/ExpectedHTMLs"
         #endif
-        try? NutConfig.fruits.mkpath()
+//        try? NutConfig.fruits.mkpath()
     }
 
     override func tearDown() {
         super.tearDown()
-        NutConfig.clearFruits(removeRootDirectory: true)
+//        NutConfig.clearFruits(removeRootDirectory: true)
     }
 
     func testPosts() {
