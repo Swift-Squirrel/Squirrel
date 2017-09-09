@@ -27,17 +27,14 @@ let package = Package(
             dependencies: ["Squirrel"]),*/
         .target(
             name: "Squirrel",
-            dependencies: ["SquirrelView", "SquirrelConfig", "SquirrelJSONEncoding", "Socket"]),
+            dependencies: ["NutView", "SquirrelConfig", "SquirrelJSONEncoding", "Socket"]),
         .target(
-            name: "SquirrelView",
-            dependencies: ["SquirrelJSONEncoding", "NutView"]),
-        .target(
-                name: "NutView",
-                dependencies: ["SquirrelConfig", "SquirrelJSONEncoding", "Evaluation", "Regex"]),
+            name: "NutView",
+            dependencies: ["SquirrelJSONEncoding", "Evaluation", "Regex"]),
 
         .target(
             name: "SquirrelConfig",
-            dependencies: ["SquirrelConnector", "PathKit", "SwiftyBeaver", "Yams"]),
+            dependencies: ["SquirrelConnector", "PathKit", "SwiftyBeaver", "NutView", "Yams"]),
         .target(
             name: "SquirrelJSONEncoding",
             dependencies: ["SquirrelConnector"]),
@@ -47,6 +44,12 @@ let package = Package(
             dependencies: ["SquirrelJSONEncoding", "Test"]),
         .testTarget(
             name: "SquirrelTests",
-            dependencies: ["Squirrel", "Test"])
-        ]
+            dependencies: ["Squirrel", "Test"]),
+        .testTarget(
+            name: "NutViewTests",
+            dependencies: ["NutView"]),
+        .testTarget(
+            name: "NutViewIntegrationTests",
+            dependencies: ["NutView"])
+    ]
 )

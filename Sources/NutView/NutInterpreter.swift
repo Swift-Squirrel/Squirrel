@@ -10,19 +10,19 @@ import Foundation
 import Evaluation
 import Regex
 
-public protocol NutInterpreterProtocol {
+protocol NutInterpreterProtocol {
     init(view name: String, with data: [String : Any])
 
     func resolve() throws -> String
 }
 
-public class NutInterpreter: NutInterpreterProtocol {
+class NutInterpreter: NutInterpreterProtocol {
     private let name: String
     private var data: [String: Any]
     private let resolver: NutResolverProtocol
     private let viewName: String
 
-    public required init(view name: String, with data: [String: Any]) {
+    required init(view name: String, with data: [String: Any]) {
         self.name = name
         self.data = data
         self.resolver = NutResolver.sharedInstance
@@ -30,7 +30,7 @@ public class NutInterpreter: NutInterpreterProtocol {
     }
 
 
-    public func resolve() throws -> String {
+    func resolve() throws -> String {
         let viewToken = try resolver.viewToken(for: viewName)
         do {
             var result: String

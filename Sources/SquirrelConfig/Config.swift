@@ -11,6 +11,7 @@ import SquirrelConnector
 import PathKit
 import SwiftyBeaver
 import Yams
+import NutView
 
 public let squirrelConfig = Config.sharedInstance
 
@@ -116,6 +117,9 @@ public class Config {
 
         initLog()
         createDirectories()
+
+        NutConfig.fruits = storageViews
+        NutConfig.nuts = views
     }
 
 

@@ -77,7 +77,7 @@ Public/
 Storage/
 .squirrel
 Sources/App
-Resources/
+/Resources/
 .squirrel.yaml
 
 # Testing

@@ -16,7 +16,7 @@ import Foundation
 import Socket
 import Dispatch
 import PathKit
-import SquirrelView
+import NutView
 import SquirrelConfig
 
 open class Server {

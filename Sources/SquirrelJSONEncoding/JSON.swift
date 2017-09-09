@@ -169,12 +169,12 @@ extension JSON: Equatable {
             return false
         }
         switch ldata {
-        case let bool as Bool:
-            return bool == rdata as? Bool
         case let int as Int:
             return int == rdata as? Int
         case let double as Double:
             return double == rdata as? Double
+        case let bool as Bool:
+            return bool == rdata as? Bool
         case let string as String:
             return string == rdata as? String
         case is [Any]:

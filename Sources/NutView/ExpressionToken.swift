@@ -23,7 +23,7 @@ struct ExpressionToken: NutCommandTokenProtocol {
     }
 
     var serialized: [String: Any] {
-        return ["id": id, "infix": infix]
+        return ["id": id, "infix": infix, "row": row]
     }
 }
 
@@ -42,7 +42,7 @@ struct RawExpressionToken: NutCommandTokenProtocol {
     }
 
     var serialized: [String: Any] {
-        return ["id": id, "infix": infix]
+        return ["id": id, "infix": infix, "row": row]
     }
 }
 

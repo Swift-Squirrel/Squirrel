@@ -175,7 +175,7 @@ class RouteThreeTests: XCTestCase {
 
     static var allTests = [
         ("testRootNode", testRootNode),
-        ("testRootThree", testRouteThree),
+        ("testRouteThree", testRouteThree)
     ]
 
 }

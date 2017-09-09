@@ -39,31 +39,81 @@ jobs:
     <<: *default_docker
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+            - build-cache-{{ .Branch }}
+            - build-cache
       - attach_workspace:
           at: .build
       - run:
           name: Build for debug
           command: swift build
+      - save_cache:
+          key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+          paths:
+            - .build/
+            - Package.resolved
 
   build_release:
     <<: *default_docker
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+            - build-cache-{{ .Branch }}
+            - build-cache
       - attach_workspace:
           at: .build
       - run:
           name: Build for release
           command: swift build
+      - save_cache:
+          key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+          paths:
+            - .build/
+            - Package.resolved
 
-  test:
+  test_parallel:
     <<: *test_docker
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+            - build-cache-{{ .Branch }}
+            - build-cache
       - attach_workspace:
           at: .build
       - run:
           name: Run unit tests
           command: swift test --parallel
+      - save_cache:
+          key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+          paths:
+            - .build/
+            - Package.resolved
+
+  test:
+    <<: *test_docker
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+            - build-cache-{{ .Branch }}
+            - build-cache
+      - attach_workspace:
+          at: .build
+      - run:
+          name: Run unit tests
+          command: swift test
+      - save_cache:
+          key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+          paths:
+            - .build/
+            - Package.resolved
 
 workflows:
   version: 2
@@ -77,6 +127,10 @@ workflows:
           requires:
             - resolve
       - test:
+          requires:
+            - build_debug
+            - build_release
+      - test_parallel:
           requires:
             - build_debug
             - build_release
