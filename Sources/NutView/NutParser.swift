@@ -877,12 +877,12 @@ extension NutParser {
 
 extension NutParser {
     private func checkSimple(variable: String) -> Bool {
-        let regex = Regex("^\\s*[a-zA-Z][a-zA-Z0-9]*\\s*$")
+        let regex = Regex("^[a-zA-Z]\\w*$")
         return regex.matches(variable)
     }
 
     private func checkChained(variable: String) -> Bool {
-        let regex = Regex("^\\s*[a-zA-Z][a-zA-Z0-9]*(?:\\.[a-zA-Z][a-zA-Z0-9]*)*\\s*$")
+        let regex = Regex("^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$")
         return regex.matches(variable)
     }
 }

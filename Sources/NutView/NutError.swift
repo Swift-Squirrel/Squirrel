@@ -67,10 +67,10 @@ public struct NutParserError: Error, CustomStringConvertible {
                 + "but got '\(String(describing: got))'"
         case .wrongSimpleVariable(let name, let command):
             res = "Variable name '\(name)' in '\(command)' does not match "
-                + "regular expression '[a-zA-Z][a-zA-Z0-9]*'"
+                + "regular expression '[a-zA-Z]\\w*'"
         case .wrongChainedVariable(let name, let command):
             res = "Variable name '\(name)' in '\(command)' does not match "
-                + "regular expression '[a-zA-Z][a-zA-Z0-9]*(\\.[a-zA-Z][a-zA-Z0-9]*)*'"
+                + "regular expression '[a-zA-Z]\\w*(\\.[a-zA-Z]\\w*)*'"
         case .unexpectedBlockEnd:
             res = "Unexpected '\\}'"
         }
