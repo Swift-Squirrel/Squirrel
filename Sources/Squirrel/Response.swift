@@ -159,7 +159,7 @@ open class Response {
                     to: HTTPHeaders.ContentType.Text.plain.rawValue)
             }
         } else {
-            // TODO
+            // TODO Binary data
             setHeader(
                 for: HTTPHeaders.ContentType.contentType,
                 to: HTTPHeaders.ContentType.Text.plain.rawValue)
