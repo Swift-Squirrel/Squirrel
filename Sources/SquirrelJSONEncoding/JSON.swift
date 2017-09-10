@@ -171,9 +171,17 @@ extension JSON {
     }
 }
 
+// MARK: - Any
+public extension JSON {
+    /// Any
+    public var any: Any? {
+        return data
+    }
+}
+
 // MARK: - Additive functions
 public extension JSON {
-    /// Check if JSOn represents nil
+    /// Check if JSON represents nil
     public var isNil: Bool {
         return data == nil
     }

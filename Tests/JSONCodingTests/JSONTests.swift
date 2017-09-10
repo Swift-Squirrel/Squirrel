@@ -192,6 +192,26 @@ class JSONTests: XCTestCase {
         XCTAssert(double.boolValue == false)
     }
 
+    func testAny() {
+        guard let json = try? JSON(string: JSONS.simple) else {
+            fail()
+            return
+        }
+
+        XCTAssertNotNil(json.any)
+
+        guard let data = json.any as? [String: Any] else {
+            XCTFail()
+            return
+        }//{\"id\":1,\"name\":\"Thom\",\"age\":21}
+
+        XCTAssertEqual(data["id"] as? Int, 1)
+        XCTAssertEqual(data["name"] as? String, "Thom")
+        XCTAssertEqual(data["age"] as? Int, 21)
+
+        XCTAssertNil(JSON(from: nil).any)
+    }
+
     func testNilJSON() {
         let json = JSON(from: nil)
 
@@ -240,6 +260,7 @@ class JSONTests: XCTestCase {
         ("testInt", testInt),
         ("testDouble", testDouble),
         ("testBool", testBool),
+        ("testAny", testAny),
         ("testNilJSON", testNilJSON),
         ("testIsEmpty", testIsEmpty),
         ("testEq", testEq)
