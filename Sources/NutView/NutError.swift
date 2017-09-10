@@ -6,7 +6,21 @@
 //
 //
 
+/// Nut parser errors
 public struct NutParserError: Error, CustomStringConvertible {
+    /// Error kinds
+    ///
+    /// - unknownInternalError: Something unexpected happened
+    /// - unexpectedEnd: Parser expect specific token but EOF found
+    /// - unexpectedBlockEnd: Parser does not expect '\}'
+    /// - syntaxError: Syntax error
+    /// - expressionError: Error while evaluating expression
+    /// - missingValue: Missing value for variable
+    /// - evaluationError: Error while evaluating expression
+    /// - wrongValue: Parser expect different type of fiven value
+    /// - wrongSimpleVariable: Parser expect common variable name `[a-zA-Z][a-zA-Z0-9]*`
+    /// - wrongChainedVariable: Parser expect dot convention variable name
+    ///    `[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9]*)*`
     public enum ErrorKind {
         case unknownInternalError(commandName: String)
         case unexpectedEnd(reading: String)
@@ -19,10 +33,14 @@ public struct NutParserError: Error, CustomStringConvertible {
         case wrongSimpleVariable(name: String, in: String)
         case wrongChainedVariable(name: String, in: String)
     }
+    /// Kind of error
     public let kind: ErrorKind
+    /// Name of file
     public var name: String? = nil
+    /// row of error
     public let row: Int
     private let _description: String?
+    /// Description
     public var description: String {
         var res = ""
         switch kind {
@@ -31,7 +49,13 @@ public struct NutParserError: Error, CustomStringConvertible {
         case .unexpectedEnd(let reading):
             res = "Unexpected end of file while reading: \(reading)"
         case .syntaxError(let expected, let got):
-            res = "Syntax error\nexpected: \n\t" + expected.flatMap( { "'" + $0 + "'" } ).joined(separator: "\n\t") + "\nbut got: \n\t'\(got)'"
+            res = """
+                Syntax error
+                expected:
+                    \(expected.flatMap({ "'" + $0 + "'" }).joined(separator: "\n\t"))
+                but got:
+                    '\(got)'
+                """
         case .expressionError:
             res = "Expression error"
         case .evaluationError(let infix, let message):
@@ -39,11 +63,14 @@ public struct NutParserError: Error, CustomStringConvertible {
         case .missingValue(let name):
             res = "Missing value for \(name)"
         case .wrongValue(let name, let expected, let got):
-            res = "Wrong value for \(name), expected: '\(expected)' but got '\(String(describing: got))'"
+            res = "Wrong value for \(name), expected: '\(expected)' "
+                + "but got '\(String(describing: got))'"
         case .wrongSimpleVariable(let name, let command):
-            res = "Variable name '\(name)' in '\(command)' does not match regular expression '[a-zA-Z][a-zA-Z0-9]*'"
+            res = "Variable name '\(name)' in '\(command)' does not match "
+                + "regular expression '[a-zA-Z][a-zA-Z0-9]*'"
         case .wrongChainedVariable(let name, let command):
-            res = "Variable name '\(name)' in '\(command)' does not match regular expression '[a-zA-Z][a-zA-Z0-9]*(\\.[a-zA-Z][a-zA-Z0-9]*)*'"
+            res = "Variable name '\(name)' in '\(command)' does not match "
+                + "regular expression '[a-zA-Z][a-zA-Z0-9]*(\\.[a-zA-Z][a-zA-Z0-9]*)*'"
         case .unexpectedBlockEnd:
             res = "Unexpected '\\}'"
         }
@@ -64,13 +91,19 @@ public struct NutParserError: Error, CustomStringConvertible {
     }
 }
 
+/// Error struct for common errors in NutView
 public struct NutError: Error, CustomStringConvertible {
+    /// Error kinds
+    ///
+    /// - notExists: File does not exists
     public enum ErrorKind {
         case notExists(name: String)
     }
 
+    /// Kind of error
     public let kind: ErrorKind
     private let _description: String?
+    /// Description
     public var description: String {
         var res = ""
         switch kind {

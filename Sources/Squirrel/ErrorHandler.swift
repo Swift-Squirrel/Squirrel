@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Error handler protocol
 public protocol ErrorHandlerProtocol {
     func getResponse(for error: Error) -> Response?
 }
@@ -30,7 +31,9 @@ struct BasicErrors: ErrorHandlerProtocol {
     }
 }
 
-class ErrorHandler {
+/// Error handler singleton class
+public class ErrorHandler {
+    /// Singleton instance
     public static let sharedInstance = ErrorHandler()
 
     private init() {
@@ -38,6 +41,9 @@ class ErrorHandler {
     }
     private var handlers = [ErrorHandlerProtocol]()
 
+    /// Add error hanler as firt in array of erro handlers
+    ///
+    /// - Parameter handler: handler to insert
     public func addErrorHandler(handler: ErrorHandlerProtocol) {
         handlers.insert(handler, at: 0)
     }
@@ -58,8 +64,11 @@ class ErrorHandler {
     func response(for error: Error) -> Response {
         guard let response = getErrorResponse(for: error) else {
             let description = String(describing: error)
-//            let escaped = convertToSpecialCharacters(string: description)
-            let body = "Internal error has occured, nothing to handle it.\nError description:\n'\(description)'".data(using: .utf8)!
+            let body = """
+                Internal error has occured, nothing to handle it.
+                Error description:
+                    '\(description)'
+                """.data(using: .utf8)!
             return Response(status: .internalError, body: body)
         }
         return response
@@ -75,9 +84,13 @@ func convertToSpecialCharacters(string: String) -> String {
         "&gt;" : ">",
         "&quot;" : "\"",
         "&apos;" : "'"
-    ];
+    ]
     for (escaped_char, unescaped_char) in char_dictionary {
-        newString = newString.replacingOccurrences(of: unescaped_char, with: escaped_char, options: NSString.CompareOptions.literal, range: nil)
+        newString = newString.replacingOccurrences(
+            of: unescaped_char,
+            with: escaped_char,
+            options: NSString.CompareOptions.literal,
+            range: nil)
     }
     return newString
 }

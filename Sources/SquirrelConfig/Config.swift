@@ -13,8 +13,10 @@ import SwiftyBeaver
 import Yams
 import NutView
 
+/// Squirrel config shared instance
 public let squirrelConfig = Config.sharedInstance
 
+/// Squirrel config class
 public class Config {
     private var _serverRoot: Path = Path().absolute()
     private let _webRoot: Path
@@ -31,46 +33,58 @@ public class Config {
     private let _assets: Path
     private let _publicStorage: Path
 
+    /// Logger
     public let log = SwiftyBeaver.self
 
     private let logFileName = "server.log"
 
+    /// Log file desctination
     public var logFile: Path {
         return _logFile
     }
 
+    /// Server root destination
     public var serverRoot: Path {
         return _serverRoot
     }
+    /// Webroot destination
     public var webRoot: Path {
         return _webRoot
     }
+    /// Cache destination
     public var cache: Path {
         return _cache
     }
+    /// HTTP Requests port
     public var port: UInt16 {
         return _port
     }
+    /// If is allowed directory browsing
     public var isAllowedDirBrowsing: Bool {
         return _isAllowedDirBrowsing
     }
 
+    /// Storage views destination
     public var storageViews: Path {
         return _storageViews
     }
 
+    /// Assets destination
     public var assets: Path {
         return _assets
     }
 
+    /// Views *.nut* destination
     public var views: Path {
         return _viewsDir
     }
 
+    /// Public storage destination
     public var publicStorage: Path {
         return _publicStorage
     }
 
+    /// Shared instance
     public static let sharedInstance = Config()
 
     private init() {
@@ -144,10 +158,17 @@ public class Config {
         }
         let res: Bool
         if let user = dbData.user {
-            res = Connector.setConnector(username: user.username, password: user.password,
-                                   host: dbData.host, port: dbData.port, dbname: dbData.dbname)
+            res = Connector.setConnector(
+                username: user.username,
+                password: user.password,
+               host: dbData.host,
+               port: dbData.port,
+               dbname: dbData.dbname)
         } else {
-            res = Connector.setConnector(host: dbData.host, port: dbData.port, dbname: dbData.dbname)
+            res = Connector.setConnector(
+                host: dbData.host,
+                port: dbData.port,
+                dbname: dbData.dbname)
         }
         if res {
             log.info("Connected to database with: '\(dbData)'")
@@ -173,7 +194,8 @@ public class Config {
         let dbname = (dbDataYaml["dbname"] as? String) ?? "squirrel"
         let port = (dbDataYaml["port"] as? Int) ?? 27017
         let user: DBCredentials.UserCredentails?
-        if let username = dbDataYaml["username"] as? String, let password = dbDataYaml["password"] as? String {
+        if let username = dbDataYaml["username"] as? String,
+            let password = dbDataYaml["password"] as? String {
             user = DBCredentials.UserCredentails(username: username, password: password)
         } else {
             user = nil
@@ -203,11 +225,14 @@ public class Config {
         try? dir.mkpath()
         log.info("creating folder: \(dir.string)")
     }
-    
+
     private func createDir(url: String) {
         let fileManager = FileManager.default
         if !fileManager.fileExists(atPath: url) {
-            try? fileManager.createDirectory(atPath: url, withIntermediateDirectories: true) // TODO handle
+            try? fileManager.createDirectory(
+                atPath: url,
+                withIntermediateDirectories: true) // TODO handle
+
             log.info("creating folder: \(url)")
         }
     }

@@ -28,7 +28,7 @@ protocol NutSubviewProtocol: NutViewProtocol {
 }
 
 protocol NutLayoutProtocol: NutViewProtocol {
-    
+
 }
 
 protocol NutHeadProtocol: NutCommandTokenProtocol {
@@ -146,12 +146,17 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
     }
 
     var serialized: [String: Any] {
-        var res: [String: Any] = ["id": id, "condition": condition, "then": thenBlock.map( { $0.serialized }), "row": row]
+        var res: [String: Any] = [
+            "id": id,
+            "condition": condition,
+            "then": thenBlock.map({ $0.serialized }),
+            "row": row
+        ]
         if let variable = self.variable {
             res["variable"] = variable
         }
         if let elseBlock = self.elseBlock {
-            res["else"] = elseBlock.map( { $0.serialized })
+            res["else"] = elseBlock.map({ $0.serialized })
         }
         return res
     }
@@ -209,16 +214,20 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
             variable = nil
             id = "else if"
         }
-
     }
 
     var serialized: [String: Any] {
-        var res: [String: Any] = ["id": id, "condition": condition, "then": thenBlock.map( { $0.serialized }), "row": row]
+        var res: [String: Any] = [
+            "id": id,
+            "condition": condition,
+            "then": thenBlock.map({ $0.serialized }),
+            "row": row
+        ]
         if let variable = self.variable {
             res["variable"] = variable
         }
         if let elseBlock = self.elseBlock {
-            res["else"] = elseBlock.map( { $0.serialized })
+            res["else"] = elseBlock.map({ $0.serialized })
         }
         return res
     }
@@ -305,7 +314,13 @@ struct ForInToken: NutCommandTokenProtocol {
     }
 
     var serialized: [String: Any] {
-        var res: [String: Any] = ["id": id, "variable": variable, "array": array, "body": body.map({ $0.serialized }), "row": row]
+        var res: [String: Any] = [
+            "id": id,
+            "variable": variable,
+            "array": array,
+            "body": body.map({ $0.serialized }),
+            "row": row
+        ]
         if let key = self.key {
             res["key"] = key
         }

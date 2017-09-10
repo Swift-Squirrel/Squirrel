@@ -13,7 +13,8 @@ typealias ResponseHandler = ((Request) -> Response)
 
 typealias AnyResponseHandler = ((Request) throws -> Any)
 
-public class Response {
+/// <#Description#>
+open class Response {
 
     private let routeTree = RouteTree()
 
@@ -27,10 +28,14 @@ public class Response {
 
     private var body = Data()
 
+    /// Body length
     var bodyLenght: Int {
         return (Array(body)).count
     }
 
+    /// Construct response with HTTP status
+    ///
+    /// - Parameter status: HTTP Status
     public init(status: HTTPStatus) {
         self.status = status
 
@@ -52,6 +57,12 @@ public class Response {
         }
     }
 
+   /// Construct response with HTTP status, headers and body
+   ///
+   /// - Parameters:
+   ///   - status: HTTP Status
+   ///   - headers: HTTP Headers
+   ///   - body: HTTP Body
    public convenience init(status: HTTPStatus = .ok, headers: [String: String] = [:], body: Data) {
         self.init(status: status)
 
@@ -76,10 +87,22 @@ public class Response {
         }
     }
 
-    func setHeader(for key: String, to value: String) {
+    /// Set HTTP Header
+    ///
+    /// - Parameters:
+    ///   - key: Header Key
+    ///   - value: Header Value
+    public func setHeader(for key: String, to value: String) {
         headers[key] = value
     }
 
+    // swiftlint:disable cyclomatic_complexity
+    // swiftlint:disable function_body_length
+
+    /// Construct from file
+    ///
+    /// - Parameter path: File path
+    /// - Throws: `HTTPError`
     public init(pathToFile path: Path) throws {
 
         status = .ok
@@ -101,29 +124,49 @@ public class Response {
                     to: HTTPHeaders.ContentType.Application.json.rawValue
                 )
             case "js":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Application.js.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Application.js.rawValue)
 
             case "jpg", "jpeg":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.jpeg.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Image.jpeg.rawValue)
             case "png":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.png.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Image.png.rawValue)
             case "svg":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Image.svg.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Image.svg.rawValue)
 
             case "css":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.css.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Text.css.rawValue)
             case "html":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.html.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Text.html.rawValue)
             case "txt":
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.plain.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Text.plain.rawValue)
             default:
-                setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.plain.rawValue)
+                setHeader(
+                    for: HTTPHeaders.ContentType.contentType,
+                    to: HTTPHeaders.ContentType.Text.plain.rawValue)
             }
         } else {
-            // TODO
-            setHeader(for: HTTPHeaders.ContentType.contentType, to: HTTPHeaders.ContentType.Text.plain.rawValue)
+            // TODO Binary data
+            setHeader(
+                for: HTTPHeaders.ContentType.contentType,
+                to: HTTPHeaders.ContentType.Text.plain.rawValue)
         }
     }
+    // swiftlint:enable cyclomatic_complexity
+    // swiftlint:enable function_body_length
 
     func responeHandler() -> ResponseHandler {
         return {

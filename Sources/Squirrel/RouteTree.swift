@@ -11,11 +11,16 @@ import Foundation
 class RouteTree {
     private var root: RouteNode? = nil
 
-    func add(route: String, forMethod method: HTTPHeaders.Method, handler: @escaping AnyResponseHandler) {
+    func add(
+        route: String,
+        forMethod method: HTTPHeaders.Method,
+        handler: @escaping AnyResponseHandler) {
+
         log.debug("Adding route for method \(method.rawValue) in route: \(route)")
 
         guard !(route.contains("/./") || !route.hasPrefix("/") || route.contains("/../")) else {
-            log.error("Route can not contains with \"/./\" or \"/../\" and must has prefix with \"/\"")
+            log.error("Route can not contains with \"/./\""
+                + " or \"/../\" and must has prefix with \"/\"")
             exit(1)
         }
 
@@ -51,7 +56,11 @@ class RouteTree {
         }
     }
 
-    func findHandler(for method: HTTPHeaders.Method, in route: String) throws -> AnyResponseHandler? {
+    func findHandler(
+        for method: HTTPHeaders.Method,
+        in route: String)
+        throws -> AnyResponseHandler? {
+
         guard route.hasPrefix("/") else {
             log.error("Route is without prefix \"/\"")
             throw HTTPError(status: .badRequest, description: "Route is without prefix '/'")

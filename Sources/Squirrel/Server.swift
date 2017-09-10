@@ -19,6 +19,7 @@ import PathKit
 import NutView
 import SquirrelConfig
 
+/// Server class
 open class Server {
 
     private let port: UInt16
@@ -30,7 +31,15 @@ open class Server {
 
     let responseManager = ResponseManager.sharedInstance
 
-    public init(port: UInt16 = Config.sharedInstance.port, serverRoot root: Path = Config.sharedInstance.serverRoot) {
+    /// Construct server
+    ///
+    /// - Parameters:
+    ///   - port: Port for HTTP requests
+    ///   - root: Root directory of server
+    public init(
+        port: UInt16 = Config.sharedInstance.port,
+        serverRoot root: Path = Config.sharedInstance.serverRoot) {
+
         self.port = port
         self.serverRoot = root
 
@@ -43,6 +52,9 @@ open class Server {
         listenSocket?.close()
     }
 
+    /// Run server and start to listen on given `port` from `init(port:root:)`
+    ///
+    /// - Throws: <#throws value description#>
     public func run() throws {
         try squirrelConfig.setConnector()
 
@@ -134,7 +146,10 @@ open class Server {
         }
         let path: Path
         if (Config.sharedInstance.webRoot + "Storage").isSymlink
-            && String(Path(request.path).normalize().string.split(separator: "/", maxSplits: 1).first!) == "Storage" {
+            && String(
+                Path(request.path).normalize().string.split(separator: "/", maxSplits: 1).first!)
+            == "Storage" {
+
             var a = Path(request.path).normalize().string.split(separator: "/")
             a.removeFirst()
             path = (Config.sharedInstance.publicStorage + a.joined(separator: "/")).normalize()
@@ -162,11 +177,15 @@ open class Server {
                 return try Response(pathToFile: index).responeHandler()
             }
             guard Config.sharedInstance.isAllowedDirBrowsing else {
-                throw HTTPError(status: .forbidden, description: "Directory browsing is not allowed")
+                throw HTTPError(
+                    status: .forbidden,
+                    description: "Directory browsing is not allowed")
             }
-            // TODO
+            // TODO Directory browsing
             return Response(
-                headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue],
+                headers: [
+                    HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue
+                ],
                 body: "Not implemented".data(using: .utf8)!
             ).responeHandler()
         }
