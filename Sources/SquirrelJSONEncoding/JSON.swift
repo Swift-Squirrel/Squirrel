@@ -16,7 +16,7 @@ public struct JSON {
     /// - Throws: Parsing errors
     public init(string: String) throws {
         guard let data = JSONCoding.toJSON(json: string) else {
-            throw JSONError(kind: .parseError, message: "Corrupted content")
+            throw JSONError(kind: .parseError, description: "Corrupted content")
         }
         self.data = data
     }

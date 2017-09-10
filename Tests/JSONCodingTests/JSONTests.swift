@@ -36,7 +36,7 @@ class JSONTests: XCTestCase {
         } catch let error {
             if let err = error as? JSONError {
                 if err.kind != JSONError.ErrorKind.parseError {
-                    fail(err.message)
+                    fail(err.description)
                 }
             } else {
                 fail(String(describing: error))
@@ -47,7 +47,7 @@ class JSONTests: XCTestCase {
         } catch let error {
             if let err = error as? JSONError {
                 if err.kind != JSONError.ErrorKind.parseError {
-                    fail(err.message)
+                    fail(err.description)
                 }
             } else {
                 fail(String(describing: error))
@@ -58,7 +58,7 @@ class JSONTests: XCTestCase {
         } catch let error {
             if let err = error as? JSONError {
                 if err.kind != JSONError.ErrorKind.parseError {
-                    fail(err.message)
+                    fail(err.description)
                 }
             } else {
                 fail(String(describing: error))
@@ -203,7 +203,7 @@ class JSONTests: XCTestCase {
         guard let data = json.any as? [String: Any] else {
             XCTFail()
             return
-        }//{\"id\":1,\"name\":\"Thom\",\"age\":21}
+        }
 
         XCTAssertEqual(data["id"] as? Int, 1)
         XCTAssertEqual(data["name"] as? String, "Thom")

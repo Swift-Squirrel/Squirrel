@@ -49,7 +49,7 @@ public extension Response {
         }
 
         guard JSONCoding.isValid(json: json) else {
-            throw JSONError(kind: .parseError, message: "'\(json)' is not valid json format")
+            throw JSONError(kind: .parseError, description: "'\(json)' is not valid json format")
         }
 
         self.init(

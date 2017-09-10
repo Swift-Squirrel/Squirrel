@@ -7,7 +7,7 @@
 //
 
 /// JSON Error
-public struct JSONError: Error {
+public struct JSONError: Error, CustomStringConvertible {
     /// Error kinds
     ///
     /// - parseError: Parser error
@@ -22,15 +22,15 @@ public struct JSONError: Error {
     /// Error kind
     public let kind: ErrorKind
     /// Description
-    public let message: String
+    public let description: String
 
     /// Construct error
     ///
     /// - Parameters:
     ///   - kind: Error kind
     ///   - message: Description
-    public init(kind: ErrorKind, message: String) {
+    public init(kind: ErrorKind, description: String) {
         self.kind = kind
-        self.message = message
+        self.description = description
     }
 }

@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  SquirrelErrorProtocol.swift
 //  Squirrel
 //
 //  Created by Filip Klembara on 8/4/17.
