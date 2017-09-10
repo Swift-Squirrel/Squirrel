@@ -234,7 +234,13 @@ extension NutInterpreter {
                 kind: .wrongValue(for: "Date(_:format:)", expected: "Double", got: dateStr),
                 row: dateToken.date.row)
         }
-        let formatStr = try parse(expression: dateToken.format)
+        let format: ExpressionToken
+        if dateToken.format == nil {
+            format = ExpressionToken(infix: "\"\(NutConfig.dateDefaultFormat)\"", row: dateToken.row)!
+        } else {
+            format = dateToken.format!
+        }
+        let formatStr = try parse(expression: format)
         let date = Date(timeIntervalSince1970: dateMiliseconds)
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = formatStr

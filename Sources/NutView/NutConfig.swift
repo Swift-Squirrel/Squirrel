@@ -17,6 +17,9 @@ public struct NutConfig {
     /// Directory with *.nut* files
     public static var nuts = Path().absolute() + "Nuts"
 
+    /// Default date format
+    public static var dateDefaultFormat = "MMM dd yyyy"
+
     /// Clears directory with *.fruit* files
     ///
     /// - Note: This will always remove root directory but if

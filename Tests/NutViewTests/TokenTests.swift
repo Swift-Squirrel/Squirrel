@@ -52,7 +52,7 @@ class TokenTests: XCTestCase {
                 row: 5)!, row: 5)
 
         XCTAssert(token.date.infix == "date")
-        XCTAssert(token.format.infix == "\"MMM dd YY\"")
+        XCTAssert(token.format?.infix == "\"MMM dd YY\"")
         XCTAssert(token.id == "date")
         XCTAssert(token.row == 5)
 
@@ -69,14 +69,13 @@ class TokenTests: XCTestCase {
 
 
         XCTAssert(token1.date.infix == "date1")
-        XCTAssert(token1.format.infix == "\"MMM dd yyyy\"")
+        XCTAssertNil(token1.format)
         XCTAssert(token1.id == "date")
         XCTAssert(token1.row == 1)
 
         let serialized1 = JSON(from: token1.serialized)
         let expected1 = try! JSON(string: """
-            {"id": "date","date": {"id": "expression","infix": "date1","row": 1},
-            "format": {"id": "expression","infix": "\\\"MMM dd yyyy\\\"","row": 1},"row": 1}
+            {"id": "date","date": {"id": "expression","infix": "date1","row": 1},"row": 1}
             """)
 
         XCTAssert(serialized1["id"] == expected1["id"])
@@ -97,7 +96,7 @@ class TokenTests: XCTestCase {
                 row: 2)!, row: 2)
 
         XCTAssert(token2.date.infix == "date2")
-        XCTAssert(token2.format.infix == "\"MMM YY\"")
+        XCTAssert(token2.format?.infix == "\"MMM YY\"")
         XCTAssert(token2.id == "date")
         XCTAssert(token2.row == 2)
 
@@ -114,14 +113,13 @@ class TokenTests: XCTestCase {
 
 
         XCTAssert(token3.date.infix == "date19")
-        XCTAssert(token3.format.infix == "\"MMM dd yyyy\"")
+        XCTAssertNil(token3.format)
         XCTAssert(token3.id == "date")
         XCTAssert(token3.row == 10)
 
         let serialized3 = JSON(from: token3.serialized)
         let expected3 = try! JSON(string: """
-            {"id": "date","date": {"id": "expression","infix": "date19","row": 10},
-            "format": {"id": "expression","infix": "\\"MMM dd yyyy\\"","row": 10},"row": 10}
+            {"id": "date","date": {"id": "expression","infix": "date19","row": 10},"row": 10}
             """)
         XCTAssert(serialized3 == expected3, "serialized: \(String(describing: serialized3))\nexpected: \(String(describing: expected3))")
     }

@@ -76,24 +76,25 @@ struct DateToken: NutCommandTokenProtocol {
 
     let date: ExpressionToken
 
-    let format: ExpressionToken
+    let format: ExpressionToken?
 
     init(date: ExpressionToken, format: ExpressionToken? = nil, row: Int) {
         self.date = date
         self.row = row
-
-        if let format = format {
-            self.format = format
-        } else {
-            self.format = ExpressionToken(infix: "\"MMM dd yyyy\"", row: row)!
-        }
+        self.format = format
     }
 
     var serialized: [String : Any] {
-        return ["id": id, "date": date.serialized, "format": format.serialized, "row": row]
+        var res: [String: Any] = [
+            "id": id,
+            "date": date.serialized,
+            "row": row
+        ]
+        if let format = self.format {
+            res["format"] = format.serialized
+        }
+        return res
     }
-
-
 }
 
 struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {

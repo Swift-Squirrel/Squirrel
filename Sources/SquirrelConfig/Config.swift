@@ -109,6 +109,11 @@ public class Config {
                         _port = UInt16(port)
                     }
                 }
+                if let nutView = yaml["nut_view"] as? [String: Any] {
+                    if let defaultDate = nutView["default_date_format"] as? String {
+                        NutConfig.dateDefaultFormat = defaultDate
+                    }
+                }
             } catch {
                 print("config.yaml is not valid, using default values")
             }
