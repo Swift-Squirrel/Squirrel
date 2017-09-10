@@ -12,6 +12,7 @@ import PathKit
 import SwiftyBeaver
 import Yams
 import NutView
+import Cache
 
 /// Squirrel config shared instance
 public let squirrelConfig = Config.sharedInstance
@@ -89,6 +90,9 @@ public class Config {
 
     private init() {
         let configFile = Path().absolute() + ".squirrel.yaml"
+        var cacheStorage: String? = nil
+        var cacheMaxSize: UInt = 0
+        var cacheExpiry: Expiry = .never
         if configFile.exists {
             _configFile = configFile
             do {
@@ -96,6 +100,20 @@ public class Config {
                 guard let yaml = try Yams.load(yaml: content) as? [String: Any] else {
                     throw ConfigError(kind: .yamlSyntax)
                 }
+
+                if let cacheYaml = yaml["cache"] as? [String: Any] {
+                    cacheStorage = cacheYaml["storage"] as? String
+                    if let exp = cacheYaml["expiry"] as? [String: Any] {
+                        if let seconds = exp["seconds"] as? Int {
+                            let interval = TimeInterval(seconds)
+                            cacheExpiry = .seconds(interval)
+                        }
+                    }
+                    if let maxSize = cacheYaml["maximum_disk_size"] as? Int {
+                        cacheMaxSize = UInt(maxSize)
+                    }
+                }
+
                 if let serv = yaml["server"] as? [String: Any] {
                     if let serverRoot = serv["serverRoot"] as? String {
                         let sr = Path(serverRoot).absolute()
@@ -117,7 +135,7 @@ public class Config {
         }
 
         _webRoot = _serverRoot + "Public"
-        _cache = _serverRoot + "Storage/Cache"
+        _cache = _serverRoot + (cacheStorage ?? "Storage/Cache")
         _storage = _serverRoot + "Storage"
         _publicStorage = _storage + "Public"
         _logDir = _storage + "Logs"
@@ -134,6 +152,9 @@ public class Config {
 
         NutConfig.fruits = storageViews
         NutConfig.nuts = views
+        let cacheConfig = Cache.Config(expiry: cacheExpiry, maxDiskSize: cacheMaxSize, cacheDirectory: _cache.string)
+        NutConfig.NutViewCache.setNutViewCache(config: cacheConfig)
+        // TODO SquirrelConnector cache
     }
 
 

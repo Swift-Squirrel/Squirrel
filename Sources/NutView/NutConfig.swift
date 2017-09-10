@@ -45,7 +45,7 @@ public struct NutConfig {
         /// Set projection cache manager
         ///
         /// - Parameter specializedCache: Cache manager
-        public static func setNutViewCache(name: String, config: Config) {
+        public static func setNutViewCache(name: String = defaultName, config: Config) {
             cache = SpecializedCache(name: name, config: config)
         }
 
