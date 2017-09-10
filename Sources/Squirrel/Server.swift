@@ -92,6 +92,11 @@ open class Server {
                             cont = false
                         }
                         let response = handle(request: request)
+                        if request.acceptEncoding.count > 0 {
+                            if request.acceptEncoding.contains(.gzip) {
+                                response.contentEncoding = .gzip
+                            }
+                        }
                         send(socket: socket, response: response)
                     } catch let error {
                         let response = ErrorHandler.sharedInstance.response(for: error)
@@ -193,23 +198,21 @@ open class Server {
     }
 
     private func send(socket: Socket, response: Response) {
-        if response.bodyLenght <= 4096 {
-            let _ = try? socket.write(from: response.raw())
+        let body = response.rawBody
+        let bodyBytes: [UInt8] = Array(body)
+        if bodyBytes.count <= 4096 {
+            let _ = try? socket.write(from: response.rawHeader + body)
         } else {
             response.setHeader(for: "Transfer-Encoding", to: "chunked")
 
-            var bytes = [UInt8]()
-            let bodyData = response.rawBody()
-            bytes = Array(bodyData)
-
-            var c = bytes.count
+            var c = bodyBytes.count
             var i = 0
-            let _ = try? socket.write(from: response.rawHeader())
+            let _ = try? socket.write(from: response.rawHeader)
 
             let chunkSize = 2048
 
             while c >= chunkSize {
-                let d: [UInt8] = Array(bytes[(i*chunkSize)...(chunkSize*(i+1) - 1)])
+                let d: [UInt8] = Array(bodyBytes[(i*chunkSize)...(chunkSize*(i+1) - 1)])
                 var d1: Data = (String(format: "%X", d.count) + "\r\n").data(using: .utf8)!
                 d1.append(contentsOf: d)
                 d1.append("\r\n".data(using: .utf8)!)
@@ -219,7 +222,7 @@ open class Server {
                 i += 1
             }
             if c > 0 {
-                let d: [UInt8] = Array(bytes[(bytes.count - c)...(bytes.count - 1)])
+                let d: [UInt8] = Array(bodyBytes[(bodyBytes.count - c)...(bodyBytes.count - 1)])
                 var d1: Data = (String(format: "%X", c) + "\r\n").data(using: .utf8)!
                 d1.append(contentsOf: d)
                 d1.append("\r\n".data(using: .utf8)!)
@@ -229,5 +232,13 @@ open class Server {
             }
             let _ = try? socket.write(from: "0\r\n\r\n".data(using: .utf8)!)
         }
+
+//        if response.bodyLenght <= 11000 /*4096*/ {
+//            let _ = try? socket.write(from: response.raw)
+//        } else {
+//            response.setHeader(for: "Transfer-Encoding", to: "chunked")
+//
+
+//        }
     }
 }

@@ -8,12 +8,13 @@
 
 import Foundation
 import PathKit
+import Gzip
 
 typealias ResponseHandler = ((Request) -> Response)
 
 typealias AnyResponseHandler = ((Request) throws -> Any)
 
-/// <#Description#>
+/// Response class
 open class Response {
 
     private let routeTree = RouteTree()
@@ -22,15 +23,26 @@ open class Response {
 
     private let httpProtocolVersion = "HTTP/1.1"
 
+    var contentEncoding: HTTPHeaders.Encoding.EncodingType? = nil
+
     private var headers: [String: String] = [
         HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.plain.rawValue
     ]
 
-    private var body = Data()
+    private var body = Data() {
+        didSet {
+            finalBody = nil
+        }
+    }
+
+    private var finalBody: Data? = nil
 
     /// Body length
     var bodyLenght: Int {
-        return (Array(body)).count
+        if finalBody == nil {
+            finalBody = body
+        }
+        return Array<UInt8>(finalBody!).count
     }
 
     /// Construct response with HTTP status
@@ -174,10 +186,20 @@ open class Response {
             return self
         }
     }
+}
 
-    func rawHeader() -> Data {
+// MARK: - Raw head and body
+extension Response {
+    var rawHeader: Data {
+        if finalBody == nil {
+            finalBody = rawBody
+        }
         var header = httpProtocolVersion + " " + status.description + "\r\n"
         header += HTTPHeaders.contentLength + ": " + String(bodyLenght) + "\r\n"
+        if let encoding = contentEncoding {
+            header += HTTPHeaders.Encoding.contentEncoding + ": "
+                + encoding.rawValue + "\r\n"
+        }
         for (key, value) in headers {
             header += key + ": " + value + "\r\n"
         }
@@ -185,13 +207,18 @@ open class Response {
         return header.data(using: .utf8)!
     }
 
-    func rawBody() -> Data {
-        return body
-    }
-
-    func raw() -> Data {
-        var res = rawHeader()
-        res.append(rawBody())
+    var rawBody: Data {
+        if let final = finalBody {
+            return final
+        }
+        let res: Data
+        if contentEncoding != nil {
+            // swiftlint:disable:next force_try
+            res = try! body.gzipped()
+        } else {
+            res = body
+        }
+        finalBody = res
         return res
     }
 }

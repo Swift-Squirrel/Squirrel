@@ -30,6 +30,20 @@ public enum HTTPHeaders {
     /// `Allow`
     public static let allow = "Allow"
 
+    /// Content-Encoding values
+    public enum Encoding {
+        /// Content-Encoding
+        public static let contentEncoding = "Content-Encoding"
+        /// Accept-Encoding
+        public static let acceptEncoding = "Accept-Encoding"
+        /// Values
+        ///
+        /// - gzip: gzip
+        public enum EncodingType: String {
+            case gzip
+        }
+    }
+
     /// Content type
     public enum ContentType {
         /// `Content-Type`

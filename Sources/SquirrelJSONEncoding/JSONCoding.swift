@@ -55,7 +55,9 @@ public struct JSONCoding {
             ) {
             return theJSONData
         } else {
-            throw JSONError(kind: .parseError, description: "Can not serialize data to json format.")
+            throw JSONError(
+                kind: .parseError,
+                description: "Can not serialize data to json format.")
         }
     }
 

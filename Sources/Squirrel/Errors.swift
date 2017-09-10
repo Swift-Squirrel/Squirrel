@@ -25,6 +25,7 @@ import SquirrelJSONEncoding
 
 // MARK: - NutError
 extension NutError: SquirrelErrorProtocol {
+    /// HTTPError representation
     public var asHTTPError: HTTPError {
         return HTTPError(status: .internalError, description: description)
     }
@@ -32,6 +33,7 @@ extension NutError: SquirrelErrorProtocol {
 
 // MARK: - NutParserError
 extension NutParserError: SquirrelErrorProtocol {
+    /// HTTPError representation
     public var asHTTPError: HTTPError {
         return HTTPError(status: .internalError, description: description)
     }
@@ -47,6 +49,10 @@ extension JSONError: SquirrelErrorProtocol {
 
 /// Data errors
 public struct DataError: SquirrelErrorProtocol {
+    /// Error kinds
+    ///
+    /// - dataEncodingError: Encoding filed
+    /// - dataCodingError: Coding failed
     public enum ErrorKind {
         case dataEncodingError
         case dataCodingError(string: String)
@@ -57,9 +63,11 @@ public struct DataError: SquirrelErrorProtocol {
         _description = description
     }
 
+    /// Error kind
     public let kind: ErrorKind
     private let _description: String?
 
+    /// Error description
     public var description: String {
         var msg = ""
         if let _description = self._description {
@@ -109,15 +117,21 @@ public struct HTTPError: SquirrelErrorProtocol {
     }
 }
 
-
-public struct RouteError: SquirrelErrorProtocol {
+/// Route error
+public struct RouteError: Error, CustomStringConvertible {
+    /// Error kinds
+    ///
+    /// - addNodeError: Could not add node
+    /// - methodHandlerOverwrite: Method at given node already exists
     public enum ErrorKind {
         case addNodeError
         case methodHandlerOverwrite
     }
 
+    /// Error kind
     public let kind: ErrorKind
 
+    /// Error description
     public var description: String {
         switch kind {
         case .addNodeError:
@@ -126,14 +140,17 @@ public struct RouteError: SquirrelErrorProtocol {
             return "Trying to overwrite existing handler"
         }
     }
-
-    public var asHTTPError: HTTPError {
-        return HTTPError(status: .internalError, description: description)
-    }
-
 }
 
+/// Request error
 public struct RequestError: SquirrelErrorProtocol {
+    /// Error kinds
+    ///
+    /// - unseparatableHead: Can not separate head from body (missing: \n\r\n\r
+    /// - parseError: Can not parse request
+    /// - unknownMethod: Unknown method
+    /// - unknownProtocol: Unknown protocol
+    /// - postBodyParseError: Can not decode body from POST request
     public enum ErrorKind {
         case unseparatableHead
         case parseError(string: String, expectations: String)
@@ -147,9 +164,11 @@ public struct RequestError: SquirrelErrorProtocol {
         _description = description
     }
 
+    /// Error kind
     public let kind: ErrorKind
     private let _description: String?
 
+    /// Error description
     public var description: String {
         var msg = ""
         if let _description = _description {
@@ -177,6 +196,7 @@ public struct RequestError: SquirrelErrorProtocol {
         return msg
     }
 
+    /// HTTPError representation
     public var asHTTPError: HTTPError {
         switch kind {
         case .unseparatableHead:

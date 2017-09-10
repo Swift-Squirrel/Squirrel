@@ -36,7 +36,7 @@ extension Server {
     public func route<T>(get url: String, handler: @escaping (Request, T) throws -> Any)
         where T: Decodable {
 
-        responseManager.route(get: url, handler: handler)
+            responseManager.route(get: url, handler: handler)
     }
 
     /// Add route for get method
@@ -82,8 +82,9 @@ extension Server {
     /// - Parameters:
     ///   - url: Url of route
     ///   - handler: Response handler
-    public func route<T>(post url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
-        responseManager.route(post: url, handler: handler)
+    public func route<T>(post url: String, handler: @escaping (T) throws -> Any)
+        where T: Decodable {
+            responseManager.route(post: url, handler: handler)
     }
 
     /// Add route for put method
@@ -158,8 +159,8 @@ extension Server {
     /// - Parameters:
     ///   - url: Url of route
     ///   - handler: Response handler
-    public func route<T>(delete url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
-        responseManager.route(delete: url, handler: handler)
+    public func route<T>(delete url: String, handler: @escaping (T) throws -> Any)
+        where T: Decodable {
+            responseManager.route(delete: url, handler: handler)
     }
-
 }

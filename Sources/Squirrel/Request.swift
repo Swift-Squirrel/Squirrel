@@ -23,6 +23,7 @@ open class Request {
     private let _fullpath: URL
 
     private var _cookies: [String: String] = [:]
+    var acceptEncoding = Set<HTTPHeaders.Encoding.EncodingType>()
 
     var path: String {
         return _path.absoluteString
@@ -37,6 +38,8 @@ open class Request {
     private var urlParameters: [String: String] = [:]
     private var _postParameters: [String: String] = [:]
 
+    // swiftlint:disable function_body_length
+    // swiftlint:disable cyclomatic_complexity
     /// Init Request from data
     ///
     /// - Parameter data: Data of request
@@ -95,6 +98,17 @@ open class Request {
                     expectations: "Header row has to be separatable by ': ' to two parts"
                     ))
             }
+            if pomArray[0].lowercased() == "accept-encoding" {
+                let acceptable = pomArray[1].components(separatedBy: ", ")
+                acceptable.forEach({ (encoding) in
+                    switch encoding {
+                    case "gzip":
+                        acceptEncoding.insert(.gzip)
+                    default:
+                        break
+                    }
+                })
+            }
             headers[pomArray[0].lowercased()] = pomArray[1]
         }
 
@@ -104,6 +118,8 @@ open class Request {
             try parsePostRequest()
         }
     }
+    // swiftlint:enable function_body_length
+    // swiftlint:enable cyclomatic_complexity
 
     private func parseCookies() {
         guard let cookieLine = getHeader(for: "Cookie") else {
