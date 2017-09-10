@@ -30,7 +30,7 @@ let package = Package(
             dependencies: ["NutView", "SquirrelConfig", "SquirrelJSONEncoding", "Socket"]),
         .target(
             name: "NutView",
-            dependencies: ["SquirrelJSONEncoding", "Evaluation", "Regex"]),
+            dependencies: ["SquirrelJSONEncoding", "Evaluation", "Regex", "Cache"]),
 
         .target(
             name: "SquirrelConfig",

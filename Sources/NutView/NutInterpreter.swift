@@ -19,13 +19,12 @@ protocol NutInterpreterProtocol {
 class NutInterpreter: NutInterpreterProtocol {
     private let name: String
     private var data: [String: Any]
-    private let resolver: NutResolverProtocol
+    private let resolver: NutResolverProtocol.Type = NutResolver.self
     private let viewName: String
 
     required init(view name: String, with data: [String: Any]) {
         self.name = name
         self.data = data
-        self.resolver = NutResolver.sharedInstance
         viewName = "Views." + name
     }
 
