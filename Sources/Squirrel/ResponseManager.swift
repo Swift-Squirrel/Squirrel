@@ -17,6 +17,21 @@ class ResponseManager {
     private init() {
     }
 
+    private func route(
+        method: HTTPHeaders.Method,
+        url: String,
+        handler: @escaping AnyResponseHandler) {
+
+        routeTree.add(route: url, forMethod: method, handler: handler)
+    }
+
+    func findHandler(for request: Request) throws -> AnyResponseHandler? {
+        return try routeTree.findHandler(for: request.method, in: request.path)
+    }
+}
+
+// MARK: - Get method
+extension ResponseManager {
     func route(get url: String, handler: @escaping (Request) throws -> Any) {
         route(method: .get, url: url, handler: handler)
     }
@@ -32,12 +47,12 @@ class ResponseManager {
         handler: @escaping (Request, T) throws -> Any)
         where T: Decodable {
 
-        let closure: AnyResponseHandler = {
-            [unowned self] (req: Request) in
-            let converted = try self.convertParameters(request: req, object: T.self)
-            return try handler(req, converted)
-        }
-        route(get: url, handler: closure)
+            let closure: AnyResponseHandler = {
+                [unowned self] (req: Request) in
+                let converted = try self.convertParameters(request: req, object: T.self)
+                return try handler(req, converted)
+            }
+            route(get: url, handler: closure)
     }
 
     func route<T>(get url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
@@ -48,17 +63,33 @@ class ResponseManager {
         }
         route(get: url, handler: closure)
     }
-
-    // POST
+}
+// MARK: - Post method
+extension ResponseManager {
     func route(post url: String, handler: @escaping (Request) throws -> Any) {
         route(method: .post, url: url, handler: handler)
     }
 
+    func route(post url: String, handler: @escaping () throws -> Any) {
+        route(post: url) { (_ :Request) in
+            return try handler()
+        }
+    }
+
     func route<T>(
         post url: String,
-        handler: @escaping (T) throws -> Any)
+        handler: @escaping (Request, T) throws -> Any)
         where T: Decodable {
 
+            let closure: AnyResponseHandler = {
+                [unowned self] (req: Request) in
+                let converted = try self.convertParameters(request: req, object: T.self)
+                return try handler(req, converted)
+            }
+            route(post: url, handler: closure)
+    }
+
+    func route<T>(post url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
         let closure: AnyResponseHandler = {
             [unowned self] (req: Request) in
             let converted = try self.convertParameters(request: req, object: T.self)
@@ -66,46 +97,107 @@ class ResponseManager {
         }
         route(post: url, handler: closure)
     }
+}
 
+// MARK: - PUT method
+extension ResponseManager {
+    func route(put url: String, handler: @escaping (Request) throws -> Any) {
+        route(method: .put, url: url, handler: handler)
+    }
 
-    // CONVERTIONS
+    func route(put url: String, handler: @escaping () throws -> Any) {
+        route(put: url) { (_ :Request) in
+            return try handler()
+        }
+    }
+
+    func route<T>(
+        put url: String,
+        handler: @escaping (Request, T) throws -> Any)
+        where T: Decodable {
+
+            let closure: AnyResponseHandler = {
+                [unowned self] (req: Request) in
+                let converted = try self.convertParameters(request: req, object: T.self)
+                return try handler(req, converted)
+            }
+            route(put: url, handler: closure)
+    }
+
+    func route<T>(put url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
+        let closure: AnyResponseHandler = {
+            [unowned self] (req: Request) in
+            let converted = try self.convertParameters(request: req, object: T.self)
+            return try handler(converted)
+        }
+        route(put: url, handler: closure)
+    }
+}
+
+// MARK: - DELETE method
+extension ResponseManager {
+    func route(delete url: String, handler: @escaping (Request) throws -> Any) {
+        route(method: .delete, url: url, handler: handler)
+    }
+
+    func route(delete url: String, handler: @escaping () throws -> Any) {
+        route(delete: url) { (_ :Request) in
+            return try handler()
+        }
+    }
+
+    func route<T>(
+        delete url: String,
+        handler: @escaping (Request, T) throws -> Any)
+        where T: Decodable {
+
+            let closure: AnyResponseHandler = {
+                [unowned self] (req: Request) in
+                let converted = try self.convertParameters(request: req, object: T.self)
+                return try handler(req, converted)
+            }
+            route(delete: url, handler: closure)
+    }
+
+    func route<T>(delete url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
+        let closure: AnyResponseHandler = {
+            [unowned self] (req: Request) in
+            let converted = try self.convertParameters(request: req, object: T.self)
+            return try handler(converted)
+        }
+        route(delete: url, handler: closure)
+    }
+}
+
+// MARK: - Convertions
+extension ResponseManager {
     private func convertParameters<T>(
         request: Request,
         object: T.Type)
         throws -> T where T: Decodable {
 
-        var values = request.getURLParameters()
-        for (k, v) in request.postParameters {
-            if values[k] == nil {
-                values[k] = v
+            var values = request.getURLParameters()
+
+            if request.method == HTTPHeaders.Method.post {
+                for (k, v) in request.postParameters {
+                    if values[k] == nil {
+                        values[k] = v
+                    }
+                }
             }
-        }
-        for (k, v) in request.getParameters {
-            if values[k] == nil {
-                values[k] = v
+            for (k, v) in request.getParameters {
+                if values[k] == nil {
+                    values[k] = v
+                }
             }
-        }
-        do {
-            let jsonDecoder = JSONDecoder()
-            let jsonData = try JSONSerialization.data(withJSONObject: values)
-            return try jsonDecoder.decode(object, from: jsonData)
-        } catch {
-            throw HTTPError(
-                status: .badRequest,
-                description: "Wrong parameters type or missing parameters")
-        }
-    }
-
-
-    private func route(
-        method: HTTPHeaders.Method,
-        url: String,
-        handler: @escaping AnyResponseHandler) {
-
-        routeTree.add(route: url, forMethod: method, handler: handler)
-    }
-
-    func findHandler(for request: Request) throws -> AnyResponseHandler? {
-        return try routeTree.findHandler(for: request.method, in: request.path)
+            do {
+                let jsonDecoder = JSONDecoder()
+                let jsonData = try JSONSerialization.data(withJSONObject: values)
+                return try jsonDecoder.decode(object, from: jsonData)
+            } catch {
+                throw HTTPError(
+                    status: .badRequest,
+                    description: "Wrong parameters type or missing parameters")
+            }
     }
 }

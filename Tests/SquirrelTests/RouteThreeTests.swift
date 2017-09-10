@@ -64,6 +64,15 @@ class RouteThreeTests: XCTestCase {
         handlerExists(for: .get, in: "/web/images/asd")
         handlerExists(for: .get, in: "/web/images/5161")
 
+        handlerNotExists(for: .delete, in: "/web/images/51")
+        handlerNotExists(for: .delete, in: "/web/images/asd")
+        handlerNotExists(for: .delete, in: "/web/images/5161")
+        assertNoThrow(try rootNode.addNode(routes: ["/", "web", "images", ":id"], method: .delete, handler: handler))
+        assertThrowsError(try rootNode.addNode(routes: ["/", "web", "images", ":id"], method: .delete, handler: handler))
+        handlerExists(for: .delete, in: "/web/images/51")
+        handlerExists(for: .delete, in: "/web/images/asd")
+        handlerExists(for: .delete, in: "/web/images/5161")
+
         handlerNotExists(for: .get, in: "/web/images/51/dsa")
         handlerNotExists(for: .get, in: "/web/images/asd/41")
         handlerNotExists(for: .get, in: "/web/images/5161/51")
@@ -102,6 +111,15 @@ class RouteThreeTests: XCTestCase {
         handlerExists(for: .get, in: "/web/asd")
         handlerExists(for: .get, in: "/web/53")
         handlerExists(for: .get, in: "/web/1fa")
+
+        handlerNotExists(for: .put, in: "/web/asd")
+        handlerNotExists(for: .put, in: "/web/53")
+        handlerNotExists(for: .put, in: "/web/1fa")
+        assertNoThrow(try rootNode.addNode(routes: ["/", "web", ":"], method: .put, handler: handler))
+        assertThrowsError(try rootNode.addNode(routes: ["/", "web", ":"], method: .put, handler: handler))
+        handlerExists(for: .put, in: "/web/asd")
+        handlerExists(for: .put, in: "/web/53")
+        handlerExists(for: .put, in: "/web/1fa")
 
         handlerNotExists(for: .get, in: "/web/1fa/asd/asd/21")
         handlerNotExists(for: .get, in: "/web/1fa/as1")
