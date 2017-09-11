@@ -39,13 +39,13 @@ jobs:
     <<: *default_docker
     steps:
       - checkout
+      - attach_workspace:
+          at: .build
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
             - build-cache-{{ .Branch }}
             - build-cache
-      - attach_workspace:
-          at: .build
       - run:
           name: Build for debug
           command: swift build
@@ -59,13 +59,13 @@ jobs:
     <<: *default_docker
     steps:
       - checkout
+      - attach_workspace:
+          at: .build
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
             - build-cache-{{ .Branch }}
             - build-cache
-      - attach_workspace:
-          at: .build
       - run:
           name: Build for release
           command: swift build
@@ -79,13 +79,13 @@ jobs:
     <<: *test_docker
     steps:
       - checkout
+      - attach_workspace:
+          at: .build
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
             - build-cache-{{ .Branch }}
             - build-cache
-      - attach_workspace:
-          at: .build
       - run:
           name: Run unit tests
           command: swift test --parallel
@@ -99,13 +99,13 @@ jobs:
     <<: *test_docker
     steps:
       - checkout
+      - attach_workspace:
+          at: .build
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
             - build-cache-{{ .Branch }}
             - build-cache
-      - attach_workspace:
-          at: .build
       - run:
           name: Run unit tests
           command: swift test
