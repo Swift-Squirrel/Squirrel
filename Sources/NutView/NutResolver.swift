@@ -8,63 +8,26 @@
 
 import Foundation
 import PathKit
+import Cache
 
 protocol NutResolverProtocol {
-    func viewToken(for name: String) throws -> ViewToken
+    static func viewToken(for name: String) throws -> ViewToken
 }
 
-fileprivate func getModificationDate(for path: Path) -> Date? {
-    guard let attributes = try? FileManager.default.attributesOfItem(atPath: path.string) else {
-        return nil
+struct NutResolver: NutResolverProtocol {
+    private static var cache: SpecializedCache<ViewToken> {
+        return NutConfig.NutViewCache.cache
     }
-    return attributes[FileAttributeKey.modificationDate] as? Date
-}
-
-class NutResolver: NutResolverProtocol {
-
-    private init() { }
-
-    static let sharedInstance = NutResolver()
-
-    private var parsedNuts: [String: FruitInfo] = [:]
-
-    private struct FruitInfo {
-        let viewToken: ViewToken
-        let name: String
-
-        let fruit: Path
-        let nut: Path
-
-        init(name: String, viewToken: ViewToken, fruit: Path, nut: Path) {
-            self.name = name
-            self.viewToken = viewToken
-            self.fruit = fruit
-            self.nut = nut
-        }
-
-        var valid: Bool {
-            guard let fruitModif = getModificationDate(for: fruit) else {
-                return false
-            }
-
-            guard let nutModif = getModificationDate(for: nut) else {
-                return false
-            }
-
-            return fruitModif > nutModif
-        }
-    }
-
-    func viewToken(for name: String) throws -> ViewToken {
-        if let fruitInfo = parsedNuts[name], fruitInfo.valid {
-            return fruitInfo.viewToken
-        }
-
-        let nutName = name.components(separatedBy: ".").joined(separator: "/") + ".nut"
+    static func viewToken(for name: String) throws -> ViewToken {
+        let nutName = name.replacingAll(matching: "\\.", with: "/") + ".nut"
         let fruitName = name + ".fruit"
 
         let fruit = NutConfig.fruits + fruitName
         let nut = NutConfig.nuts + nutName
+        let fruitValid = isValid(fruit: fruit, nut: nut)
+        if let token = cache["name"], fruitValid {
+            return token
+        }
 
         guard nut.exists else {
             throw NutError(kind: .notExists(name: nutName))
@@ -72,11 +35,7 @@ class NutResolver: NutResolverProtocol {
 
         let vToken: ViewToken
 
-        if fruit.exists,
-            let nutModif = getModificationDate(for: nut),
-            let fruitModif = getModificationDate(for: fruit),
-            fruitModif > nutModif
-        {
+        if fruit.exists && fruitValid {
             let content: String = try fruit.read()
             let parser = FruitParser(content: content)
             vToken = parser.tokenize()
@@ -95,8 +54,27 @@ class NutResolver: NutResolverProtocol {
             }
             try? fruit.write(serialized)
         }
-
-        parsedNuts[name] = FruitInfo(name: name, viewToken: vToken, fruit: fruit, nut: nut)
+        try? cache.addObject(vToken, forKey: name)
         return vToken
     }
+
+    private static func isValid(fruit: Path, nut: Path) -> Bool {
+        guard let fruitModif = getModificationDate(for: fruit) else {
+            return false
+        }
+
+        guard let nutModif = getModificationDate(for: nut) else {
+            return false
+        }
+
+        return fruitModif > nutModif
+    }
+
+    private static func getModificationDate(for path: Path) -> Date? {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: path.string) else {
+            return nil
+        }
+        return attributes[FileAttributeKey.modificationDate] as? Date
+    }
+
 }
