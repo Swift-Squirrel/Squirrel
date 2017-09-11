@@ -50,20 +50,20 @@ open class Request {
         guard let stringData = String(data: data, encoding: .utf8) else {
             throw DataError(kind: .dataEncodingError)
         }
-        var rows = stringData.components(separatedBy: "\r\n\r\n")
-        if rows.count != 2 {
+        var lines = stringData.components(separatedBy: "\r\n\r\n")
+        if lines.count != 2 {
             throw RequestError(kind: .unseparatableHead)
         }
-        rawHeader = rows[0]
-        rawBody = rows[1]
+        rawHeader = lines[0]
+        rawBody = lines[1]
 
-        rows = rawHeader.components(separatedBy: "\r\n")
-        let row = rows[0]
-        let components = row.components(separatedBy: " ")
+        lines = rawHeader.components(separatedBy: "\r\n")
+        let line = lines[0]
+        let components = line.components(separatedBy: " ")
         if components.count != 3 {
             throw RequestError(
                 kind: .parseError(
-                    string: row,
+                    string: line,
                     expectations: "String has to be separatable into "
                         + "exactly three parts divided by ' '."
                 )
@@ -89,13 +89,13 @@ open class Request {
         }
         httpProtocol = components[2]
 
-        rows.remove(at: 0)
-        for row in rows {
-            let pomArray = row.components(separatedBy: ": ")
+        lines.remove(at: 0)
+        for line in lines {
+            let pomArray = line.components(separatedBy: ": ")
             if pomArray.count != 2 {
                 throw RequestError(kind: .parseError(
-                    string: row,
-                    expectations: "Header row has to be separatable by ': ' to two parts"
+                    string: line,
+                    expectations: "Header line has to be separatable by ': ' to two parts"
                     ))
             }
             if pomArray[0].lowercased() == "accept-encoding" {

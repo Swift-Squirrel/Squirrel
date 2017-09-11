@@ -44,7 +44,7 @@ class NutParserTests: XCTestCase {
             return
         }
         let expexted = try! JSON(string: """
-            {"body":[{"id":"text","value":"\\nthis is about "},{"id":"expression","infix":"topic","row":2}],"fileName":"Views\\/Post.nut","head":[{"id":"title","expression":{"id":"expression","infix":"\\"Title of post\\"","row":1},"row":1}]}
+            {"body":[{"id":"text","value":"\\nthis is about "},{"id":"expression","infix":"topic","line":2}],"fileName":"Views\\/Post.nut","head":[{"id":"title","expression":{"id":"expression","infix":"\\"Title of post\\"","line":1},"line":1}]}
             """)
 
         XCTAssert(serialized == expexted)
@@ -61,7 +61,7 @@ class NutParserTests: XCTestCase {
             <body>
                 \\Subview("Page.Header.Jumbotron")
             <div class="container">
-                <div class="row">
+                <div class="line">
                     <div class="col-8 mx-auto">
                         \\View()
                     </div>
@@ -90,7 +90,7 @@ class NutParserTests: XCTestCase {
             return
         }
         let expexted = try! JSON(string: """
-            {"body":[{"id":"text","value":"<!-- Default.html -->\\n<!DOCTYPE html>\\n<html lang=\\"en\\">\\n<head>\\n    "},{"id":"subview","name":"Subviews.Page.Head","row":5},{"id":"text","value":"\\n<\\/head>\\n<body>\\n    "},{"id":"subview","name":"Subviews.Page.Header.Jumbotron","row":8},{"id":"text","value":"\\n<div class=\\"container\\">\\n    <div class=\\"row\\">\\n        <div class=\\"col-8 mx-auto\\">\\n            "},{"id":"view","row":12},{"id":"text","value":"\\n        <\\/div>\\n    <\\/div>\\n<\\/div>\\n    "},{"id":"subview","name":"Subviews.Page.Footer","row":16},{"id":"text","value":"\\n<\\/body>\\n<\\/html>"}],"fileName":"Layouts\\/Default.nut"}
+            {"body":[{"id":"text","value":"<!-- Default.html -->\\n<!DOCTYPE html>\\n<html lang=\\"en\\">\\n<head>\\n    "},{"id":"subview","name":"Subviews.Page.Head","line":5},{"id":"text","value":"\\n<\\/head>\\n<body>\\n    "},{"id":"subview","name":"Subviews.Page.Header.Jumbotron","line":8},{"id":"text","value":"\\n<div class=\\"container\\">\\n    <div class=\\"line\\">\\n        <div class=\\"col-8 mx-auto\\">\\n            "},{"id":"view","line":12},{"id":"text","value":"\\n        <\\/div>\\n    <\\/div>\\n<\\/div>\\n    "},{"id":"subview","name":"Subviews.Page.Footer","line":16},{"id":"text","value":"\\n<\\/body>\\n<\\/html>"}],"fileName":"Layouts\\/Default.nut"}
             """)
 
         XCTAssert(serialized == expexted, parser.jsonSerialized)
@@ -181,7 +181,7 @@ class NutParserTests: XCTestCase {
             return
         }
         let expexted = try! JSON(string: """
-            {"body":[{"id":"text","value":"dasd alm ak po\\n"},{"date":{"id":"expression","infix":"date","row":2},"row":2,"id":"date"},{"id":"text","value":" oid\\n"},{"row":3,"id":"if","condition":"true","then":[{"id":"text","value":"\\n    asd a "},{"date":{"id":"expression","infix":"date1","row":4},"format":{"id":"expression","infix":"\\"m\\" + years","row":4},"row":4,"id":"date"},{"id":"text","value":" asda\\n"}]},{"id":"text","value":"\\n"},{"row":6,"else":[{"row":8,"else":[{"variable":"notNil","row":10,"id":"if let","condition":"posts","then":[{"id":"text","value":"\\n    doefja e\\n"}]}],"id":"if","condition":"true == true","then":[{"id":"text","value":"\\n    "},{"id":"expression","infix":"true","row":9},{"id":"text","value":"\\n"}]}],"id":"if","condition":"1 + 3 == 4","then":[{"id":"text","value":"\\n    true\\n"}]},{"id":"text","value":"\\n"},{"variable":"asd","row":13,"else":[{"id":"text","value":"    ds\\n    "},{"id":"subview","name":"Subviews.Map","row":17},{"id":"text","value":"\\n"}],"id":"if let","condition":"Tom","then":[{"id":"text","value":"\\n    dfe\\n"}]},{"id":"text","value":"\\n\\n"},{"variable":"post","row":20,"id":"for in Array","array":"posts","body":[{"id":"text","value":"\\n    "},{"id":"raw expression","infix":"post.body","row":21},{"id":"text","value":"\\n"}]},{"id":"text","value":"\\n"},{"variable":"value","row":23,"id":"for in Dictionary","array":"dictionary","body":[{"id":"text","value":"\\n    "},{"id":"expression","infix":"key + \\" \\" + value","row":24},{"id":"text","value":"\\n"}],"key":"key"},{"id":"text","value":"\\npdso a"}],"fileName":"Subviews\\/Smt.nut"}
+            {"body":[{"id":"text","value":"dasd alm ak po\\n"},{"date":{"id":"expression","infix":"date","line":2},"line":2,"id":"date"},{"id":"text","value":" oid\\n"},{"line":3,"id":"if","condition":"true","then":[{"id":"text","value":"\\n    asd a "},{"date":{"id":"expression","infix":"date1","line":4},"format":{"id":"expression","infix":"\\"m\\" + years","line":4},"line":4,"id":"date"},{"id":"text","value":" asda\\n"}]},{"id":"text","value":"\\n"},{"line":6,"else":[{"line":8,"else":[{"variable":"notNil","line":10,"id":"if let","condition":"posts","then":[{"id":"text","value":"\\n    doefja e\\n"}]}],"id":"if","condition":"true == true","then":[{"id":"text","value":"\\n    "},{"id":"expression","infix":"true","line":9},{"id":"text","value":"\\n"}]}],"id":"if","condition":"1 + 3 == 4","then":[{"id":"text","value":"\\n    true\\n"}]},{"id":"text","value":"\\n"},{"variable":"asd","line":13,"else":[{"id":"text","value":"    ds\\n    "},{"id":"subview","name":"Subviews.Map","line":17},{"id":"text","value":"\\n"}],"id":"if let","condition":"Tom","then":[{"id":"text","value":"\\n    dfe\\n"}]},{"id":"text","value":"\\n\\n"},{"variable":"post","line":20,"id":"for in Array","array":"posts","body":[{"id":"text","value":"\\n    "},{"id":"raw expression","infix":"post.body","line":21},{"id":"text","value":"\\n"}]},{"id":"text","value":"\\n"},{"variable":"value","line":23,"id":"for in Dictionary","array":"dictionary","body":[{"id":"text","value":"\\n    "},{"id":"expression","infix":"key + \\" \\" + value","line":24},{"id":"text","value":"\\n"}],"key":"key"},{"id":"text","value":"\\npdso a"}],"fileName":"Subviews\\/Smt.nut"}
             """)
 
         XCTAssertEqual(serialized, expexted)
@@ -212,7 +212,7 @@ class NutParserTests: XCTestCase {
             return
         }
         let expexted = try! JSON(string: """
-            {"layout":{"id":"layout","name":"Layouts.Default","row":2},"body":[{"id":"text","value":"dasd alm ak po\\n"},{"id":"text","value":"\\n"}],"fileName":"Views\\/Smt.nut","head":[{"id":"title","expression":{"id":"expression","infix":"\\"ds\\"","row":3},"row":3}]}
+            {"layout":{"id":"layout","name":"Layouts.Default","line":2},"body":[{"id":"text","value":"dasd alm ak po\\n"},{"id":"text","value":"\\n"}],"fileName":"Views\\/Smt.nut","head":[{"id":"title","expression":{"id":"expression","infix":"\\"ds\\"","line":3},"line":3}]}
             """)
 
         XCTAssert(serialized == expexted, parser.jsonSerialized)
@@ -243,7 +243,7 @@ class NutParserTests: XCTestCase {
             return
         }
         let expexted = try! JSON(string: """
-            {"body":[{"id":"text","value":"dasd alm ak po\\n"},{"id":"view","row":2},{"id":"text","value":"\\n    fa"}],"fileName":"Layouts\\/Smt.nut"}
+            {"body":[{"id":"text","value":"dasd alm ak po\\n"},{"id":"view","line":2},{"id":"text","value":"\\n    fa"}],"fileName":"Layouts\\/Smt.nut"}
             """)
 
         XCTAssert(serialized == expexted, parser.jsonSerialized)

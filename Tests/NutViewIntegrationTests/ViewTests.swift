@@ -125,7 +125,7 @@ class ViewTests: XCTestCase {
         let name = "Posts"
         let view = View(name: name)
 
-        var expected = NutParserError(kind: .missingValue(for: "posts"), row: 13)
+        var expected = NutParserError(kind: .missingValue(for: "posts"), line: 13)
         expected.name = "Views/Posts.nut"
         XCTAssertTrue(checkError(for: view, expect: expected), "Missing value for 'posts'")
     }
