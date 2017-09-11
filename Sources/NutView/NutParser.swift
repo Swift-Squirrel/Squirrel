@@ -72,24 +72,24 @@ class NutParser: NutParserProtocol {
         return separatedPom
     }
 
-    private func getRow(string: String) -> Int {
-        var rowIndex: Int = 1
+    private func getLine(string: String) -> Int {
+        var lineIndex: Int = 1
         string.forEach({ (char) in
             if char == "\n" {
-                rowIndex += 1
+                lineIndex += 1
             }
         })
 
-        return rowIndex
+        return lineIndex
     }
 
-    private func getRow(array: [String]) -> Int {
+    private func getLine(array: [String]) -> Int {
         let string = array.joined(separator: Constants.separator)
-        return getRow(string: string)
+        return getLine(string: string)
     }
-    private func getRow(array: ArraySlice<String>) -> Int {
+    private func getLine(array: ArraySlice<String>) -> Int {
         let string = array.joined(separator: Constants.separator)
-        return getRow(string: string)
+        return getLine(string: string)
     }
 
     func tokenize() throws -> ViewToken {
@@ -100,17 +100,17 @@ class NutParser: NutParserProtocol {
         var index = separated.count - 1
         do {
             while index > 0 {
-                let row = getRow(array: separated.prefix(index))
+                let line = getLine(array: separated.prefix(index))
                 let current = separated[index]
                 var cont = false
                 switch viewType {
                 case .view:
                     if current.hasPrefix("Layout(\"") {
-                        let tks = try parseLayout(text: current, row: row)
+                        let tks = try parseLayout(text: current, line: line)
                         guard let layoutToken = (tks.last! as? LayoutToken) else {
                             throw NutParserError(
                                 kind: .unknownInternalError(commandName: "\\Layout"),
-                                row: getRow(
+                                line: getLine(
                                     string: separated.prefix(index).joined(separator: "\\")
                                 )
                             )
@@ -120,11 +120,11 @@ class NutParser: NutParserProtocol {
                             tokens.append(tks.first!)
                         }
                     } else if current.hasPrefix("Title") {
-                        let tks = try parseTitle(text: current, row: row)
+                        let tks = try parseTitle(text: current, line: line)
                         guard let titleToken = (tks.last! as? TitleToken) else {
                             throw NutParserError(
                                 kind: .unknownInternalError(commandName: "\\Title"),
-                                row: getRow(
+                                line: getLine(
                                     string: separated.prefix(index).joined(separator: "\\")
                                 )
                             )
@@ -138,7 +138,7 @@ class NutParser: NutParserProtocol {
                     }
                 case .layout:
                     if current.hasPrefix("View()") {
-                        tokens.append(contentsOf: parseView(text: current, row: row))
+                        tokens.append(contentsOf: parseView(text: current, line: line))
                     } else {
                         cont = true
                     }
@@ -147,27 +147,27 @@ class NutParser: NutParserProtocol {
                 }
                 if cont {
                     if current.hasPrefix("(") {
-                        tokens.append(contentsOf: try parseExpression(text: current, row: row))
+                        tokens.append(contentsOf: try parseExpression(text: current, line: line))
                     } else if current.hasPrefix("RawValue(") {
-                        tokens.append(contentsOf: try parseRawExpression(text: current, row: row))
+                        tokens.append(contentsOf: try parseRawExpression(text: current, line: line))
                     } else if current.hasPrefix("Date(") {
-                        tokens.append(contentsOf: try parseDate(text: current, row: row))
+                        tokens.append(contentsOf: try parseDate(text: current, line: line))
                     } else if current.hasPrefix("if ") {
-                        tokens.append(contentsOf: try parseIf(text: current, row: row))
+                        tokens.append(contentsOf: try parseIf(text: current, line: line))
                     } else if current.hasPrefix("Subview(\"") {
-                        let tks = try parseSubview(text: current, row: row)
+                        let tks = try parseSubview(text: current, line: line)
                         tokens.append(contentsOf: tks)
                     } else if current.hasPrefix("for ") {
-                        tokens.append(contentsOf: try parseFor(text: current, row: row))
+                        tokens.append(contentsOf: try parseFor(text: current, line: line))
                     } else if current.hasPrefix("} else if ") {
-                        tokens.append(contentsOf: try parseElseIf(text: current, row: row))
+                        tokens.append(contentsOf: try parseElseIf(text: current, line: line))
                     } else if current.hasPrefix("} else { ") || current.hasPrefix("} else {\n") {
-                        tokens.append(contentsOf: parseElse(text: current, row: row))
+                        tokens.append(contentsOf: parseElse(text: current, line: line))
                     } else if current.hasPrefix("}") {
                         var text = current
                         text.remove(at: text.startIndex)
                         tokens.append(TextToken(value: text))
-                        tokens.append(EndBlockToken(row: row))
+                        tokens.append(EndBlockToken(line: line))
                     } else {
                         separated[index - 1] += "\\" + current
                         separated[index] = ""
@@ -246,7 +246,7 @@ class NutParser: NutParserProtocol {
                 } else {
                     throw NutParserError(
                         kind: .unexpectedEnd(reading: forInToken.id),
-                        row: forInToken.row,
+                        line: forInToken.line,
                         description: "\\} not found")
                 }
 
@@ -283,9 +283,9 @@ class NutParser: NutParserProtocol {
                                 ifT = IfToken(
                                     variable: variable,
                                     condition: el.getCondition(),
-                                    row: el.row)
+                                    line: el.line)
                             } else {
-                                ifT = IfToken(condition: el.getCondition(), row: el.row)!
+                                ifT = IfToken(condition: el.getCondition(), line: el.line)!
                             }
                             ifT.setThen(body: el.getThen())
                             if let elseBlock = el.getElse() {
@@ -298,7 +298,7 @@ class NutParser: NutParserProtocol {
                 } else {
                     throw NutParserError(
                         kind: .unexpectedEnd(reading: ifToken.id),
-                        row: ifToken.row,
+                        line: ifToken.line,
                         description: "\\} not found")
                 }
 
@@ -323,7 +323,7 @@ class NutParser: NutParserProtocol {
                 } else {
                     throw NutParserError(
                         kind: .unexpectedEnd(reading: elseToken.id),
-                        row: elseToken.row,
+                        line: elseToken.line,
                         description: "\\} not found")
                 }
             case let endBlock as EndBlockToken:
@@ -335,14 +335,14 @@ class NutParser: NutParserProtocol {
         }
         guard opened.isEmpty else {
             let endBlock = opened.last!
-            throw NutParserError(kind: .unexpectedBlockEnd, row: endBlock.row)
+            throw NutParserError(kind: .unexpectedBlockEnd, line: endBlock.line)
         }
         return tokens
     }
 }
 
 extension NutParser {
-    private func parseDate(text: String, row: Int) throws -> [NutTokenProtocol] {
+    private func parseDate(text: String, line: Int) throws -> [NutTokenProtocol] {
         let stringIndex = text.index(text.startIndex, offsetBy: 5)
         let text = String(text[stringIndex...])
         let chars = text.map({ String(describing: $0) })
@@ -356,10 +356,10 @@ extension NutParser {
                 let finalStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
                 var dateString = String(text[..<finalStringIndex])
                 dateString.removeLast()
-                guard let datePom = ExpressionToken(infix: dateString, row: row) else {
+                guard let datePom = ExpressionToken(infix: dateString, line: line) else {
                     throw NutParserError(
                         kind: .expressionError,
-                        row: row,
+                        line: line,
                         description: "Could not resolve '\(dateString)'")
                 }
                 date = datePom
@@ -380,7 +380,7 @@ extension NutParser {
                     expected: ["Date(<expression: Double>, format: <expression: String>)",
                                "Date(<expression: Double>)"],
                     got: text),
-                row: row,
+                line: line,
                 description: "missing '\")'")
         }
         guard charIndex > 0 else {
@@ -389,7 +389,7 @@ extension NutParser {
                     expected: ["Date(<expression: Double>, format: <expression: String>)",
                                "Date(<expression: Double>)"],
                     got: text),
-                row: row)
+                line: line)
         }
         let format: ExpressionToken?
         if formatIndex > 0 {
@@ -399,15 +399,15 @@ extension NutParser {
             guard formatArg.hasPrefix(" format: ") else {
                 throw NutParserError(
                     kind: .syntaxError(expected: [" format: <expression: String>"], got: formatArg),
-                    row: row)
+                    line: line)
             }
             let formatOffset = formatArg.index(formatArg.startIndex, offsetBy: 9)
             var formatExpr = String(formatArg[formatOffset...])
             formatExpr.removeLast()
-            guard let formatPom = ExpressionToken(infix: formatExpr, row: row) else {
+            guard let formatPom = ExpressionToken(infix: formatExpr, line: line) else {
                 throw NutParserError(
                     kind: .expressionError,
-                    row: row,
+                    line: line,
                     description: "Could not resolve '\(formatExpr)'")
             }
             format = formatPom
@@ -416,22 +416,22 @@ extension NutParser {
             let dateStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
             var dateString = String(text[..<dateStringIndex])
             dateString.removeLast()
-            guard let datePom = ExpressionToken(infix: dateString, row: row) else {
+            guard let datePom = ExpressionToken(infix: dateString, line: line) else {
                 throw NutParserError(
                     kind: .expressionError,
-                    row: row,
+                    line: line,
                     description: "Could not resolve '\(dateString)'")
             }
             date = datePom
         }
         let textIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
         let textToken = TextToken(value: String(text[textIndex...]))
-        return [textToken, DateToken(date: date, format: format, row: row)]
+        return [textToken, DateToken(date: date, format: format, line: line)]
     }
 
     // swiftlint:disable cyclomatic_complexity
     // swiftlint:disable function_body_length
-    private func parseFor(text: String, row: Int) throws -> [NutTokenProtocol] {
+    private func parseFor(text: String, line: Int) throws -> [NutTokenProtocol] {
         let expected = [
             "for <variable: Any> in <array: [Any]> {",
             "for (<key: String>, <value: Any>) in <dictionary: [String: Value> {"
@@ -452,7 +452,7 @@ extension NutParser {
                 let text = String(text[stringIndex...])
 
                 guard stm != "" else {
-                    throw NutParserError(kind: .syntaxError(expected: expected, got: stm), row: row)
+                    throw NutParserError(kind: .syntaxError(expected: expected, got: stm), line: line)
                 }
                 let separated = stm.components(separatedBy: " ")
                 var key: String? = nil
@@ -465,7 +465,7 @@ extension NutParser {
                     if variable.contains(",") {
                         throw NutParserError(
                             kind: .syntaxError(expected: expected, got: stm),
-                            row: row)
+                            line: line)
                     }
                 } else if separated.count == 6 && separated[3] == "in"
                     && separated[1].hasPrefix("(") && separated[1].hasSuffix(",")
@@ -479,26 +479,26 @@ extension NutParser {
                     variable = String(variable.dropLast())
                     array = separated[4]
                 } else {
-                    throw NutParserError(kind: .syntaxError(expected: expected, got: stm), row: row)
+                    throw NutParserError(kind: .syntaxError(expected: expected, got: stm), line: line)
                 }
                 if let keyValue = key {
                     guard checkSimple(variable: keyValue) else {
                         throw NutParserError(
                             kind: .wrongSimpleVariable(name: keyValue, in: "for" + stm + "{"),
-                            row: row)
+                            line: line)
                     }
                 }
                 guard checkSimple(variable: variable) else {
                     throw NutParserError(
                         kind: .wrongSimpleVariable(name: variable, in: "for" + stm + "{"),
-                        row: row)
+                        line: line)
                 }
                 guard checkChained(variable: array) else {
                     throw NutParserError(
                         kind: .wrongChainedVariable(name: array, in: "for" + stm + "{"),
-                        row: row)
+                        line: line)
                 }
-                let token = ForInToken(key: key, variable: variable, array: array, row: row)
+                let token = ForInToken(key: key, variable: variable, array: array, line: line)
 
                 if text == "" {
                     return [token]
@@ -513,14 +513,14 @@ extension NutParser {
         }
         throw NutParserError(
             kind: .syntaxError(expected: expected, got: text),
-            row: row,
+            line: line,
             description: "'{' not found")
     }
 
-    private func parseView(text: String, row: Int) -> [NutTokenProtocol] {
+    private func parseView(text: String, line: Int) -> [NutTokenProtocol] {
         let stringIndex = text.index(text.startIndex, offsetBy: 6)
         let text = String(text[stringIndex...])
-        let viewToken = InsertViewToken(row: row)
+        let viewToken = InsertViewToken(line: line)
         if text == "" {
             return [viewToken]
         } else {
@@ -528,22 +528,22 @@ extension NutParser {
         }
     }
 
-    private func parseTitle(text: String, row: Int) throws -> [NutTokenProtocol] {
+    private func parseTitle(text: String, line: Int) throws -> [NutTokenProtocol] {
         let stringIndex = text.index(text.startIndex, offsetBy: 5)
         let text = String(text[stringIndex...])
-        let res = try parseExpression(text: text, row: row)
+        let res = try parseExpression(text: text, line: line)
         if let expr = res.last! as? ExpressionToken {
-            let titleToken = TitleToken(expression: expr, row: row)
+            let titleToken = TitleToken(expression: expr, line: line)
             if res.count == 2 {
                 return [res[0], titleToken]
             } else {
                 return [titleToken]
             }
         }
-        throw NutParserError(kind: .expressionError, row: row)
+        throw NutParserError(kind: .expressionError, line: line)
     }
 
-    private func parseLayout(text: String, row: Int) throws -> [NutTokenProtocol] {
+    private func parseLayout(text: String, line: Int) throws -> [NutTokenProtocol] {
         let stringIndex = text.index(text.startIndex, offsetBy: 8)
         let text = String(text[stringIndex...])
         var inString = true
@@ -561,7 +561,7 @@ extension NutParser {
         guard charIndex < text.count else {
             throw NutParserError(
                 kind: .syntaxError(expected: ["Layout(\"<name>\")"], got: text),
-                row: row,
+                line: line,
                 description: "missing '\")'")
         }
         let finalStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
@@ -569,14 +569,14 @@ extension NutParser {
         name.remove(at: name.index(before: name.endIndex))
         name.remove(at: name.index(before: name.endIndex))
         let finalText = String(text[finalStringIndex...])
-        let layoutToken = LayoutToken(name: "Layouts." + name, row: row)
+        let layoutToken = LayoutToken(name: "Layouts." + name, line: line)
         if finalText == "" {
             return [layoutToken]
         }
         return [TextToken(value: finalText), layoutToken]
     }
 
-    private func parseSubview(text: String, row: Int) throws -> [NutTokenProtocol] {
+    private func parseSubview(text: String, line: Int) throws -> [NutTokenProtocol] {
         let stringIndex = text.index(text.startIndex, offsetBy: 9)
         let text = String(text[stringIndex...])
         var inString = true
@@ -596,7 +596,7 @@ extension NutParser {
                 kind: .syntaxError(
                     expected: ["Subview(\"<name>\")"],
                     got: text),
-                row: row,
+                line: line,
                 description: "missing '\")'")
         }
         let finalStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
@@ -604,14 +604,14 @@ extension NutParser {
         name.remove(at: name.index(before: name.endIndex))
         name.remove(at: name.index(before: name.endIndex))
         let finalText = String(text[finalStringIndex...])
-        let subviewToken = SubviewToken(name: "Subviews." + name, row: row)
+        let subviewToken = SubviewToken(name: "Subviews." + name, line: line)
         if finalText == "" {
             return [subviewToken]
         }
         return [TextToken(value: finalText), subviewToken]
     }
 
-    fileprivate func parseElseIf(text: String, row: Int) throws -> [NutTokenProtocol] {
+    fileprivate func parseElseIf(text: String, line: Int) throws -> [NutTokenProtocol] {
         let expected = [
             "} else if <expression: Bool> {",
             "} else if let <variableName: Any> = <expression: Any?> {"
@@ -626,13 +626,13 @@ extension NutParser {
         guard text.first != "{" else {
             throw NutParserError(
                 kind: .syntaxError(expected: expected, got: "} else if {"),
-                row: row,
+                line: line,
                 description: "empty <expression>")
         }
         guard !text.hasPrefix("let {") else {
             throw NutParserError(
                 kind: .syntaxError(expected: expected, got: "} else if let {"),
-                row: row,
+                line: line,
                 description: "empty <expression>")
         }
         for char in chars {
@@ -648,16 +648,16 @@ extension NutParser {
                         kind: .syntaxError(
                             expected: expected,
                             got: "} else if " + condition + " {"),
-                        row: row,
+                        line: line,
                         description: "empty <expression>")
 
                 }
-                guard let elsifToken = ElseIfToken(condition: condition, row: row) else {
+                guard let elsifToken = ElseIfToken(condition: condition, line: line) else {
                     throw NutParserError(
                         kind: .syntaxError(
                             expected: expected,
                             got: "} else if " + condition + " {"),
-                        row: row)
+                        line: line)
                 }
                 if let variable = elsifToken.variable {
                     guard checkSimple(variable: variable) else {
@@ -665,14 +665,14 @@ extension NutParser {
                             kind: .wrongSimpleVariable(
                                 name: variable,
                                 in: "} else if " + condition + " {"),
-                            row: row)
+                            line: line)
                     }
                     guard checkSimple(variable: elsifToken.condition) else {
                         throw NutParserError(
                             kind: .wrongChainedVariable(
                                 name: elsifToken.condition,
                                 in: "} else if " + condition + " {"),
-                            row: row)
+                            line: line)
                     }
                 }
                 if text == "" {
@@ -690,21 +690,21 @@ extension NutParser {
             kind: .syntaxError(
                 expected: expected,
                 got: "} else if " + text),
-            row: row,
+            line: line,
             description: "'{' not found")
     }
 
-    fileprivate func parseElse(text: String, row: Int) -> [NutTokenProtocol] {
+    fileprivate func parseElse(text: String, line: Int) -> [NutTokenProtocol] {
         let stringIndex = text.index(text.startIndex, offsetBy: 9)
         let text = String(text[stringIndex...])
-        let elseToken = ElseToken(row: row)
+        let elseToken = ElseToken(line: line)
         if text == "" {
             return [elseToken]
         }
         return [TextToken(value: text), elseToken]
     }
 
-    private func parseRawExpression(text: String, row: Int) throws -> [NutTokenProtocol] {
+    private func parseRawExpression(text: String, line: Int) throws -> [NutTokenProtocol] {
         let text = String(text[text.index(text.startIndex, offsetBy: 8)...])
         let chars = text.map({ String($0) })
         var prevChar = ""
@@ -730,7 +730,7 @@ extension NutParser {
                 kind: .syntaxError(
                     expected: ["RawValue(<expression: Any>)"],
                     got: "RawValue" + text),
-                row: row,
+                line: line,
                 description: "missing ')'")
         }
         let stringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
@@ -740,22 +740,22 @@ extension NutParser {
                 kind: .syntaxError(
                     expected: ["RawValue(<expression: Any>)"],
                     got: "RawValue" + expression),
-                row: row,
+                line: line,
                 description: "Empty expression")
         }
         expression.removeLast()
         expression.removeFirst()
         let text1 = String(text[stringIndex...])
-        if let expressionToken = RawExpressionToken(infix: expression, row: row) {
+        if let expressionToken = RawExpressionToken(infix: expression, line: line) {
             if text1 == "" {
                 return [expressionToken]
             }
             return [TextToken(value: text1), expressionToken]
         }
-        throw NutParserError(kind: .expressionError, row: row)
+        throw NutParserError(kind: .expressionError, line: line)
     }
 
-    fileprivate func parseExpression(text: String, row: Int) throws -> [NutTokenProtocol] {
+    fileprivate func parseExpression(text: String, line: Int) throws -> [NutTokenProtocol] {
         let expected = ["(<expression: Any>)"]
         let chars = text.map({ String(describing: $0) })
         var prevChar = ""
@@ -779,7 +779,7 @@ extension NutParser {
         guard opened == 0 else {
             throw NutParserError(
                 kind: .syntaxError(expected: expected, got: text),
-                row: row,
+                line: line,
                 description: "missing ')'")
         }
         let stringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
@@ -787,22 +787,22 @@ extension NutParser {
         guard expression != "()" else {
             throw NutParserError(
                 kind: .syntaxError(expected: expected, got: expression),
-                row: row,
+                line: line,
                 description: "Empty expression")
         }
         expression.removeLast()
         expression.removeFirst()
         let text = String(text[stringIndex...])
-        if let expressionToken = ExpressionToken(infix: expression, row: row) {
+        if let expressionToken = ExpressionToken(infix: expression, line: line) {
             if text == "" {
                 return [expressionToken]
             }
             return [TextToken(value: text), expressionToken]
         }
-        throw NutParserError(kind: .expressionError, row: row)
+        throw NutParserError(kind: .expressionError, line: line)
     }
 
-    fileprivate func parseIf(text: String, row: Int) throws -> [NutTokenProtocol] {
+    fileprivate func parseIf(text: String, line: Int) throws -> [NutTokenProtocol] {
         let expected = [
             "if <expression: Bool> {",
             "if let <variableName: Any> = <expression: Any?> {"
@@ -816,13 +816,13 @@ extension NutParser {
         guard text.first != "{" else {
             throw NutParserError(
                 kind: .syntaxError(expected: expected, got: "if {"),
-                row: row,
+                line: line,
                 description: "empty <expression>")
         }
         guard !text.hasPrefix("let {") else {
             throw NutParserError(
                 kind: .syntaxError(expected: expected, got: "if let {"),
-                row: row,
+                line: line,
                 description: "empty <expression>")
         }
         for char in chars {
@@ -835,26 +835,26 @@ extension NutParser {
                 guard condition != "" else {
                     throw NutParserError(
                         kind: .syntaxError(expected: expected, got: "if " + condition + " {"),
-                        row: row,
+                        line: line,
                         description: "empty <expression>")
                 }
-                guard let token = IfToken(condition: condition, row: row) else {
+                guard let token = IfToken(condition: condition, line: line) else {
                     throw NutParserError(
                         kind: .syntaxError(expected: expected, got: "if " + condition + " {"),
-                        row: row)
+                        line: line)
                 }
                 if let variable = token.variable {
                     guard checkSimple(variable: variable) else {
                         throw NutParserError(
                             kind: .wrongSimpleVariable(
                                 name: variable, in: "if " + condition + " {"),
-                            row: row)
+                            line: line)
                     }
                     guard checkSimple(variable: token.condition) else {
                         throw NutParserError(
                             kind: .wrongChainedVariable(
                                 name: token.condition, in: "if " + condition + " {"),
-                            row: row)
+                            line: line)
                     }
                 }
                 if text == "" {
@@ -870,7 +870,7 @@ extension NutParser {
         }
         throw NutParserError(
             kind: .syntaxError(expected: expected, got: "if " + text),
-            row: row,
+            line: line,
             description: "'{' not found")
     }
 }

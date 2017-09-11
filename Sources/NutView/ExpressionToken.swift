@@ -11,36 +11,36 @@ import Evaluation
 struct ExpressionToken: NutCommandTokenProtocol {
     let id = "expression"
 
-    let row: Int
+    let line: Int
 
     let infix: String
 
-    init?(infix: String, row: Int) {
+    init?(infix: String, line: Int) {
         self.infix = infix
-        self.row = row
+        self.line = line
 //        let eval = try! Evaluation(expression: infix)
     }
 
     var serialized: [String: Any] {
-        return ["id": id, "infix": infix, "row": row]
+        return ["id": id, "infix": infix, "line": line]
     }
 }
 
 struct RawExpressionToken: NutCommandTokenProtocol {
     let id = "raw expression"
 
-    let row: Int
+    let line: Int
 
     let infix: String
 
-    init?(infix: String, row: Int) {
+    init?(infix: String, line: Int) {
         self.infix = infix
-        self.row = row
+        self.line = line
         //        let eval = try! Evaluation(expression: infix)
 
     }
 
     var serialized: [String: Any] {
-        return ["id": id, "infix": infix, "row": row]
+        return ["id": id, "infix": infix, "line": line]
     }
 }

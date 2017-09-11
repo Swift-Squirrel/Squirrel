@@ -113,7 +113,7 @@ class InterpreterTests: XCTestCase {
         let data: [String: Any] = [:]
         let name = "Posts"
         let interpreter = NutInterpreter(view: name, with: data)
-        var expected = NutParserError(kind: .missingValue(for: "posts"), row: 13)
+        var expected = NutParserError(kind: .missingValue(for: "posts"), line: 13)
         expected.name = "Views/Posts.nut"
         XCTAssertTrue(checkError(for: interpreter, expect: expected), "Missing value for 'posts'")
     }
@@ -142,7 +142,7 @@ class InterpreterTests: XCTestCase {
             ]
         let name = "Posts"
         let interpreter = NutInterpreter(view: name, with: data)
-        var expected = NutParserError(kind: .wrongValue(for: "Date(_:format:)", expected: "Double", got: "asd"), row: 38)
+        var expected = NutParserError(kind: .wrongValue(for: "Date(_:format:)", expected: "Double", got: "asd"), line: 38)
         expected.name = "Views/Posts.nut"
         XCTAssertTrue(checkError(for: interpreter, expect: expected), "String in Date")
     }

@@ -210,7 +210,7 @@ extension NutInterpreter {
         } catch let error as EvaluationError {
             throw NutParserError(
                 kind: .evaluationError(infix: expression.infix, message: error.description),
-                row: expression.row)
+                line: expression.line)
         }
     }
 
@@ -222,7 +222,7 @@ extension NutInterpreter {
         } catch let error as EvaluationError {
             throw NutParserError(
                 kind: .evaluationError(infix: expression.infix, message: error.description),
-                row: expression.row)
+                line: expression.line)
         }
     }
 
@@ -231,13 +231,13 @@ extension NutInterpreter {
         guard let dateMiliseconds = Double(dateStr) else {
             throw NutParserError(
                 kind: .wrongValue(for: "Date(_:format:)", expected: "Double", got: dateStr),
-                row: dateToken.date.row)
+                line: dateToken.date.line)
         }
         let format: ExpressionToken
         if dateToken.format == nil {
             format = ExpressionToken(
                 infix: "\"\(NutConfig.dateDefaultFormat)\"",
-                row: dateToken.row)!
+                line: dateToken.line)!
         } else {
             format = dateToken.format!
         }
@@ -250,7 +250,7 @@ extension NutInterpreter {
 
     fileprivate func parse(forIn: ForInToken) throws -> (result: String, heads: [NutHeadProtocol]) {
         guard let arr = getValue(name: forIn.array, from: data) else {
-            throw NutParserError(kind: .missingValue(for: forIn.array), row: forIn.row)
+            throw NutParserError(kind: .missingValue(for: forIn.array), line: forIn.line)
 
         }
         let prevValue = data[forIn.variable]
@@ -261,7 +261,7 @@ extension NutInterpreter {
             guard let dic = arr as? [String: Any] else {
                 throw NutParserError(
                     kind: .wrongValue(for: forIn.array, expected: "[String: Any]", got: arr),
-                    row: forIn.row)
+                    line: forIn.line)
             }
             for (key, value) in dic {
                 data[forIn.variable] = value
@@ -275,7 +275,7 @@ extension NutInterpreter {
             guard let array = arr as? [Any] else {
                 throw NutParserError(
                     kind: .wrongValue(for: forIn.array, expected: "[Any]", got: arr),
-                    row: forIn.row)
+                    line: forIn.line)
             }
             for item in array {
                 data[forIn.variable] = unwrap(any: item)
@@ -297,7 +297,7 @@ extension NutInterpreter {
         } catch let error as EvaluationError {
             throw NutParserError(
                 kind: .evaluationError(infix: ifToken.condition, message: error.description),
-                row: ifToken.row)
+                line: ifToken.line)
         }
         if let variable = ifToken.variable {
             if let value = any {
@@ -322,7 +322,7 @@ extension NutInterpreter {
                         for: ifToken.id,
                         expected: "<expression: Bool>",
                         got: String(describing: any ?? "nil")),
-                    row: ifToken.row)
+                    line: ifToken.line)
             }
         }
         return ("", [])
