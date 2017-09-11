@@ -176,7 +176,7 @@ extension ResponseManager {
         object: T.Type)
         throws -> T where T: Decodable {
 
-            var values = request.getURLParameters()
+            var values = request.urlParameters
 
             if request.method == HTTPHeaders.Method.post {
                 for (k, v) in request.postParameters {

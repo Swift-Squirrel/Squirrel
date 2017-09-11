@@ -41,6 +41,7 @@ public enum HTTPHeaders {
         /// - gzip: gzip
         public enum EncodingType: String {
             case gzip
+            case deflate
         }
     }
 

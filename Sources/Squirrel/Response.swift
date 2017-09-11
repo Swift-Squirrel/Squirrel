@@ -38,7 +38,7 @@ open class Response {
     private var finalBody: Data? = nil
 
     /// Body length
-    var bodyLenght: Int {
+    var bodyLength: Int {
         if finalBody == nil {
             finalBody = body
         }
@@ -195,7 +195,7 @@ extension Response {
             finalBody = rawBody
         }
         var header = httpProtocolVersion + " " + status.description + "\r\n"
-        header += HTTPHeaders.contentLength + ": " + String(bodyLenght) + "\r\n"
+        header += HTTPHeaders.contentLength + ": " + String(bodyLength) + "\r\n"
         if let encoding = contentEncoding {
             header += HTTPHeaders.Encoding.contentEncoding + ": "
                 + encoding.rawValue + "\r\n"

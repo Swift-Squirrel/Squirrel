@@ -88,6 +88,8 @@ public class Config {
     /// Shared instance
     public static let sharedInstance = Config()
 
+    // swiftlint:disable cyclomatic_complexity
+    // swiftlint:disable function_body_length
     private init() {
         let configFile = Path().absolute() + ".squirrel.yaml"
         var cacheStorage: String? = nil
@@ -157,10 +159,16 @@ public class Config {
 
         NutConfig.fruits = storageViews
         NutConfig.nuts = views
-        let cacheConfig = Cache.Config(expiry: cacheExpiry, maxDiskSize: cacheMaxSize, cacheDirectory: _cache.string)
+        let cacheConfig = Cache.Config(
+            expiry: cacheExpiry,
+            maxDiskSize: cacheMaxSize,
+            cacheDirectory: _cache.string)
+
         NutConfig.NutViewCache.setNutViewCache(config: cacheConfig)
         SquirrelConnectorCache.setProjectionCache(config: cacheConfig)
     }
+    // swiftlint:enable cyclomatic_complexity
+    // swiftlint:enable function_body_length
 
 
     /// Set database connector and initialize it

@@ -452,7 +452,9 @@ extension NutParser {
                 let text = String(text[stringIndex...])
 
                 guard stm != "" else {
-                    throw NutParserError(kind: .syntaxError(expected: expected, got: stm), line: line)
+                    throw NutParserError(
+                        kind: .syntaxError(expected: expected, got: stm),
+                        line: line)
                 }
                 let separated = stm.components(separatedBy: " ")
                 var key: String? = nil
@@ -479,7 +481,9 @@ extension NutParser {
                     variable = String(variable.dropLast())
                     array = separated[4]
                 } else {
-                    throw NutParserError(kind: .syntaxError(expected: expected, got: stm), line: line)
+                    throw NutParserError(
+                        kind: .syntaxError(expected: expected, got: stm),
+                        line: line)
                 }
                 if let keyValue = key {
                     guard checkSimple(variable: keyValue) else {

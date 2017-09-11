@@ -20,13 +20,12 @@ open class Request {
         return _method
     }
     private let _path: URL
-    private let _fullpath: URL
 
     private var _cookies: [String: String] = [:]
     var acceptEncoding = Set<HTTPHeaders.Encoding.EncodingType>()
 
     var path: String {
-        return _path.absoluteString
+        return _path.path
     }
     private let httpProtocol: String
     //    private let host: URL
@@ -35,7 +34,7 @@ open class Request {
 
     private var headers: [String: String] = [:]
 
-    private var urlParameters: [String: String] = [:]
+    private var _urlParameters: [String: String] = [:]
     private var _postParameters: [String: String] = [:]
 
     // swiftlint:disable function_body_length
@@ -64,8 +63,29 @@ open class Request {
             throw RequestError(
                 kind: .parseError(
                     string: line,
-                    expectations: "String has to be separatable into "
-                        + "exactly three parts divided by ' '."
+                    expectations: "First line has to be separatable into "
+                        + " three parts divided by ' '."
+                )
+            )
+        }
+
+        try components.forEach {
+            (component: String) throws in
+            guard !component.isEmpty else {
+                throw RequestError(
+                    kind: .parseError(
+                        string: line,
+                        expectations: "Empty component."
+                    )
+                )
+            }
+        }
+
+        guard components[1].first == "/" else {
+            throw RequestError(
+                kind: .parseError(
+                    string: components[1],
+                    expectations: "URL prefix must be '/' not '\(components[1].first!)'."
                 )
             )
         }
@@ -75,8 +95,7 @@ open class Request {
                 string: components[1],
                 expectations: "Has to be parsable as URL."))
         }
-        _fullpath = fullpath
-        _path = URL(string: fullpath.path)!
+        _path = fullpath
 
         let methodRegex = Regex("^(post|get|delete|put|head|option)$")
         guard methodRegex.matches(components[0].lowercased()) == true else {
@@ -91,28 +110,22 @@ open class Request {
 
         lines.remove(at: 0)
         for line in lines {
-            let pomArray = line.components(separatedBy: ": ")
-            if pomArray.count != 2 {
+            let pomArray: [String] = line.split(
+                separator: ":",
+                maxSplits: 1,
+                omittingEmptySubsequences: false).map({ String($0) })
+
+            if pomArray.count != 2 || pomArray[1].first != " " {
                 throw RequestError(kind: .parseError(
                     string: line,
                     expectations: "Header line has to be separatable by ': ' to two parts"
                     ))
             }
-            if pomArray[0].lowercased() == "accept-encoding" {
-                let acceptable = pomArray[1].components(separatedBy: ", ")
-                acceptable.forEach({ (encoding) in
-                    switch encoding {
-                    case "gzip":
-                        acceptEncoding.insert(.gzip)
-                    default:
-                        break
-                    }
-                })
-            }
-            headers[pomArray[0].lowercased()] = pomArray[1]
+            headers[pomArray[0].lowercased()] = String(pomArray[1].dropFirst())
         }
 
         parseCookies()
+        parseEncoding()
 
         if _method == .post {
             try parsePostRequest()
@@ -120,6 +133,25 @@ open class Request {
     }
     // swiftlint:enable function_body_length
     // swiftlint:enable cyclomatic_complexity
+
+    private func parseEncoding() {
+        guard var acceptLine = getHeader(for: "accept-encoding") else {
+            return
+        }
+        acceptLine.replaceAll(matching: " ", with: "")
+        let acceptable = acceptLine.components(separatedBy: ",")
+        acceptable.forEach({ (encoding) in
+            switch encoding {
+            case "gzip":
+                acceptEncoding.insert(.gzip)
+            case "deflate":
+                acceptEncoding.insert(.deflate)
+            default:
+                break
+            }
+        })
+
+    }
 
     private func parseCookies() {
         guard let cookieLine = getHeader(for: "Cookie") else {
@@ -170,19 +202,19 @@ open class Request {
     }
 
     func setURLParameter(key: String, value: String) {
-        urlParameters[key] = value
+        _urlParameters[key] = value
     }
 
     func getURLParameter(for key: String) -> String? {
-        return urlParameters[key]
+        return _urlParameters[key]
     }
 
-    func getURLParameters() -> [String: String] {
-        return urlParameters
+    var urlParameters: [String: String] {
+        return _urlParameters
     }
 
     func getGetParameter(for key: String) -> String? {
-        return _fullpath[key]
+        return _path[key]
     }
 
     func getPostParameter(for key: String) -> String? {
@@ -201,7 +233,7 @@ open class Request {
     }
 
     var getParameters: [String: String?] {
-        return _fullpath.allQueryParams
+        return _path.allQueryParams
     }
 
     func getHeader(for key: String) -> String? {
