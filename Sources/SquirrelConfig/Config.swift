@@ -154,7 +154,7 @@ public class Config {
         NutConfig.nuts = views
         let cacheConfig = Cache.Config(expiry: cacheExpiry, maxDiskSize: cacheMaxSize, cacheDirectory: _cache.string)
         NutConfig.NutViewCache.setNutViewCache(config: cacheConfig)
-        // TODO SquirrelConnector cache
+        SquirrelConnectorCache.setProjectionCache(config: cacheConfig)
     }
 
 
