@@ -8,7 +8,7 @@
 
 import Foundation
 import PathKit
-import Gzip
+import GZip
 
 typealias ResponseHandler = ((Request) -> Response)
 

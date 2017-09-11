@@ -19,7 +19,7 @@ let package = Package(
         .package(url: "https://github.com/LeoNavel/Evaluation.git",  from: "0.2.0"),
         .package(url: "https://github.com/sharplet/Regex.git",  from: "1.1.0"),
         .package(url: "https://github.com/IBM-Swift/BlueSocket", from: "0.12.61"),
-        .package(url: "https://github.com/1024jp/GzipSwift.git", .branch("swift4")),
+        .package(url: "https://github.com/antonmes/GZip.git", from: "5.0.0"),
         .package(url: "https://github.com/tris-foundation/test.git", from: "0.4.3")
         ],
     targets: [
@@ -28,7 +28,7 @@ let package = Package(
             dependencies: ["Squirrel"]),*/
         .target(
             name: "Squirrel",
-            dependencies: ["NutView", "SquirrelConfig", "SquirrelJSONEncoding", "Socket", "Gzip"]),
+            dependencies: ["NutView", "SquirrelConfig", "SquirrelJSONEncoding", "Socket", "GZip"]),
         .target(
             name: "NutView",
             dependencies: ["SquirrelJSONEncoding", "Evaluation", "Regex", "SquirrelConnector"]),
