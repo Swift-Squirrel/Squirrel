@@ -16,7 +16,7 @@ protocol NutTokenProtocol {
 }
 
 protocol NutCommandTokenProtocol: NutTokenProtocol {
-    var row: Int { get }
+    var line: Int { get }
 }
 
 protocol NutViewProtocol: NutCommandTokenProtocol {
@@ -50,56 +50,57 @@ struct TextToken: NutTokenProtocol {
 }
 
 struct InsertViewToken: NutCommandTokenProtocol {
-    var row: Int
+    var line: Int
 
     let id = "view"
 
-    init(row: Int) {
-        self.row = row
+    init(line: Int) {
+        self.line = line
     }
 
     var serialized: [String: Any] {
-        return ["id": id, "row": row]
+        return ["id": id, "line": line]
     }
 }
 
 protocol IfTokenProtocol: NutCommandTokenProtocol {
-    init?(condition: String, row: Int)
+    init?(condition: String, line: Int)
     mutating func setThen(body: [NutTokenProtocol])
     mutating func setElse(body: [NutTokenProtocol])
 }
 
 struct DateToken: NutCommandTokenProtocol {
-    let row: Int
+    let line: Int
 
     let id = "date"
 
     let date: ExpressionToken
 
-    let format: ExpressionToken
+    let format: ExpressionToken?
 
-    init(date: ExpressionToken, format: ExpressionToken? = nil, row: Int) {
+    init(date: ExpressionToken, format: ExpressionToken? = nil, line: Int) {
         self.date = date
-        self.row = row
-
-        if let format = format {
-            self.format = format
-        } else {
-            self.format = ExpressionToken(infix: "\"MMM dd yyyy\"", row: row)!
-        }
+        self.line = line
+        self.format = format
     }
 
     var serialized: [String : Any] {
-        return ["id": id, "date": date.serialized, "format": format.serialized, "row": row]
+        var res: [String: Any] = [
+            "id": id,
+            "date": date.serialized,
+            "line": line
+        ]
+        if let format = self.format {
+            res["format"] = format.serialized
+        }
+        return res
     }
-
-
 }
 
 struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
     let id: String
 
-    let row: Int
+    let line: Int
 
     let condition: String
 
@@ -117,15 +118,15 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let variable: String?
 
-    init(variable: String, condition: String, row: Int) {
-        self.row = row
+    init(variable: String, condition: String, line: Int) {
+        self.line = line
         self.id = "if let"
         self.variable = variable
         self.condition = condition
     }
 
-    init?(condition: String, row: Int) {
-        self.row = row
+    init?(condition: String, line: Int) {
+        self.line = line
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
             guard separated.count == 4 else {
@@ -150,7 +151,7 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
             "id": id,
             "condition": condition,
             "then": thenBlock.map({ $0.serialized }),
-            "row": row
+            "line": line
         ]
         if let variable = self.variable {
             res["variable"] = variable
@@ -165,7 +166,7 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
 struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
     let id: String
 
-    let row: Int
+    let line: Int
 
     let condition: String
 
@@ -195,8 +196,8 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let variable: String?
 
-    init?(condition: String, row: Int) {
-        self.row = row
+    init?(condition: String, line: Int) {
+        self.line = line
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
             guard separated.count == 4 else {
@@ -221,7 +222,7 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
             "id": id,
             "condition": condition,
             "then": thenBlock.map({ $0.serialized }),
-            "row": row
+            "line": line
         ]
         if let variable = self.variable {
             res["variable"] = variable
@@ -236,58 +237,58 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
 struct LayoutToken: NutLayoutProtocol {
     let id = "layout"
 
-    let row: Int
+    let line: Int
 
     let name: String
 
-    init(name: String, row: Int) {
-        self.row = row
+    init(name: String, line: Int) {
+        self.line = line
         self.name = name
     }
 
     var serialized: [String: Any] {
-        return ["id": id, "name": name, "row": row]
+        return ["id": id, "name": name, "line": line]
     }
 }
 
 struct SubviewToken: NutSubviewProtocol {
     var name: String
 
-    var row: Int
+    var line: Int
 
     let id = "subview"
 
-    init(name: String, row: Int) {
-        self.row = row
+    init(name: String, line: Int) {
+        self.line = line
         self.name = name
     }
 
     var serialized: [String : Any] {
-        return ["id": id, "row": row, "name": name]
+        return ["id": id, "line": line, "name": name]
     }
 }
 
 struct TitleToken: NutHeadProtocol {
     let id = "title"
 
-    let row: Int
+    let line: Int
 
     let expression: ExpressionToken
 
-    init(expression: ExpressionToken, row: Int) {
-        self.row = row
+    init(expression: ExpressionToken, line: Int) {
+        self.line = line
         self.expression = expression
     }
 
     var serialized: [String: Any] {
-        return ["id": id, "expression": expression.serialized, "row": row]
+        return ["id": id, "expression": expression.serialized, "line": line]
     }
 }
 
 struct ForInToken: NutCommandTokenProtocol {
     let id: String
 
-    let row: Int
+    let line: Int
 
     let variable: String
 
@@ -301,8 +302,8 @@ struct ForInToken: NutCommandTokenProtocol {
         self.body = body
     }
 
-    init(key: String? = nil, variable: String, array: String, row: Int) {
-        self.row = row
+    init(key: String? = nil, variable: String, array: String, line: Int) {
+        self.line = line
         if key == nil {
             id = "for in Array"
         } else {
@@ -319,7 +320,7 @@ struct ForInToken: NutCommandTokenProtocol {
             "variable": variable,
             "array": array,
             "body": body.map({ $0.serialized }),
-            "row": row
+            "line": line
         ]
         if let key = self.key {
             res["key"] = key
@@ -331,12 +332,12 @@ struct ForInToken: NutCommandTokenProtocol {
 struct ElseToken: NutCommandTokenProtocol {
     let id = "else"
 
-    let row: Int
+    let line: Int
 
     private var body = [NutTokenProtocol]()
 
-    init(row: Int) {
-        self.row = row
+    init(line: Int) {
+        self.line = line
     }
 
     func getBody() -> [NutTokenProtocol] {
@@ -348,16 +349,16 @@ struct ElseToken: NutCommandTokenProtocol {
     }
 
     var serialized: [String: Any] {
-        return ["id": "else", "row": row]
+        return ["id": "else", "line": line]
     }
 }
 
 struct EndBlockToken: NutCommandTokenProtocol {
     let id = "}"
 
-    let row: Int
+    let line: Int
 
     var serialized: [String: Any] {
-        return ["id": id, "row": row]
+        return ["id": id, "line": line]
     }
 }

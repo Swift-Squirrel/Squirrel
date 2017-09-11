@@ -36,7 +36,7 @@ extension Server {
     public func route<T>(get url: String, handler: @escaping (Request, T) throws -> Any)
         where T: Decodable {
 
-        responseManager.route(get: url, handler: handler)
+            responseManager.route(get: url, handler: handler)
     }
 
     /// Add route for get method
@@ -52,10 +52,115 @@ extension Server {
     ///
     /// - Parameters:
     ///   - url: Url of route
-    ///   - handler: response handler
-    public func route<T>(post url: String, handler: @escaping (T) throws -> Any)
+    ///   - handler: Response handler
+    public func route(post url: String, handler: @escaping (Request) throws -> Any) {
+        responseManager.route(post: url, handler: handler)
+    }
+
+    /// Add route for post method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - handler: Response handler
+    public func route(post url: String, handler: @escaping () throws -> Any) {
+        responseManager.route(post: url, handler: handler)
+    }
+
+    /// Add route for post method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - handler: Response handler
+    public func route<T>(post url: String, handler: @escaping (Request, T) throws -> Any)
         where T: Decodable {
 
-        responseManager.route(post: url, handler: handler)
+            responseManager.route(post: url, handler: handler)
+    }
+
+    /// Add route for post method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - handler: Response handler
+    public func route<T>(post url: String, handler: @escaping (T) throws -> Any)
+        where T: Decodable {
+            responseManager.route(post: url, handler: handler)
+    }
+
+    /// Add route for put method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - handler: Response handler
+    public func route(put url: String, handler: @escaping (Request) throws -> Any) {
+        responseManager.route(put: url, handler: handler)
+    }
+
+    /// Add route for put method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - handler: Response handler
+    public func route(put url: String, handler: @escaping () throws -> Any) {
+        responseManager.route(put: url, handler: handler)
+    }
+
+    /// Add route for put method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - handler: Response handler
+    public func route<T>(put url: String, handler: @escaping (Request, T) throws -> Any)
+        where T: Decodable {
+
+            responseManager.route(put: url, handler: handler)
+    }
+
+    /// Add route for put method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - handler: Response handler
+    public func route<T>(put url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
+        responseManager.route(put: url, handler: handler)
+    }
+
+    /// Add route for delete method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - handler: Response handler
+    public func route(delete url: String, handler: @escaping (Request) throws -> Any) {
+        responseManager.route(delete: url, handler: handler)
+    }
+
+    /// Add route for delete method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - handler: Response handler
+    public func route(delete url: String, handler: @escaping () throws -> Any) {
+        responseManager.route(delete: url, handler: handler)
+    }
+
+    /// Add route for delete method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - handler: Response handler
+    public func route<T>(delete url: String, handler: @escaping (Request, T) throws -> Any)
+        where T: Decodable {
+
+            responseManager.route(delete: url, handler: handler)
+    }
+
+    /// Add route for delete method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - handler: Response handler
+    public func route<T>(delete url: String, handler: @escaping (T) throws -> Any)
+        where T: Decodable {
+            responseManager.route(delete: url, handler: handler)
     }
 }

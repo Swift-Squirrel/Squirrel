@@ -37,8 +37,8 @@ public struct NutParserError: Error, CustomStringConvertible {
     public let kind: ErrorKind
     /// Name of file
     public var name: String? = nil
-    /// row of error
-    public let row: Int
+    /// line of error
+    public let line: Int
     private let _description: String?
     /// Description
     public var description: String {
@@ -67,27 +67,27 @@ public struct NutParserError: Error, CustomStringConvertible {
                 + "but got '\(String(describing: got))'"
         case .wrongSimpleVariable(let name, let command):
             res = "Variable name '\(name)' in '\(command)' does not match "
-                + "regular expression '[a-zA-Z][a-zA-Z0-9]*'"
+                + "regular expression '[a-zA-Z]\\w*'"
         case .wrongChainedVariable(let name, let command):
             res = "Variable name '\(name)' in '\(command)' does not match "
-                + "regular expression '[a-zA-Z][a-zA-Z0-9]*(\\.[a-zA-Z][a-zA-Z0-9]*)*'"
+                + "regular expression '[a-zA-Z]\\w*(\\.[a-zA-Z]\\w*)*'"
         case .unexpectedBlockEnd:
             res = "Unexpected '\\}'"
         }
         if let name = self.name {
             res += "\nFile name: \(name)"
         }
-        res += "\nRow:\(row)"
+        res += "\nLine:\(line)"
         if let desc = _description {
             res += "\nDescription: \(desc)"
         }
         return res
     }
 
-    init(kind: ErrorKind, row: Int, description: String? = nil) {
+    init(kind: ErrorKind, line: Int, description: String? = nil) {
         self.kind = kind
         self._description = description
-        self.row = row
+        self.line = line
     }
 }
 

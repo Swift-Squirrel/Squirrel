@@ -32,7 +32,7 @@ class NutResolverTests: XCTestCase {
     }
 
     func testSuccessResolingPosts() {
-        let resolver: NutResolverProtocol = NutResolver.sharedInstance
+        let resolver: NutResolverProtocol.Type = NutResolver.self
 
         XCTAssertNoThrow(try resolver.viewToken(for: "Views.Posts"))
         guard let viewToken = try? resolver.viewToken(for: "Views.Posts") else {
@@ -46,7 +46,7 @@ class NutResolverTests: XCTestCase {
     }
 
     func testSuccessResolingPost() {
-        let resolver: NutResolverProtocol = NutResolver.sharedInstance
+        let resolver: NutResolverProtocol.Type = NutResolver.self
 
         XCTAssertNoThrow(try resolver.viewToken(for: "Views.Post"))
         guard let viewToken = try? resolver.viewToken(for: "Views.Post") else {
@@ -60,7 +60,7 @@ class NutResolverTests: XCTestCase {
     }
 
     func testSuccessResolingDefaultLayout() {
-        let resolver: NutResolverProtocol = NutResolver.sharedInstance
+        let resolver: NutResolverProtocol.Type = NutResolver.self
         let name = "Layouts.Default"
 
         XCTAssertNoThrow(try resolver.viewToken(for: name))
@@ -75,7 +75,7 @@ class NutResolverTests: XCTestCase {
     }
 
     func testSuccessResolingHeadSubview() {
-        let resolver: NutResolverProtocol = NutResolver.sharedInstance
+        let resolver: NutResolverProtocol.Type = NutResolver.self
         let name = "Subviews.Page.Head"
 
         XCTAssertNoThrow(try resolver.viewToken(for: name))
@@ -90,7 +90,7 @@ class NutResolverTests: XCTestCase {
     }
 
     func testNotExists() {
-        let resolver: NutResolverProtocol = NutResolver.sharedInstance
+        let resolver: NutResolverProtocol.Type = NutResolver.self
         let name = "Subviews.Page.Heada"
 
         XCTAssertThrowsError(try resolver.viewToken(for: name))

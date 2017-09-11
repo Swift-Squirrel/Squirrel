@@ -12,13 +12,14 @@ let package = Package(
             targets: ["Squirrel"]),
         ],
     dependencies: [
-        .package(url: "https://github.com/LeoNavel/Squirrel-Connector.git",  from: "0.1.4"),
+        .package(url: "https://github.com/LeoNavel/Squirrel-Connector.git",  from: "0.1.5"),
         .package(url: "https://github.com/kylef/PathKit.git",  from: "0.8.0"),
         .package(url: "https://github.com/SwiftyBeaver/SwiftyBeaver.git",  from: "1.4.0"),
         .package(url: "https://github.com/jpsim/Yams.git",  from: "0.3.5"),
         .package(url: "https://github.com/LeoNavel/Evaluation.git",  from: "0.2.0"),
         .package(url: "https://github.com/sharplet/Regex.git",  from: "1.1.0"),
         .package(url: "https://github.com/IBM-Swift/BlueSocket", from: "0.12.61"),
+        .package(url: "https://github.com/antonmes/GZip.git", from: "5.0.0"),
         .package(url: "https://github.com/tris-foundation/test.git", from: "0.4.3")
         ],
     targets: [
@@ -27,10 +28,10 @@ let package = Package(
             dependencies: ["Squirrel"]),*/
         .target(
             name: "Squirrel",
-            dependencies: ["NutView", "SquirrelConfig", "SquirrelJSONEncoding", "Socket"]),
+            dependencies: ["NutView", "SquirrelConfig", "SquirrelJSONEncoding", "Socket", "GZip"]),
         .target(
             name: "NutView",
-            dependencies: ["SquirrelJSONEncoding", "Evaluation", "Regex"]),
+            dependencies: ["SquirrelJSONEncoding", "Evaluation", "Regex", "SquirrelConnector"]),
 
         .target(
             name: "SquirrelConfig",

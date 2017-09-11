@@ -16,7 +16,7 @@ public struct JSON {
     /// - Throws: Parsing errors
     public init(string: String) throws {
         guard let data = JSONCoding.toJSON(json: string) else {
-            throw JSONError(kind: .parseError, message: "Corrupted content")
+            throw JSONError(kind: .parseError, description: "Corrupted content")
         }
         self.data = data
     }
@@ -171,9 +171,17 @@ extension JSON {
     }
 }
 
+// MARK: - Any
+public extension JSON {
+    /// Any
+    public var any: Any? {
+        return data
+    }
+}
+
 // MARK: - Additive functions
 public extension JSON {
-    /// Check if JSOn represents nil
+    /// Check if JSON represents nil
     public var isNil: Bool {
         return data == nil
     }

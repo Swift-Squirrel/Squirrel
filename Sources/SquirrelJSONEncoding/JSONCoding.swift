@@ -44,7 +44,7 @@ public struct JSONCoding {
         if let data = encodeSerializeJSON(object: object) {
             return try dataSerialization(data: data)
         } else {
-            throw JSONError(kind: .encodeError, message: "Can not encode object to JSON.")
+            throw JSONError(kind: .encodeError, description: "Can not encode object to JSON.")
         }
     }
 
@@ -55,7 +55,9 @@ public struct JSONCoding {
             ) {
             return theJSONData
         } else {
-            throw JSONError(kind: .parseError, message: "Can not serialize data to json format.")
+            throw JSONError(
+                kind: .parseError,
+                description: "Can not serialize data to json format.")
         }
     }
 
@@ -88,7 +90,7 @@ public struct JSONCoding {
         if let theJSONText = String(data: theJSONData, encoding: .utf8) {
             return theJSONText
         } else {
-            throw JSONError(kind: .dataEncodingError, message: "Can not encode data")
+            throw JSONError(kind: .dataEncodingError, description: "Can not encode data")
         }
     }
 

@@ -36,7 +36,7 @@ public struct View: ViewProtocol {
         self.name = name
         if let object = object {
             guard let data = JSONCoding.encodeSerializeJSON(object: object) as? [String: Any] else {
-                throw JSONError(kind: .encodeError, message: "Encode error")
+                throw JSONError(kind: .encodeError, description: "Encode error")
             }
             self.data = data
         } else {
