@@ -20,8 +20,10 @@ class ResponseManager {
     private func route(
         method: HTTPHeaders.Method,
         url: String,
+        middlewares: [Middleware],
         handler: @escaping AnyResponseHandler) {
 
+        let handler = chain(middlewares: middlewares, handler: handler)
         routeTree.add(route: url, forMethod: method, handler: handler)
     }
 
@@ -32,18 +34,27 @@ class ResponseManager {
 
 // MARK: - Get method
 extension ResponseManager {
-    func route(get url: String, handler: @escaping (Request) throws -> Any) {
-        route(method: .get, url: url, handler: handler)
+    func route(
+        get url: String,
+        middlewares: [Middleware],
+        handler: @escaping (Request) throws -> Any) {
+
+        route(method: .get, url: url, middlewares: middlewares, handler: handler)
     }
 
-    func route(get url: String, handler: @escaping () throws -> Any) {
-        route(get: url) { (_ :Request) in
+    func route(
+        get url: String,
+        middlewares: [Middleware],
+        handler: @escaping () throws -> Any) {
+
+        route(get: url, middlewares: middlewares) { (_ :Request) in
             return try handler()
         }
     }
 
     func route<T>(
         get url: String,
+        middlewares: [Middleware],
         handler: @escaping (Request, T) throws -> Any)
         where T: Decodable {
 
@@ -52,32 +63,45 @@ extension ResponseManager {
                 let converted = try self.convertParameters(request: req, object: T.self)
                 return try handler(req, converted)
             }
-            route(get: url, handler: closure)
+            route(get: url, middlewares: middlewares, handler: closure)
     }
 
-    func route<T>(get url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
+    func route<T>(
+        get url: String,
+        middlewares: [Middleware],
+        handler: @escaping (T) throws -> Any) where T: Decodable {
+
         let closure: AnyResponseHandler = {
             [unowned self] (req: Request) in
             let converted = try self.convertParameters(request: req, object: T.self)
             return try handler(converted)
         }
-        route(get: url, handler: closure)
+        route(get: url, middlewares: middlewares, handler: closure)
     }
 }
 // MARK: - Post method
 extension ResponseManager {
-    func route(post url: String, handler: @escaping (Request) throws -> Any) {
-        route(method: .post, url: url, handler: handler)
+    func route(
+        post url: String,
+        middlewares: [Middleware],
+        handler: @escaping (Request) throws -> Any) {
+
+        route(method: .post, url: url, middlewares: middlewares, handler: handler)
     }
 
-    func route(post url: String, handler: @escaping () throws -> Any) {
-        route(post: url) { (_ :Request) in
+    func route(
+        post url: String,
+        middlewares: [Middleware],
+        handler: @escaping () throws -> Any) {
+
+        route(post: url, middlewares: middlewares) { (_ :Request) in
             return try handler()
         }
     }
 
     func route<T>(
         post url: String,
+        middlewares: [Middleware],
         handler: @escaping (Request, T) throws -> Any)
         where T: Decodable {
 
@@ -86,33 +110,46 @@ extension ResponseManager {
                 let converted = try self.convertParameters(request: req, object: T.self)
                 return try handler(req, converted)
             }
-            route(post: url, handler: closure)
+            route(post: url, middlewares: middlewares, handler: closure)
     }
 
-    func route<T>(post url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
+    func route<T>(
+        post url: String,
+        middlewares: [Middleware],
+        handler: @escaping (T) throws -> Any) where T: Decodable {
+
         let closure: AnyResponseHandler = {
             [unowned self] (req: Request) in
             let converted = try self.convertParameters(request: req, object: T.self)
             return try handler(converted)
         }
-        route(post: url, handler: closure)
+        route(post: url, middlewares: middlewares, handler: closure)
     }
 }
 
 // MARK: - PUT method
 extension ResponseManager {
-    func route(put url: String, handler: @escaping (Request) throws -> Any) {
-        route(method: .put, url: url, handler: handler)
+    func route(
+        put url: String,
+        middlewares: [Middleware],
+        handler: @escaping (Request) throws -> Any) {
+
+        route(method: .put, url: url, middlewares: middlewares, handler: handler)
     }
 
-    func route(put url: String, handler: @escaping () throws -> Any) {
-        route(put: url) { (_ :Request) in
+    func route(
+        put url: String,
+        middlewares: [Middleware],
+        handler: @escaping () throws -> Any) {
+
+        route(put: url, middlewares: middlewares) { (_ :Request) in
             return try handler()
         }
     }
 
     func route<T>(
         put url: String,
+        middlewares: [Middleware],
         handler: @escaping (Request, T) throws -> Any)
         where T: Decodable {
 
@@ -121,33 +158,46 @@ extension ResponseManager {
                 let converted = try self.convertParameters(request: req, object: T.self)
                 return try handler(req, converted)
             }
-            route(put: url, handler: closure)
+            route(put: url, middlewares: middlewares, handler: closure)
     }
 
-    func route<T>(put url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
+    func route<T>(
+        put url: String,
+        middlewares: [Middleware],
+        handler: @escaping (T) throws -> Any) where T: Decodable {
+
         let closure: AnyResponseHandler = {
             [unowned self] (req: Request) in
             let converted = try self.convertParameters(request: req, object: T.self)
             return try handler(converted)
         }
-        route(put: url, handler: closure)
+        route(put: url, middlewares: middlewares, handler: closure)
     }
 }
 
 // MARK: - DELETE method
 extension ResponseManager {
-    func route(delete url: String, handler: @escaping (Request) throws -> Any) {
-        route(method: .delete, url: url, handler: handler)
+    func route(
+        delete url: String,
+        middlewares: [Middleware],
+        handler: @escaping (Request) throws -> Any) {
+
+        route(method: .delete, url: url, middlewares: middlewares, handler: handler)
     }
 
-    func route(delete url: String, handler: @escaping () throws -> Any) {
-        route(delete: url) { (_ :Request) in
+    func route(
+        delete url: String,
+        middlewares: [Middleware],
+        handler: @escaping () throws -> Any) {
+
+        route(delete: url, middlewares: middlewares) { (_ :Request) in
             return try handler()
         }
     }
 
     func route<T>(
         delete url: String,
+        middlewares: [Middleware],
         handler: @escaping (Request, T) throws -> Any)
         where T: Decodable {
 
@@ -156,16 +206,20 @@ extension ResponseManager {
                 let converted = try self.convertParameters(request: req, object: T.self)
                 return try handler(req, converted)
             }
-            route(delete: url, handler: closure)
+            route(delete: url, middlewares: middlewares, handler: closure)
     }
 
-    func route<T>(delete url: String, handler: @escaping (T) throws -> Any) where T: Decodable {
+    func route<T>(
+        delete url: String,
+        middlewares: [Middleware],
+        handler: @escaping (T) throws -> Any) where T: Decodable {
+
         let closure: AnyResponseHandler = {
             [unowned self] (req: Request) in
             let converted = try self.convertParameters(request: req, object: T.self)
             return try handler(converted)
         }
-        route(delete: url, handler: closure)
+        route(delete: url, middlewares: middlewares, handler: closure)
     }
 }
 

@@ -10,9 +10,8 @@ import Foundation
 import PathKit
 import GZip
 
-typealias ResponseHandler = ((Request) -> Response)
-
-typealias AnyResponseHandler = ((Request) throws -> Any)
+/// Responder
+public typealias AnyResponseHandler = ((Request) throws -> Any)
 
 /// Response class
 open class Response {
@@ -180,7 +179,7 @@ open class Response {
     // swiftlint:enable cyclomatic_complexity
     // swiftlint:enable function_body_length
 
-    func responeHandler() -> ResponseHandler {
+    func responeHandler() -> (Request) -> Response {
         return {
             _ in
             return self

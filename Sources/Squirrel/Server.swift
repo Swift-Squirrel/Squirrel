@@ -6,12 +6,6 @@
 //
 //
 
-//#if os(Linux)
-//    import Glibc
-//#else
-//    import Darwin
-//#endif
-
 import Foundation
 import Socket
 import Dispatch
@@ -232,13 +226,5 @@ open class Server {
             }
             let _ = try? socket.write(from: "0\r\n\r\n".data(using: .utf8)!)
         }
-
-//        if response.bodyLenght <= 11000 /*4096*/ {
-//            let _ = try? socket.write(from: response.raw)
-//        } else {
-//            response.setHeader(for: "Transfer-Encoding", to: "chunked")
-//
-
-//        }
     }
 }
