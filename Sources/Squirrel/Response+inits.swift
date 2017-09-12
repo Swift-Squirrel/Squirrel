@@ -13,14 +13,22 @@ import SquirrelJSONEncoding
 
 // MARK: - JSON and HTML
 public extension Response {
-    convenience init(html path: Path) throws {
+    /// Constructs html response from file
+    ///
+    /// - Parameter path: path to file
+    /// - Throws: Filesystem errors
+    public convenience init(html path: Path) throws {
         try self.init(pathToFile: path)
         setHeader(
             for: HTTPHeaders.ContentType.contentType,
             to: HTTPHeaders.ContentType.Text.html.rawValue)
     }
 
-    convenience init(html: String) throws {
+    /// Construct html response from given string
+    ///
+    /// - Parameter html: html response
+    /// - Throws: `DataError(kind: dataCodingError(string:)`
+    public convenience init(html: String) throws {
         guard let data = html.data(using: .utf8) else {
             throw DataError(kind: .dataCodingError(string: html))
         }
@@ -32,7 +40,11 @@ public extension Response {
         )
     }
 
-    convenience init<T>(object: T) throws {
+    /// Constructs JSON response from given object
+    ///
+    /// - Parameter json: Object to serialize
+    /// - Throws: `JSONError` and swift JSON errors
+    public convenience init<T>(object: T) throws {
         let data = try JSONCoding.encodeDataJSON(object: object)
         self.init(
             headers: [
@@ -43,7 +55,12 @@ public extension Response {
         )
     }
 
-    convenience init(json: String) throws {
+    /// Constructs JSON response from given string
+    ///
+    /// - Parameter json: JSON string representation
+    /// - Throws: `DataError(kind: .dataCodingError(string:))` if string is not in utf8
+    ///   and `JSONError(kind: .parseError, description:)` if given string is not valid JSON
+    public convenience init(json: String) throws {
         guard let data = json.data(using: .utf8) else {
             throw DataError(kind: .dataCodingError(string: json))
         }
