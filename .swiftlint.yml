@@ -17,6 +17,13 @@ custom_rules:
     message: "Types, properties and methods with public or open access level should be documented."
     severity: warning
 
+  emptyline_before_curlbrace:
+    included: ".*.swift"
+    regex: '\n[ \t]*\n[ \t]*\}'
+    name: "newline before curlbrace"
+    message: "'}' should not be separated with code by empty line"
+    severity: warning
+
 variable_name:
   excluded:
     - id

@@ -37,7 +37,6 @@ struct RawExpressionToken: NutCommandTokenProtocol {
         self.infix = infix
         self.line = line
         //        let eval = try! Evaluation(expression: infix)
-
     }
 
     var serialized: [String: Any] {
