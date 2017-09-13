@@ -13,7 +13,7 @@ public protocol MiddlewareGroup {
 // MARK: - Grouping function
 public extension MiddlewareGroup {
 
-    /// Group routes under global and given middlewares
+    /// Group routes of global and given middlewares
     ///
     /// - Parameters:
     ///   - middlewares: Middlewares (default: [])
@@ -27,6 +27,16 @@ public extension MiddlewareGroup {
         let router = CommonRouter(middlewares: middlewareGroup + middlewares)
         routes(router)
         return router
+    }
+
+    /// Group routes of global and given group
+    ///
+    /// - Parameters:
+    ///   - middlewareGroup: Middleware group
+    ///   - routes: Closure with routes
+    /// - Returns: Middleware group for future grouping
+    public func group(_ middlewareGroup: MiddlewareGroup) -> MiddlewareGroup {
+        return self + middlewareGroup
     }
 }
 
