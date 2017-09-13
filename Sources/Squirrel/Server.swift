@@ -6,12 +6,6 @@
 //
 //
 
-//#if os(Linux)
-//    import Glibc
-//#else
-//    import Darwin
-//#endif
-
 import Foundation
 import Socket
 import Dispatch
@@ -20,7 +14,7 @@ import NutView
 import SquirrelConfig
 
 /// Server class
-open class Server {
+open class Server: Router {
 
     private let port: UInt16
     let bufferSize = 20
@@ -29,19 +23,23 @@ open class Server {
     var acceptNewConnection = true
     let serverRoot: Path
 
-    let responseManager = ResponseManager.sharedInstance
+    /// global middlewares used for all routes
+    public let middlewareGroup: [Middleware]
 
     /// Construct server
     ///
     /// - Parameters:
     ///   - port: Port for HTTP requests
     ///   - root: Root directory of server
+    ///   - globalMiddlewares: Middlewares used on all routes (default: [])
     public init(
         port: UInt16 = Config.sharedInstance.port,
-        serverRoot root: Path = Config.sharedInstance.serverRoot) {
+        serverRoot root: Path = Config.sharedInstance.serverRoot,
+        globalMiddlewares: [Middleware] = []) {
 
         self.port = port
         self.serverRoot = root
+        self.middlewareGroup = globalMiddlewares
 
     }
 
@@ -54,7 +52,7 @@ open class Server {
 
     /// Run server and start to listen on given `port` from `init(port:root:)`
     ///
-    /// - Throws: <#throws value description#>
+    /// - Throws: Socket errors
     public func run() throws {
         try squirrelConfig.setConnector()
 
@@ -232,13 +230,5 @@ open class Server {
             }
             let _ = try? socket.write(from: "0\r\n\r\n".data(using: .utf8)!)
         }
-
-//        if response.bodyLenght <= 11000 /*4096*/ {
-//            let _ = try? socket.write(from: response.raw)
-//        } else {
-//            response.setHeader(for: "Transfer-Encoding", to: "chunked")
-//
-
-//        }
     }
 }
