@@ -34,6 +34,8 @@ public class Config {
     private let _assets: Path
     private let _publicStorage: Path
 
+    public let session: Path
+
     /// Logger
     public let log = SwiftyBeaver.self
 
@@ -146,6 +148,7 @@ public class Config {
         _storage = _serverRoot + "Storage"
         _publicStorage = _storage + "Public"
         _logDir = _storage + "Logs"
+        session = _storage + "Sessions"
         _logFile = _logDir + logFileName
         _resourcesDir = _serverRoot + "Resources"
         _assets = _serverRoot + "Assets"
@@ -279,5 +282,6 @@ public class Config {
         createDir(path: cache)
         createDir(path: assets)
         createDir(path: publicStorage)
+        createDir(path: session)
     }
 }

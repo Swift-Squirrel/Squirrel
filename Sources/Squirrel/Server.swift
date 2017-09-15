@@ -122,24 +122,11 @@ open class Server: Router {
         do {
             let handler = try getHandler(for: request)
             let handlerResult = try handler(request)
-            return try parseAnyResponse(any: handlerResult)
+            return try Response.parseAnyResponse(any: handlerResult)
         } catch let error {
             return ErrorHandler.sharedInstance.response(for: error)
         }
 
-    }
-
-    private func parseAnyResponse(any: Any) throws -> Response {
-        switch any {
-        case let response as Response:
-            return response
-        case let view as ViewProtocol:
-            return try Response(view: view)
-        case let string as String:
-            return try Response(html: string)
-        default:
-            return try Response(object: any)
-        }
     }
 
     private func getHandler(for request: Request) throws -> AnyResponseHandler {
