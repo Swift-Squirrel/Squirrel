@@ -5,6 +5,8 @@
 //  Created by Filip Klembara on 9/3/17.
 //
 
+// swiftlint:disable file_length
+
 import Foundation
 
 /// JSON Representation
@@ -46,15 +48,26 @@ public struct JSON: Codable {
         }
     }
 
+    /// Construct null JSON value
     public init() {
         type = .nil
     }
 
+    /// Construct from JSON
+    ///
+    /// - Parameter json: JSON
     public init(_ json: JSON) {
         type = json.type
     }
 
+    /// Construct from any value
+    ///
+    /// - Note: If `any` is incompatible type returns nil
+    ///
+    /// - Parameter any: Value
     public init?(from any: Any?) {
+        // swiftlint:disable:previous cyclomatic_complexity
+
         if let any = any {
             switch any {
             case let dictionary as [String: JSON]:
@@ -87,6 +100,9 @@ public struct JSON: Codable {
 // MARK: - String
 public extension JSON {
 
+    /// Construct from string
+    ///
+    /// - Parameter string: String value
     public init(_ string: String) {
         type = .string(str: string)
     }
@@ -108,10 +124,16 @@ public extension JSON {
 // MARK: - Dictionary
 extension JSON {
 
+    /// Constructs from dictionary
+    ///
+    /// - Parameter dictionary: Dictionary value
     public init(_ dictionary: [String: JSON]) {
         type = .dictionary(dic: dictionary)
     }
 
+    /// Constructs from dictionary
+    ///
+    /// - Parameter dictionary: Dictionary value
     public init?(dictionary: [String: Any]) {
         var res = [String: JSON]()
         for (key, value) in dictionary {
@@ -153,10 +175,16 @@ extension JSON {
 // MARK: - Array
 public extension JSON {
 
+    /// Constructs from Array
+    ///
+    /// - Parameter array: Array value
     public init(_ array: [JSON]) {
         type = .array(arr: array)
     }
 
+    /// Constructs from Array
+    ///
+    /// - Parameter array: Array value
     public init?(array: [Any]) {
         var res = [JSON]()
         for element in array {
@@ -202,6 +230,9 @@ public extension JSON {
 
 // MARK: - Int
 extension JSON {
+    /// Constructs from integer value
+    ///
+    /// - Parameter int: Integer value
     public init(_ int: Int) {
         type = .int(int: int)
     }
@@ -222,6 +253,9 @@ extension JSON {
 
 // MARK: - Double
 extension JSON {
+    /// Constructs from double value
+    ///
+    /// - Parameter double: Double value
     public init(_ double: Double) {
         type = .double(double: double)
     }
@@ -241,6 +275,9 @@ extension JSON {
 
 // MARK: - Bool
 extension JSON {
+    /// Constructs from Bool value
+    ///
+    /// - Parameter bool: Bool value
     public init(_ bool: Bool) {
         type = .bool(bool: bool)
     }
@@ -261,6 +298,9 @@ extension JSON {
 
 // MARK: - Date
 extension JSON {
+    /// Constructs from date value
+    ///
+    /// - Parameter date: Date value
     public init(_ date: Date) {
         type = .date(date: date)
     }
@@ -310,11 +350,16 @@ public extension JSON {
         }
     }
 
+    /// Decode data to JSON
+    ///
+    /// - Parameter data: All important data in JSON data format
+    /// - Returns: JSON or nil on error
     public static func decode(from data: Data) -> JSON? {
         let decoder = JSONDecoder()
         return try? decoder.decode(self, from: data)
     }
 
+    /// Encoded JSON to Data or nil on error
     public var encode: Data? {
         let encoder = JSONEncoder()
         return try? encoder.encode(self)
@@ -322,8 +367,6 @@ public extension JSON {
 }
 
 extension JSON: Equatable {
-    // swiftlint:disable cyclomatic_complexity
-    // swiftlint:disable operator_whitespace
     /// Check JSONs for Equality
     ///
     /// - Note: If JSONS are Codable this return false
@@ -333,6 +376,7 @@ extension JSON: Equatable {
     ///   - rhs: right JSON
     /// - Returns: True if JSONs are equal
     public static func ==(lhs: JSON, rhs: JSON) -> Bool {
+        // swiftlint:disable:previous operator_whitespace
 
         if case .nil = lhs.type, case .nil = rhs.type {
             return true
@@ -363,8 +407,6 @@ extension JSON: Equatable {
             return false
         }
     }
-    // swiftlint:enable cyclomatic_complexity
-    // swiftlint:enable operator_whitespace
 }
 
 extension JSON.ValueType: Codable {
