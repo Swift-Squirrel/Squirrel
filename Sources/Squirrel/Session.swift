@@ -10,7 +10,7 @@ import SquirrelJSONEncoding
 import PathKit
 import SquirrelConfig
 
-public protocol SessionProtocol {
+public protocol SessionProtocol: Codable {
     var sessionID: String { get }
     var expiry: Date { get }
 
@@ -21,24 +21,43 @@ struct Session: SessionProtocol {
 
     private var data: [String: JSON] = [:]
 
-    var sessionID: String
+    let sessionID: String
 
-    var expiry: Date
+    let expiry: Date
 
-    init(id: String, expiry: Date, data: [String: JSON] = [:]) {
+    let userAgent: String
+
+    init(id: String, expiry: Date, userAgent: String, data: [String: JSON] = [:]) {
         self.sessionID = id
         self.expiry = expiry
         self.data = data
+        self.userAgent = userAgent
+        let _ = store()
+    }
+
+    init?(id: String, userAgent: String) {
+        let file = SessionConfig.storage + "\(id).session"
+        guard let data: Data = try? file.read() else {
+            return nil
+        }
+        let decoder = JSONDecoder()
+        guard let json = try? decoder.decode(Session.self, from: data) else {
+            return nil
+        }
+        guard json.userAgent == userAgent && json.expiry > Date() else {
+            try? file.delete()
+            return nil
+        }
+        self = json
     }
 
     func store() -> Bool {
         let file: Path = SessionConfig.storage + "\(sessionID).session"
-        let json = JSON(from: data).serialized
-        try file.write(json)
-    }
-
-    deinit {
-        <#statements#>
+        let encoder = JSONEncoder()
+        guard let data = try? encoder.encode(self) else {
+            return false
+        }
+        return (try? file.write(data)) != nil
     }
 
     subscript(key: String) -> JSON? {
@@ -47,9 +66,9 @@ struct Session: SessionProtocol {
         }
         set(value) {
             data[key] = value
+            let _ = store()
         }
     }
-
 }
 
 protocol SessionBuilder {
@@ -70,14 +89,13 @@ struct SessionConfig {
 
 struct SessionManager: SessionBuilder {
 
-
     func new(for request: Request) -> SessionProtocol? {
         guard let userAgent = request.getHeader(for: SessionConfig.userAgent) else {
             return nil
         }
         let id = randomString()
 
-        return Session(id: id, expiry: Date().addingTimeInterval(SessionConfig.defaultExpiry))
+        return Session(id: id, expiry: Date().addingTimeInterval(SessionConfig.defaultExpiry), userAgent: userAgent)
     }
 
     func get(for request: Request) -> SessionProtocol? {
@@ -87,7 +105,7 @@ struct SessionManager: SessionBuilder {
         guard let id = request.getCookie(for: SessionConfig.sessionName) else {
             return nil
         }
-        return Session(id: id, expiry: Date().addingTimeInterval(SessionConfig.defaultExpiry))
+        return Session(id: id, userAgent: userAgent)
     }
 }
 
@@ -112,7 +130,7 @@ public struct SessionMiddleware: Middleware {
     }
 
     public init() {
-        
+
     }
 }
 
