@@ -29,7 +29,7 @@ public struct JSON: Codable {
     ///
     /// - Parameter string: String containing JSON
     /// - Throws: Parsing errors
-    public init?(json: String) throws {
+    public init(json: String) throws {
         guard let data = JSONCoding.toJSON(json: json) else {
             throw JSONError(kind: .parseError, description: "Corrupted content")
         }

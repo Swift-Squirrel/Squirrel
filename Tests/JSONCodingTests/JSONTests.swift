@@ -23,16 +23,16 @@ class JSONTests: XCTestCase {
     }
 
     func testConstructors() {
-        XCTAssertThrowsError(try JSON(string: "}" + JSONS.simple))
-        XCTAssertThrowsError(try JSON(string: "}" + JSONS.oneSubstruct))
-        XCTAssertThrowsError(try JSON(string: "}" + JSONS.medium))
+        XCTAssertThrowsError(try JSON(json: "}" + JSONS.simple))
+        XCTAssertThrowsError(try JSON(json: "}" + JSONS.oneSubstruct))
+        XCTAssertThrowsError(try JSON(json: "}" + JSONS.medium))
 
-        XCTAssertNoThrow(try JSON(string: JSONS.simple))
-        XCTAssertNoThrow(try JSON(string: JSONS.oneSubstruct))
-        XCTAssertNoThrow(try JSON(string: JSONS.medium))
+        XCTAssertNoThrow(try JSON(json: JSONS.simple))
+        XCTAssertNoThrow(try JSON(json: JSONS.oneSubstruct))
+        XCTAssertNoThrow(try JSON(json: JSONS.medium))
 
         do {
-            _ = try JSON(string: "}" + JSONS.simple)
+            _ = try JSON(json: "}" + JSONS.simple)
         } catch let error {
             if let err = error as? JSONError {
                 if err.kind != JSONError.ErrorKind.parseError {
@@ -43,7 +43,7 @@ class JSONTests: XCTestCase {
             }
         }
         do {
-            _ = try JSON(string: "}" + JSONS.oneSubstruct)
+            _ = try JSON(json: "}" + JSONS.oneSubstruct)
         } catch let error {
             if let err = error as? JSONError {
                 if err.kind != JSONError.ErrorKind.parseError {
@@ -54,7 +54,7 @@ class JSONTests: XCTestCase {
             }
         }
         do {
-            _ = try JSON(string: "}" + JSONS.medium)
+            _ = try JSON(json: "}" + JSONS.medium)
         } catch let error {
             if let err = error as? JSONError {
                 if err.kind != JSONError.ErrorKind.parseError {
@@ -67,7 +67,7 @@ class JSONTests: XCTestCase {
     }
 
     func testDictionary() {
-        guard let json = try? JSON(string: JSONS.simple) else {
+        guard let json = try? JSON(json: JSONS.simple) else {
             fail()
             return
         }
@@ -93,7 +93,7 @@ class JSONTests: XCTestCase {
     }
 
     func testArray() {
-        guard let json = try? JSON(string: JSONS.medium) else {
+        guard let json = try? JSON(json: JSONS.medium) else {
             fail()
             return
         }
@@ -116,7 +116,7 @@ class JSONTests: XCTestCase {
     }
 
     func testString() {
-        guard let json = try? JSON(string: JSONS.simple) else {
+        guard let json = try? JSON(json: JSONS.simple) else {
             fail()
             return
         }
@@ -136,7 +136,7 @@ class JSONTests: XCTestCase {
     }
 
     func testInt() {
-        guard let json = try? JSON(string: JSONS.simple) else {
+        guard let json = try? JSON(json: JSONS.simple) else {
             fail()
             return
         }
@@ -155,7 +155,7 @@ class JSONTests: XCTestCase {
     }
 
     func testDouble() {
-        guard let json = (try? JSON(string: JSONS.oneSubstruct))?.dictionaryValue["c"] else {
+        guard let json = (try? JSON(json: JSONS.oneSubstruct))?.dictionaryValue["c"] else {
             fail()
             return
         }
@@ -174,7 +174,7 @@ class JSONTests: XCTestCase {
     }
 
     func testBool() {
-        guard let json = (try? JSON(string: JSONS.oneSubstruct))?.dictionaryValue["c"] else {
+        guard let json = (try? JSON(json: JSONS.oneSubstruct))?.dictionaryValue["c"] else {
             fail()
             return
         }
@@ -192,35 +192,15 @@ class JSONTests: XCTestCase {
         XCTAssert(double.boolValue == false)
     }
 
-    func testAny() {
-        guard let json = try? JSON(string: JSONS.simple) else {
-            fail()
-            return
-        }
-
-        XCTAssertNotNil(json.any)
-
-        guard let data = json.any as? [String: Any] else {
-            XCTFail()
-            return
-        }
-
-        XCTAssertEqual(data["id"] as? Int, 1)
-        XCTAssertEqual(data["name"] as? String, "Thom")
-        XCTAssertEqual(data["age"] as? Int, 21)
-
-        XCTAssertNil(JSON(from: nil).any)
-    }
-
     func testNilJSON() {
-        let json = JSON(from: nil)
+        let json = JSON(from: nil)!
 
         XCTAssert(json.isNil)
         XCTAssert(json["smth"].isNil)
     }
 
     func testIsEmpty() {
-        guard let json = try? JSON(string: JSONS.medium) else {
+        guard let json = try? JSON(json: JSONS.medium) else {
             fail()
             return
         }
@@ -234,15 +214,15 @@ class JSONTests: XCTestCase {
     }
 
     func testEq() {
-        guard let json1 = try? JSON(string: JSONS.medium) else {
+        guard let json1 = try? JSON(json: JSONS.medium) else {
             fail()
             return
         }
-        guard let json2 = try? JSON(string: JSONS.medium) else {
+        guard let json2 = try? JSON(json: JSONS.medium) else {
             fail()
             return
         }
-        guard let json3 = try? JSON(string: JSONS.oneSubstruct) else {
+        guard let json3 = try? JSON(json: JSONS.oneSubstruct) else {
             fail()
             return
         }
@@ -260,7 +240,6 @@ class JSONTests: XCTestCase {
         ("testInt", testInt),
         ("testDouble", testDouble),
         ("testBool", testBool),
-        ("testAny", testAny),
         ("testNilJSON", testNilJSON),
         ("testIsEmpty", testIsEmpty),
         ("testEq", testEq)
