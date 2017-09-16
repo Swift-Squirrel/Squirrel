@@ -25,6 +25,7 @@ open class Response {
 
     var contentEncoding: HTTPHeaders.Encoding.EncodingType? = nil
 
+    /// Cookies
     public var cookies: [String: String] = [:]
 
     private var headers: [String: String] = [
@@ -228,7 +229,13 @@ extension Response {
     }
 }
 
+// MARK: - Parsing response
 public extension Response {
+    /// Parse any to response
+    ///
+    /// - Parameter any: Something waht do you want to return as response
+    /// - Returns: Response representation of given `any`
+    /// - Throws: Response initialize errors
     public static func parseAnyResponse(any: Any) throws -> Response {
         switch any {
         case let response as Response:

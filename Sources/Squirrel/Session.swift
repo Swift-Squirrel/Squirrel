@@ -10,10 +10,16 @@ import SquirrelJSONEncoding
 import PathKit
 import SquirrelConfig
 
+/// Session protocol
 public protocol SessionProtocol: Codable {
+    /// Session ID
     var sessionID: String { get }
+    /// Expiry of session
     var expiry: Date { get }
 
+    /// Returns data for given key from session
+    ///
+    /// - Parameter key: Key
     subscript(key: String) -> JSON? { get set }
 }
 
@@ -95,7 +101,10 @@ struct SessionManager: SessionBuilder {
         }
         let id = randomString()
 
-        return Session(id: id, expiry: Date().addingTimeInterval(SessionConfig.defaultExpiry), userAgent: userAgent)
+        return Session(
+            id: id,
+            expiry: Date().addingTimeInterval(SessionConfig.defaultExpiry),
+            userAgent: userAgent)
     }
 
     func get(for request: Request) -> SessionProtocol? {
@@ -109,8 +118,19 @@ struct SessionManager: SessionBuilder {
     }
 }
 
+/// Session middleware
 public struct SessionMiddleware: Middleware {
+
     private let sessionManager: SessionBuilder = SessionManager()
+
+    /// Handle session for given request. If there is no session cookie,
+    /// creates new session and put session cookie to response.
+    ///
+    /// - Parameters:
+    ///   - request: Request
+    ///   - next: Next middleware or Response handler
+    /// - Returns: badRequest or Response from `next`
+    /// - Throws: Custom error or parsing error
     public func respond(to request: Request, next: (Request) throws -> Any) throws -> Any {
         let session: SessionProtocol
         if let sess = sessionManager.get(for: request) {
@@ -118,7 +138,9 @@ public struct SessionMiddleware: Middleware {
             session = sess
         } else {
             guard let sess = sessionManager.new(for: request) else {
-                return HTTPError(status: .badRequest, description: "Missing \(SessionConfig.userAgent) header")
+                return HTTPError(
+                    status: .badRequest,
+                    description: "Missing \(SessionConfig.userAgent) header")
             }
             session = sess
         }
@@ -129,6 +151,7 @@ public struct SessionMiddleware: Middleware {
         return response
     }
 
+    /// Constructs Session middleware
     public init() {
 
     }
@@ -137,21 +160,21 @@ public struct SessionMiddleware: Middleware {
 /// Random string generator thanks to Fattie
 ///
 /// Taken from
-/// [stack overflow](https://stackoverflow.com/questions/26845307/generate-random-alphanumeric-string-in-swift)
+/// [stack overflow](https://stackoverflow.com/questions/26845307)
 ///
 /// - Parameter length: Generated string lenght
 /// - Returns: Random string
 func randomString(length: Int = 32) -> String {
-    enum s {
-        static let c = Array("abcdefghjklmnopqrstuvwxyz012345789")
-        static let k = UInt32(c.count)
+    enum ValidCharacters {
+        static let chars = Array("abcdefghjklmnopqrstuvwxyz012345789")
+        static let count = UInt32(chars.count)
     }
 
     var result = [Character](repeating: "a", count: length)
 
     for i in 0..<length {
-        let r = Int(arc4random_uniform(s.k))
-        result[i] = s.c[r]
+        let r = Int(arc4random_uniform(ValidCharacters.count))
+        result[i] = ValidCharacters.chars[r]
     }
 
     return String(result)

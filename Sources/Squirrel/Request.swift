@@ -38,6 +38,7 @@ open class Request {
 
     private var headers: [String: String] = [:]
 
+    /// Session
     public internal(set) var session: SessionProtocol? = nil
 
     private var _urlParameters: [String: String] = [:]

@@ -34,6 +34,7 @@ public class Config {
     private let _assets: Path
     private let _publicStorage: Path
 
+    /// Session directory
     public let session: Path
 
     /// Logger
