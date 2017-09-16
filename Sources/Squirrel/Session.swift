@@ -17,10 +17,18 @@ public protocol SessionProtocol: Codable {
     /// Expiry of session
     var expiry: Date { get }
 
+    func delete() -> Bool
+
     /// Returns data for given key from session
     ///
     /// - Parameter key: Key
     subscript(key: String) -> JSON? { get set }
+}
+
+func +=(lhs: inout SessionProtocol, rhs: [String: JSON]) {
+    for (key, value) in rhs {
+        lhs[key] = value
+    }
 }
 
 struct Session: SessionProtocol {
@@ -33,10 +41,9 @@ struct Session: SessionProtocol {
 
     let userAgent: String
 
-    init(id: String, expiry: Date, userAgent: String, data: [String: JSON] = [:]) {
+    init(id: String, expiry: Date, userAgent: String) {
         self.sessionID = id
         self.expiry = expiry
-        self.data = data
         self.userAgent = userAgent
         let _ = store()
     }
@@ -64,6 +71,11 @@ struct Session: SessionProtocol {
             return false
         }
         return (try? file.write(data)) != nil
+    }
+
+    public func delete() -> Bool {
+        let file: Path = SessionConfig.storage + "\(sessionID).session"
+        return (try? file.delete()) != nil
     }
 
     subscript(key: String) -> JSON? {
@@ -123,6 +135,8 @@ public struct SessionMiddleware: Middleware {
 
     private let sessionManager: SessionBuilder = SessionManager()
 
+    private let dataInit: ((Request) throws -> [String: JSON])?
+
     /// Handle session for given request. If there is no session cookie,
     /// creates new session and put session cookie to response.
     ///
@@ -137,10 +151,13 @@ public struct SessionMiddleware: Middleware {
             // Session.isValid
             session = sess
         } else {
-            guard let sess = sessionManager.new(for: request) else {
-                return HTTPError(
+            guard var sess = sessionManager.new(for: request) else {
+                throw HTTPError(
                     status: .badRequest,
                     description: "Missing \(SessionConfig.userAgent) header")
+            }
+            if let dataInit = self.dataInit {
+                sess += try dataInit(request)
             }
             session = sess
         }
@@ -152,8 +169,10 @@ public struct SessionMiddleware: Middleware {
     }
 
     /// Constructs Session middleware
-    public init() {
-
+    ///
+    /// - Parameter dataInit: This will init session data when new session is established
+    public init(dataInit: ((Request) throws -> [String: JSON])? = nil) {
+        self.dataInit = dataInit
     }
 }
 

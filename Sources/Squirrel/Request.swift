@@ -39,7 +39,15 @@ open class Request {
     private var headers: [String: String] = [:]
 
     /// Session
-    public internal(set) var session: SessionProtocol? = nil
+    public internal(set) var session: SessionProtocol? = nil {
+        didSet {
+            DispatchQueue.global(qos: .background).async() {
+                if let old = oldValue {
+                    _ = old.delete()
+                }
+            }
+        }
+    }
 
     private var _urlParameters: [String: String] = [:]
     private var _postParameters: [String: String] = [:]
