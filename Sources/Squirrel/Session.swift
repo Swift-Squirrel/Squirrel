@@ -177,13 +177,23 @@ public struct SessionMiddleware: Middleware {
 func randomString(length: Int = 32) -> String {
     enum ValidCharacters {
         static let chars = Array("abcdefghjklmnopqrstuvwxyz012345789")
-        static let count = UInt32(chars.count)
+
+        #if os(Linux)
+            static let count = chars.count
+        #else
+            static let count32 = UInt32(chars.count)
+        #endif
     }
 
     var result = [Character](repeating: "a", count: length)
 
     for i in 0..<length {
-        let r = Int(arc4random_uniform(ValidCharacters.count))
+        #if os(Linux)
+            srandom(UInt32(time(nil)))
+            let r = random() % ValidCharacters.count
+        #else
+            let r = Int(arc4random_uniform(ValidCharacters.count32))
+        #endif
         result[i] = ValidCharacters.chars[r]
     }
 

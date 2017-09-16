@@ -8,6 +8,9 @@
 
 import Foundation
 import Regex
+#if os(Linux)
+    import Dispatch
+#endif
 
 /// Request class
 open class Request {
