@@ -142,8 +142,8 @@ class JSONTests: XCTestCase {
         }
 
         let id = json["id"]
-        XCTAssert(id.int == id.intValue)
-        XCTAssert(id.intValue == 1)
+        XCTAssertEqual(id.int, id.intValue)
+        XCTAssertEqual(id.intValue, 1)
 
         let notExists = json["notExists"]
         XCTAssert(notExists.int == nil)
@@ -180,8 +180,8 @@ class JSONTests: XCTestCase {
         }
 
         let bool = json["bool"]
-        XCTAssert(bool.bool == bool.boolValue)
-        XCTAssert(bool.boolValue == true)
+        XCTAssertEqual(bool.bool, bool.boolValue)
+        XCTAssertEqual(bool.boolValue, true)
 
         let notExists = json["notExists"]
         XCTAssert(notExists.bool == nil)
@@ -209,7 +209,7 @@ class JSONTests: XCTestCase {
 
         XCTAssert(!arr.isEmpty)
         XCTAssert(!json.isEmpty)
-        XCTAssert(json["smth"].isEmpty)
+        XCTAssertTrue(json["smth"].isEmpty)
         XCTAssert(!arr.arrayValue.first!["title"].isEmpty)
     }
 

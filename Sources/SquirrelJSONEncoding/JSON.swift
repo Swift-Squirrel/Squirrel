@@ -283,11 +283,18 @@ extension JSON {
     }
     /// Bool
     public var bool: Bool? {
-        guard case let .bool(boolVal) = type else {
+        switch type {
+        case .bool(let boolVal):
+            return boolVal
+        case .int(let intVal):
+            switch intVal {
+            case 0: return false
+            case 1: return true
+            default: return nil
+            }
+        default:
             return nil
         }
-
-        return boolVal
     }
 
     /// Bool (if nil returns false)
@@ -337,7 +344,7 @@ public extension JSON {
     ///     return false, if represents nil returns true
     public var isEmpty: Bool {
         if case .nil = type {
-            return false
+            return true
         }
 
         switch type {
