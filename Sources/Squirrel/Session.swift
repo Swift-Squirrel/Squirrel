@@ -25,17 +25,11 @@ public protocol SessionProtocol: Codable {
     subscript(key: String) -> JSON? { get set }
 }
 
-func +=(lhs: inout SessionProtocol, rhs: [String: JSON]) {
-    for (key, value) in rhs {
-        lhs[key] = value
-    }
-}
-
 struct Session: SessionProtocol {
 
     private var data: [String: JSON] = [:]
 
-    let sessionID: String
+    var sessionID: String
 
     let expiry: Date
 
@@ -73,6 +67,9 @@ struct Session: SessionProtocol {
         return (try? file.write(data)) != nil
     }
 
+    /// Remove session
+    ///
+    /// - Returns: true if everything goes ok
     public func delete() -> Bool {
         let file: Path = SessionConfig.storage + "\(sessionID).session"
         return (try? file.delete()) != nil
@@ -135,8 +132,6 @@ public struct SessionMiddleware: Middleware {
 
     private let sessionManager: SessionBuilder = SessionManager()
 
-    private let dataInit: ((Request) throws -> [String: JSON])?
-
     /// Handle session for given request. If there is no session cookie,
     /// creates new session and put session cookie to response.
     ///
@@ -151,13 +146,10 @@ public struct SessionMiddleware: Middleware {
             // Session.isValid
             session = sess
         } else {
-            guard var sess = sessionManager.new(for: request) else {
+            guard let sess = sessionManager.new(for: request) else {
                 throw HTTPError(
                     status: .badRequest,
                     description: "Missing \(SessionConfig.userAgent) header")
-            }
-            if let dataInit = self.dataInit {
-                sess += try dataInit(request)
             }
             session = sess
         }
@@ -171,8 +163,7 @@ public struct SessionMiddleware: Middleware {
     /// Constructs Session middleware
     ///
     /// - Parameter dataInit: This will init session data when new session is established
-    public init(dataInit: ((Request) throws -> [String: JSON])? = nil) {
-        self.dataInit = dataInit
+    public init() {
     }
 }
 
