@@ -7,6 +7,7 @@ import XCTest
 XCTMain([
     testCase(RouteThreeTests.allTests),
     testCase(RequestTests.allTests),
+    testCase(SessionTests.allTests),
     testCase(ResponseTests.allTests),
     testCase(TokenTests.allTests),
     testCase(NutParserTests.allTests),

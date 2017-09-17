@@ -297,4 +297,72 @@ extension Router {
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
+
+    /// Add route for patch method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - middlewares: Array of Middlewares
+    ///   - handler: Response handler
+    public func route(
+        patch url: String,
+        middlewares: [Middleware] = [],
+        handler: @escaping (Request) throws -> Any) {
+
+        responseManager.route(
+            patch: url,
+            middlewares: middlewareGroup + middlewares,
+            handler: handler)
+    }
+
+    /// Add route for patch method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - middlewares: Array of Middlewares
+    ///   - handler: Response handler
+    public func route(
+        patch url: String,
+        middlewares: [Middleware] = [],
+        handler: @escaping () throws -> Any) {
+
+        responseManager.route(
+            patch: url,
+            middlewares: middlewareGroup + middlewares,
+            handler: handler)
+    }
+
+    /// Add route for patch method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - middlewares: Array of Middlewares
+    ///   - handler: Response handler
+    public func route<T>(
+        patch url: String,
+        middlewares: [Middleware] = [],
+        handler: @escaping (Request, T) throws -> Any) where T: Decodable {
+
+        responseManager.route(
+            patch: url,
+            middlewares: middlewareGroup + middlewares,
+            handler: handler)
+    }
+
+    /// Add route for patch method
+    ///
+    /// - Parameters:
+    ///   - url: Url of route
+    ///   - middlewares: Array of Middlewares
+    ///   - handler: Response handler
+    public func route<T>(
+        patch url: String,
+        middlewares: [Middleware] = [],
+        handler: @escaping (T) throws -> Any) where T: Decodable {
+
+        responseManager.route(
+            patch: url,
+            middlewares: middlewareGroup + middlewares,
+            handler: handler)
+    }
 }

@@ -37,6 +37,9 @@ public class Config {
     /// Session directory
     public let session: Path
 
+    /// Domain name or IP
+    public let domain: String
+
     /// Logger
     public let log = SwiftyBeaver.self
 
@@ -98,6 +101,7 @@ public class Config {
         var cacheStorage: String? = nil
         var cacheMaxSize: UInt = 0
         var cacheExpiry: Expiry = .never
+        var domainConfig = "127.0.0.1"
         if configFile.exists {
             _configFile = configFile
             do {
@@ -131,6 +135,9 @@ public class Config {
                     if let port = serv["port"] as? Int {
                         _port = UInt16(port)
                     }
+                    if let dom = serv["domain"] as? String {
+                        domainConfig = dom
+                    }
                 }
                 if let nutView = yaml["nut_view"] as? [String: Any] {
                     if let defaultDate = nutView["default_date_format"] as? String {
@@ -143,7 +150,7 @@ public class Config {
         } else {
             _configFile = nil
         }
-
+        domain = domainConfig
         _webRoot = _serverRoot + "Public"
         _cache = _serverRoot + (cacheStorage ?? "Storage/Cache")
         _storage = _serverRoot + "Storage"

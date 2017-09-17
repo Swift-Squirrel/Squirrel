@@ -223,6 +223,54 @@ extension ResponseManager {
     }
 }
 
+// MARK: - PATCH method
+extension ResponseManager {
+    func route(
+        patch url: String,
+        middlewares: [Middleware],
+        handler: @escaping (Request) throws -> Any) {
+
+        route(method: .patch, url: url, middlewares: middlewares, handler: handler)
+    }
+
+    func route(
+        patch url: String,
+        middlewares: [Middleware],
+        handler: @escaping () throws -> Any) {
+
+        route(patch: url, middlewares: middlewares) { (_ :Request) in
+            return try handler()
+        }
+    }
+
+    func route<T>(
+        patch url: String,
+        middlewares: [Middleware],
+        handler: @escaping (Request, T) throws -> Any)
+        where T: Decodable {
+
+            let closure: AnyResponseHandler = {
+                [unowned self] (req: Request) in
+                let converted = try self.convertParameters(request: req, object: T.self)
+                return try handler(req, converted)
+            }
+            route(patch: url, middlewares: middlewares, handler: closure)
+    }
+
+    func route<T>(
+        patch url: String,
+        middlewares: [Middleware],
+        handler: @escaping (T) throws -> Any) where T: Decodable {
+
+        let closure: AnyResponseHandler = {
+            [unowned self] (req: Request) in
+            let converted = try self.convertParameters(request: req, object: T.self)
+            return try handler(converted)
+        }
+        route(patch: url, middlewares: middlewares, handler: closure)
+    }
+}
+
 // MARK: - Convertions
 extension ResponseManager {
     private func convertParameters<T>(

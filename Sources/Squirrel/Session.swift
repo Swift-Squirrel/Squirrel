@@ -17,17 +17,43 @@ public protocol SessionProtocol: Codable {
     /// Expiry of session
     var expiry: Date { get }
 
+    /// Indicates if session is new (Do not modify)
+    var isNew: Bool { set get }
+
+    /// Indicates if session should be removed
+    var shouldRemove: Bool { set get }
+
+    /// Removes session
+    ///
+    /// - Returns: True on success
     func delete() -> Bool
 
-    /// Returns data for given key from session
-    ///
-    /// - Parameter key: Key
-    subscript(key: String) -> JSON? { get set }
+    var data: [String: JSON] { set get }
 }
 
-struct Session: SessionProtocol {
+// MARK: - Subscript
+public extension SessionProtocol {
+    /// Get or set session parameter
+    ///
+    /// - Parameter key: Key
+    subscript(key: String) -> JSON? {
+        get {
+            return data[key]
+        }
+        set(value) {
+            data[key] = value
+        }
+    }
 
-    private var data: [String: JSON] = [:]
+    /// Number of stored elements
+    var count: Int {
+        return data.count
+    }
+}
+
+class Session: SessionProtocol {
+
+    var data: [String: JSON] = [:]
 
     var sessionID: String
 
@@ -35,11 +61,22 @@ struct Session: SessionProtocol {
 
     let userAgent: String
 
+    var isNew: Bool = false
+
+    var shouldRemove: Bool = false
+
     init(id: String, expiry: Date, userAgent: String) {
         self.sessionID = id
         self.expiry = expiry
         self.userAgent = userAgent
         let _ = store()
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sessionID
+        case expiry
+        case userAgent
+        case data
     }
 
     init?(id: String, userAgent: String) {
@@ -55,7 +92,10 @@ struct Session: SessionProtocol {
             try? file.delete()
             return nil
         }
-        self = json
+        self.data = json.data
+        self.expiry = json.expiry
+        self.sessionID = json.sessionID
+        self.userAgent = json.userAgent
     }
 
     func store() -> Bool {
@@ -71,6 +111,7 @@ struct Session: SessionProtocol {
     ///
     /// - Returns: true if everything goes ok
     public func delete() -> Bool {
+        shouldRemove = true
         let file: Path = SessionConfig.storage + "\(sessionID).session"
         return (try? file.delete()) != nil
     }
@@ -140,24 +181,32 @@ public struct SessionMiddleware: Middleware {
     ///   - next: Next middleware or Response handler
     /// - Returns: badRequest or Response from `next`
     /// - Throws: Custom error or parsing error
-    public func respond(to request: Request, next: (Request) throws -> Any) throws -> Any {
-        let session: SessionProtocol
-        if let sess = sessionManager.get(for: request) {
-            // Session.isValid
-            session = sess
-        } else {
-            guard let sess = sessionManager.new(for: request) else {
-                throw HTTPError(
-                    status: .badRequest,
-                    description: "Missing \(SessionConfig.userAgent) header")
-            }
-            session = sess
+    public func respond(to request: Request, next: AnyResponseHandler) throws -> Any {
+        if let session: SessionProtocol = sessionManager.get(for: request) {
+            request.setSession(session)
         }
-        request.session = session
         let res = try next(request)
+        guard request.sessionExists else {
+            return res
+        }
+        let session = try request.session()
+        guard session.isNew || session.shouldRemove else {
+            return res
+        }
         let response = try Response.parseAnyResponse(any: res)
-        response.cookies[SessionConfig.sessionName] = "\(session.sessionID); Path=\"/\"; HTTPOnly"
+        let domain = squirrelConfig.domain
+        if session.isNew {
+            response.cookies[SessionConfig.sessionName] = """
+                \(session.sessionID); domain=\(domain);path=/; HTTPOnly
+                """
+        } else if session.shouldRemove {
+            let _ = session.delete()
+            response.cookies[SessionConfig.sessionName] = """
+                removed; domain=\(domain);path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; HTTPOnly
+                """
+        }
         return response
+
     }
 
     /// Constructs Session middleware
