@@ -39,11 +39,11 @@ class NutParserTests: XCTestCase {
         XCTAssertNil(viewToken.layout)
         XCTAssert(viewToken.name == "Views/Post.nut")
 
-        guard let serialized = try? JSON(string: parser.jsonSerialized) else {
+        guard let serialized = try? JSON(json: parser.jsonSerialized) else {
             XCTFail()
             return
         }
-        let expexted = try! JSON(string: """
+        let expexted = try! JSON(json: """
             {"body":[{"id":"text","value":"\\nthis is about "},{"id":"expression","infix":"topic","line":2}],"fileName":"Views\\/Post.nut","head":[{"id":"title","expression":{"id":"expression","infix":"\\"Title of post\\"","line":1},"line":1}]}
             """)
 
@@ -85,11 +85,11 @@ class NutParserTests: XCTestCase {
         XCTAssertNil(viewToken.layout)
         XCTAssert(viewToken.name == "Layouts/Default.nut")
 
-        guard let serialized = try? JSON(string: parser.jsonSerialized) else {
+        guard let serialized = try? JSON(json: parser.jsonSerialized) else {
             XCTFail()
             return
         }
-        let expexted = try! JSON(string: """
+        let expexted = try! JSON(json: """
             {"body":[{"id":"text","value":"<!-- Default.html -->\\n<!DOCTYPE html>\\n<html lang=\\"en\\">\\n<head>\\n    "},{"id":"subview","name":"Subviews.Page.Head","line":5},{"id":"text","value":"\\n<\\/head>\\n<body>\\n    "},{"id":"subview","name":"Subviews.Page.Header.Jumbotron","line":8},{"id":"text","value":"\\n<div class=\\"container\\">\\n    <div class=\\"line\\">\\n        <div class=\\"col-8 mx-auto\\">\\n            "},{"id":"view","line":12},{"id":"text","value":"\\n        <\\/div>\\n    <\\/div>\\n<\\/div>\\n    "},{"id":"subview","name":"Subviews.Page.Footer","line":16},{"id":"text","value":"\\n<\\/body>\\n<\\/html>"}],"fileName":"Layouts\\/Default.nut"}
             """)
 
@@ -106,7 +106,7 @@ class NutParserTests: XCTestCase {
             return
         }
         XCTAssert(viewToken.body.count == 1)
-        guard let serialized = try? JSON(string: parser.jsonSerialized) else {
+        guard let serialized = try? JSON(json: parser.jsonSerialized) else {
             XCTFail()
             return
         }
@@ -125,7 +125,7 @@ class NutParserTests: XCTestCase {
             return
         }
         XCTAssert(viewToken.body.count == 1)
-        guard let serialized = try? JSON(string: parser.jsonSerialized) else {
+        guard let serialized = try? JSON(json: parser.jsonSerialized) else {
             XCTFail()
             return
         }
@@ -176,11 +176,11 @@ class NutParserTests: XCTestCase {
         XCTAssertNil(viewToken.layout)
         XCTAssert(viewToken.name == "Subviews/Smt.nut")
 
-        guard let serialized = try? JSON(string: parser.jsonSerialized) else {
+        guard let serialized = try? JSON(json: parser.jsonSerialized) else {
             XCTFail()
             return
         }
-        let expexted = try! JSON(string: """
+        let expexted = try! JSON(json: """
             {"body":[{"id":"text","value":"dasd alm ak po\\n"},{"date":{"id":"expression","infix":"date","line":2},"line":2,"id":"date"},{"id":"text","value":" oid\\n"},{"line":3,"id":"if","condition":"true","then":[{"id":"text","value":"\\n    asd a "},{"date":{"id":"expression","infix":"date1","line":4},"format":{"id":"expression","infix":"\\"m\\" + years","line":4},"line":4,"id":"date"},{"id":"text","value":" asda\\n"}]},{"id":"text","value":"\\n"},{"line":6,"else":[{"line":8,"else":[{"variable":"notNil","line":10,"id":"if let","condition":"posts","then":[{"id":"text","value":"\\n    doefja e\\n"}]}],"id":"if","condition":"true == true","then":[{"id":"text","value":"\\n    "},{"id":"expression","infix":"true","line":9},{"id":"text","value":"\\n"}]}],"id":"if","condition":"1 + 3 == 4","then":[{"id":"text","value":"\\n    true\\n"}]},{"id":"text","value":"\\n"},{"variable":"asd","line":13,"else":[{"id":"text","value":"    ds\\n    "},{"id":"subview","name":"Subviews.Map","line":17},{"id":"text","value":"\\n"}],"id":"if let","condition":"Tom","then":[{"id":"text","value":"\\n    dfe\\n"}]},{"id":"text","value":"\\n\\n"},{"variable":"post","line":20,"id":"for in Array","array":"posts","body":[{"id":"text","value":"\\n    "},{"id":"raw expression","infix":"post.body","line":21},{"id":"text","value":"\\n"}]},{"id":"text","value":"\\n"},{"variable":"value","line":23,"id":"for in Dictionary","array":"dictionary","body":[{"id":"text","value":"\\n    "},{"id":"expression","infix":"key + \\" \\" + value","line":24},{"id":"text","value":"\\n"}],"key":"key"},{"id":"text","value":"\\npdso a"}],"fileName":"Subviews\\/Smt.nut"}
             """)
 
@@ -207,11 +207,11 @@ class NutParserTests: XCTestCase {
         XCTAssertNotNil(viewToken.layout)
         XCTAssert(viewToken.name == "Views/Smt.nut")
 
-        guard let serialized = try? JSON(string: parser.jsonSerialized) else {
+        guard let serialized = try? JSON(json: parser.jsonSerialized) else {
             XCTFail()
             return
         }
-        let expexted = try! JSON(string: """
+        let expexted = try! JSON(json: """
             {"layout":{"id":"layout","name":"Layouts.Default","line":2},"body":[{"id":"text","value":"dasd alm ak po\\n"},{"id":"text","value":"\\n"}],"fileName":"Views\\/Smt.nut","head":[{"id":"title","expression":{"id":"expression","infix":"\\"ds\\"","line":3},"line":3}]}
             """)
 
@@ -238,11 +238,11 @@ class NutParserTests: XCTestCase {
         XCTAssertNil(viewToken.layout)
         XCTAssert(viewToken.name == "Layouts/Smt.nut")
 
-        guard let serialized = try? JSON(string: parser.jsonSerialized) else {
+        guard let serialized = try? JSON(json: parser.jsonSerialized) else {
             XCTFail()
             return
         }
-        let expexted = try! JSON(string: """
+        let expexted = try! JSON(json: """
             {"body":[{"id":"text","value":"dasd alm ak po\\n"},{"id":"view","line":2},{"id":"text","value":"\\n    fa"}],"fileName":"Layouts\\/Smt.nut"}
             """)
 

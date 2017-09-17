@@ -8,6 +8,7 @@
 
 import Foundation
 import PathKit
+import NutView
 import GZip
 
 /// Responder
@@ -23,6 +24,9 @@ open class Response {
     private let httpProtocolVersion = "HTTP/1.1"
 
     var contentEncoding: HTTPHeaders.Encoding.EncodingType? = nil
+
+    /// Cookies
+    public var cookies: [String: String] = [:]
 
     private var headers: [String: String] = [
         HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.plain.rawValue
@@ -202,6 +206,9 @@ extension Response {
         for (key, value) in headers {
             header += key + ": " + value + "\r\n"
         }
+        for (key, value) in cookies {
+            header += "Set-Cookie: " + "\(key)=\(value)\r\n"
+        }
         header += "\r\n"
         return header.data(using: .utf8)!
     }
@@ -219,5 +226,26 @@ extension Response {
         }
         finalBody = res
         return res
+    }
+}
+
+// MARK: - Parsing response
+public extension Response {
+    /// Parse any to response
+    ///
+    /// - Parameter any: Something waht do you want to return as response
+    /// - Returns: Response representation of given `any`
+    /// - Throws: Response initialize errors
+    public static func parseAnyResponse(any: Any) throws -> Response {
+        switch any {
+        case let response as Response:
+            return response
+        case let view as ViewProtocol:
+            return try Response(view: view)
+        case let string as String:
+            return try Response(html: string)
+        default:
+            return try Response(object: any)
+        }
     }
 }

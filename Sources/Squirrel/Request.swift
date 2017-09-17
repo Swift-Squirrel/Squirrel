@@ -8,6 +8,9 @@
 
 import Foundation
 import Regex
+#if os(Linux)
+    import Dispatch
+#endif
 
 /// Request class
 open class Request {
@@ -37,6 +40,9 @@ open class Request {
     private let rawBody: String
 
     private var headers: [String: String] = [:]
+
+    /// Session
+    private var _session: SessionProtocol? = nil
 
     private var _urlParameters: [String: String] = [:]
     private var _postParameters: [String: String] = [:]
@@ -190,9 +196,11 @@ open class Request {
     }
 
     private func parseURLEncoded(body data: Data) throws {
-        guard let body = String(data: data, encoding: .utf8) else {
+        guard var body = String(data: data, encoding: .utf8) else {
             throw DataError(kind: .dataEncodingError)
         }
+        body.replaceAll(matching: "\\+", with: " ")
+        body.replaceAll(matching: "%2B", with: "+")
         let groups = body.components(separatedBy: "&")
         for group in groups {
             var values = group.components(separatedBy: "=")
@@ -291,5 +299,42 @@ extension Request {
     /// - Returns: Header value
     public func getHeader(for key: String) -> String? {
         return headers[key.lowercased()]
+    }
+}
+
+// MARK: - Session control
+extension Request {
+    /// Get new session
+    ///
+    /// - Returns: New session
+    /// - Throws: `SessionError(kind: .cantEstablish)`
+    @discardableResult
+    public func newSession() throws -> SessionProtocol {
+        guard var new = SessionManager().new(for: self) else {
+            throw SessionError(kind: .cantEstablish)
+        }
+        new.isNew = true
+        _session = new
+        return new
+    }
+
+    /// Get current session
+    ///
+    /// - Returns: Current session
+    /// - Throws: `SessionError(kind: .missingSession)` if there is no session
+    public func session() throws -> SessionProtocol {
+        guard let sess = _session else {
+            throw SessionError(kind: .missingSession)
+        }
+        return sess
+    }
+
+    /// Returns true if session exists
+    public var sessionExists: Bool {
+        return _session != nil
+    }
+
+    func setSession(_ session: SessionProtocol) {
+        _session = session
     }
 }

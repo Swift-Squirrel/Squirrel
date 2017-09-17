@@ -5,38 +5,111 @@
 //  Created by Filip Klembara on 9/3/17.
 //
 
-/// JSON Representation
-public struct JSON {
+// swiftlint:disable file_length
 
-    private let data: Any?
+import Foundation
+
+/// JSON Representation
+public struct JSON: Codable {
+
+    fileprivate enum ValueType {
+        case string(str: String)
+        case dictionary(dic: [String: JSON])
+        case array(arr: [JSON])
+        case int(int: Int)
+        case double(double: Double)
+        case bool(bool: Bool)
+        case date(date: Date)
+        case `nil`
+    }
+
+    private var type: ValueType
 
     /// Construct from JSON String
     ///
     /// - Parameter string: String containing JSON
     /// - Throws: Parsing errors
-    public init(string: String) throws {
-        guard let data = JSONCoding.toJSON(json: string) else {
+    public init(json: String) throws {
+        guard let data = JSONCoding.toJSON(json: json) else {
             throw JSONError(kind: .parseError, description: "Corrupted content")
         }
-        self.data = data
+        if let dic = data as? [String: Any] {
+            guard let jsonDic = JSON(dictionary: dic)?.dictionary else {
+                throw JSONError(kind: .parseError, description: "Not valid dictionary")
+            }
+            type = .dictionary(dic: jsonDic)
+        } else if let arr = data as? [Any] {
+            guard let jsonArr = JSON(array: arr)?.array else {
+                throw JSONError(kind: .parseError, description: "Not valid array")
+            }
+            type = .array(arr: jsonArr)
+        } else {
+            throw JSONError(kind: .parseError, description: "Not valid content")
+        }
     }
 
-    /// Construct from `Any` object
+    /// Construct null JSON value
+    public init() {
+        type = .nil
+    }
+
+    /// Construct from JSON
     ///
-    /// - Parameter data: Anything as body of JSON
-    public init(from data: Any?) {
-        self.data = data
+    /// - Parameter json: JSON
+    public init(_ json: JSON) {
+        type = json.type
+    }
+
+    /// Construct from any value
+    ///
+    /// - Note: If `any` is incompatible type returns nil
+    ///
+    /// - Parameter any: Value
+    public init?(from any: Any?) {
+        // swiftlint:disable:previous cyclomatic_complexity
+
+        if let any = any {
+            switch any {
+            case let dictionary as [String: JSON]:
+                self.init(dictionary)
+            case let dictionary as [String: Any]:
+                self.init(dictionary: dictionary)
+            case let array as [JSON]:
+                self.init(array)
+            case let array as [Any]:
+                self.init(array: array)
+            case let string as String:
+                self.init(string)
+            case let int as Int:
+                self.init(int)
+            case let double as Double:
+                self.init(double)
+            case let bool as Bool:
+                self.init(bool)
+            case let json as JSON:
+                self.init(json)
+            default:
+                return nil
+            }
+        } else {
+            self.init()
+        }
     }
 }
 
 // MARK: - String
 public extension JSON {
+
+    /// Construct from string
+    ///
+    /// - Parameter string: String value
+    public init(_ string: String) {
+        type = .string(str: string)
+    }
+
     /// String
     public var string: String? {
-        guard let data = self.data else {
-            return nil
-        }
-        guard let str = data as? String else {
+        guard case let ValueType.string(str) = type else {
             return nil
         }
         return str
@@ -50,16 +123,34 @@ public extension JSON {
 
 // MARK: - Dictionary
 extension JSON {
+
+    /// Constructs from dictionary
+    ///
+    /// - Parameter dictionary: Dictionary value
+    public init(_ dictionary: [String: JSON]) {
+        type = .dictionary(dic: dictionary)
+    }
+
+    /// Constructs from dictionary
+    ///
+    /// - Parameter dictionary: Dictionary value
+    public init?(dictionary: [String: Any]) {
+        var res = [String: JSON]()
+        for (key, value) in dictionary {
+            guard let value = JSON(from: value) else {
+                return nil
+            }
+            res[key] = value
+        }
+        type = .dictionary(dic: res)
+    }
+
     /// Dictionary
     public var dictionary: [String: JSON]? {
-        guard let dic = data as? [String: Any] else {
+        guard case let .dictionary(dic) = type else {
             return nil
         }
-        var res: [String: JSON] = [:]
-        for (key, value) in dic {
-            res[key] = JSON(from: value)
-        }
-        return res
+        return dic
     }
 
     /// Dictionary value (if nil return [:])
@@ -77,23 +168,40 @@ extension JSON {
         if let dic = dictionary, let value = dic[key] {
             return value
         }
-        return JSON(from: nil)
+        return JSON(from: nil)!
     }
 }
 
 // MARK: - Array
 public extension JSON {
+
+    /// Constructs from Array
+    ///
+    /// - Parameter array: Array value
+    public init(_ array: [JSON]) {
+        type = .array(arr: array)
+    }
+
+    /// Constructs from Array
+    ///
+    /// - Parameter array: Array value
+    public init?(array: [Any]) {
+        var res = [JSON]()
+        for element in array {
+            guard let element = JSON(from: element) else {
+                return nil
+            }
+            res.append(element)
+        }
+        type = .array(arr: res)
+    }
+
     /// Array
     public var array: [JSON]? {
-        guard let data = self.data else {
+        guard case let .array(arr) = type else {
             return nil
         }
-
-        guard let arr = data as? [Any] else {
-            return nil
-        }
-
-        return arr.map({ JSON(from: $0) })
+        return arr
     }
 
     /// Array (if nil returns [])
@@ -108,13 +216,13 @@ public extension JSON {
     /// - Parameter index: index
     public subscript(index: Int) -> JSON {
         guard index >= 0 else {
-            return JSON(from: nil)
+            return JSON(from: nil)!
         }
         guard let arr = array else {
-            return JSON(from: nil)
+            return JSON(from: nil)!
         }
         guard index < arr.count else {
-            return JSON(from: nil)
+            return JSON(from: nil)!
         }
         return arr[index]
     }
@@ -122,13 +230,19 @@ public extension JSON {
 
 // MARK: - Int
 extension JSON {
+    /// Constructs from integer value
+    ///
+    /// - Parameter int: Integer value
+    public init(_ int: Int) {
+        type = .int(int: int)
+    }
+
     /// Int
     public var int: Int? {
-        guard let data = self.data else {
+        guard case let .int(intValue) = type else {
             return nil
         }
-
-        return data as? Int
+        return intValue
     }
 
     /// Int (if nil returns 0)
@@ -139,13 +253,18 @@ extension JSON {
 
 // MARK: - Double
 extension JSON {
+    /// Constructs from double value
+    ///
+    /// - Parameter double: Double value
+    public init(_ double: Double) {
+        type = .double(double: double)
+    }
     /// Double
     public var double: Double? {
-        guard let data = self.data else {
+        guard case let .double(doubleVal) = type else {
             return nil
         }
-
-        return data as? Double
+        return doubleVal
     }
 
     /// Double (if nil return 0.0)
@@ -156,13 +275,26 @@ extension JSON {
 
 // MARK: - Bool
 extension JSON {
+    /// Constructs from Bool value
+    ///
+    /// - Parameter bool: Bool value
+    public init(_ bool: Bool) {
+        type = .bool(bool: bool)
+    }
     /// Bool
     public var bool: Bool? {
-        guard let data = self.data else {
+        switch type {
+        case .bool(let boolVal):
+            return boolVal
+        case .int(let intVal):
+            switch intVal {
+            case 0: return false
+            case 1: return true
+            default: return nil
+            }
+        default:
             return nil
         }
-
-        return data as? Bool
     }
 
     /// Bool (if nil returns false)
@@ -171,11 +303,26 @@ extension JSON {
     }
 }
 
-// MARK: - Any
-public extension JSON {
-    /// Any
-    public var any: Any? {
-        return data
+// MARK: - Date
+extension JSON {
+    /// Constructs from date value
+    ///
+    /// - Parameter date: Date value
+    public init(_ date: Date) {
+        type = .date(date: date)
+    }
+    /// Bool
+    public var date: Date? {
+        guard case let .date(dateVal) = type else {
+            return nil
+        }
+
+        return dateVal
+    }
+
+    /// Bool (if nil returns Date())
+    public var dateValue: Date {
+        return date ?? Date()
     }
 }
 
@@ -183,7 +330,12 @@ public extension JSON {
 public extension JSON {
     /// Check if JSON represents nil
     public var isNil: Bool {
-        return data == nil
+        switch type {
+        case .nil:
+            return true
+        default:
+            return false
+        }
     }
 
     /// Check if value is empty
@@ -191,82 +343,146 @@ public extension JSON {
     /// - Note: When self does not represents Array or Dictionary
     ///     return false, if represents nil returns true
     public var isEmpty: Bool {
-        guard let data = self.data else {
+        if case .nil = type {
             return true
         }
 
-        switch data {
-        case let arr as [Any]:
+        switch type {
+        case .array(let arr):
             return arr.isEmpty
-        case let dic as [String: Any]:
+        case .dictionary(let dic):
             return dic.isEmpty
         default:
             return false
         }
     }
+
+    /// Decode data to JSON
+    ///
+    /// - Parameter data: All important data in JSON data format
+    /// - Returns: JSON or nil on error
+    public static func decode(from data: Data) -> JSON? {
+        let decoder = JSONDecoder()
+        return try? decoder.decode(self, from: data)
+    }
+
+    /// Encoded JSON to Data or nil on error
+    public var encode: Data? {
+        let encoder = JSONEncoder()
+        return try? encoder.encode(self)
+    }
 }
 
 extension JSON: Equatable {
-    // swiftlint:disable cyclomatic_complexity
-    // swiftlint:disable operator_whitespace
     /// Check JSONs for Equality
+    ///
+    /// - Note: If JSONS are Codable this return false
     ///
     /// - Parameters:
     ///   - lhs: left JSON
     ///   - rhs: right JSON
     /// - Returns: True if JSONs are equal
     public static func ==(lhs: JSON, rhs: JSON) -> Bool {
+        // swiftlint:disable:previous operator_whitespace
 
-        if lhs.data == nil && rhs.data == nil {
+        if case .nil = lhs.type, case .nil = rhs.type {
             return true
         }
 
-        guard let ldata = lhs.data else {
+        if case .nil = lhs.type {
             return false
         }
 
-        guard let rdata = rhs.data else {
+        if case .nil = rhs.type {
             return false
         }
-        switch ldata {
-        case let int as Int:
-            return int == rdata as? Int
-        case let double as Double:
-            return double == rdata as? Double
-        case let bool as Bool:
-            return bool == rdata as? Bool
-        case let string as String:
-            return string == rdata as? String
-        case is [Any]:
-            let larr = lhs.arrayValue
-            let rarr = rhs.arrayValue
-            guard larr.count == rarr.count else {
-                return false
-            }
-            for index in 0..<larr.count {
-                guard larr[index] == rarr[index] else {
-                    return false
-                }
-            }
-            return true
-        case is [String: Any]:
-            let ldir = lhs.dictionaryValue
-            let rdir = rhs.dictionaryValue
 
-            guard rdir.count == ldir.count else {
-                return false
-            }
-
-            for (key, value) in ldir {
-                guard rdir[key] == value else {
-                    return false
-                }
-            }
-            return true
+        switch (lhs.type, rhs.type) {
+        case let (.int(lint), .int(rint)):
+            return lint == rint
+        case let (.double(ldouble), .double(rdouble)):
+            return ldouble == rdouble
+        case let (.bool(lbool), .bool(rbool)):
+            return lbool == rbool
+        case let (.string(lstring), .string(rstring)):
+            return lstring == rstring
+        case let (.array(larr), .array(rarr)):
+            return larr == rarr
+        case let (.dictionary(ldic), .dictionary(rdic)):
+            return ldic == rdic
         default:
             return false
         }
     }
-    // swiftlint:enable cyclomatic_complexity
-    // swiftlint:enable operator_whitespace
+}
+
+extension JSON.ValueType: Codable {
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        if let value = try? values.decode(String.self, forKey: .string) {
+            self = .string(str: value)
+            return
+        }
+        if let value = try? values.decode([String: JSON].self, forKey: .dictionary) {
+            self = .dictionary(dic: value)
+            return
+        }
+        if let value = try? values.decode([JSON].self, forKey: .array) {
+            self = .array(arr: value)
+            return
+        }
+        if let value = try? values.decode(Int.self, forKey: .int) {
+            self = .int(int: value)
+            return
+        }
+        if let value = try? values.decode(Double.self, forKey: .double) {
+            self = .double(double: value)
+            return
+        }
+        if let value = try? values.decode(Bool.self, forKey: .bool) {
+            self = .bool(bool: value)
+            return
+        }
+        if let value = try? values.decode(Date.self, forKey: .date) {
+            self = .date(date: value)
+            return
+        }
+        if values.contains(.nil) {
+            self = .nil
+        }
+        throw JSONError(kind: .encodeError, description: "Could not encode")
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .string(let str):
+            try container.encode(str, forKey: .string)
+        case .dictionary(let dic):
+            try container.encode(dic, forKey: .dictionary)
+        case .array(let arr):
+            try container.encode(arr, forKey: .array)
+        case .int(let int):
+            try container.encode(int, forKey: .int)
+        case .double(let double):
+            try container.encode(double, forKey: .double)
+        case .bool(let bool):
+            try container.encode(bool, forKey: .bool)
+        case .date(let date):
+            try container.encode(date, forKey: .date)
+        case .nil:
+            try container.encode("nil", forKey: .nil)
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case string
+        case dictionary
+        case array
+        case int
+        case double
+        case bool
+        case `nil`
+        case date
+    }
 }
