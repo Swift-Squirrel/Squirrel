@@ -29,22 +29,16 @@ public protocol SessionProtocol: Codable {
     func delete() -> Bool
 
     var data: [String: JSON] { set get }
+
+
+    /// Get or set session parameter
+    ///
+    /// - Parameter key: Key
+    subscript(key: String) -> JSON? { get set }
 }
 
 // MARK: - Subscript
 public extension SessionProtocol {
-    /// Get or set session parameter
-    ///
-    /// - Parameter key: Key
-    subscript(key: String) -> JSON? {
-        get {
-            return data[key]
-        }
-        set(value) {
-            data[key] = value
-        }
-    }
-
     /// Number of stored elements
     var count: Int {
         return data.count
