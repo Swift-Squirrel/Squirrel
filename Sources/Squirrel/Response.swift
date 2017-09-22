@@ -9,7 +9,7 @@
 import Foundation
 import PathKit
 import NutView
-import Gzip
+import GZip
 
 /// Responder
 public typealias AnyResponseHandler = ((Request) throws -> Any)
