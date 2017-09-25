@@ -20,6 +20,9 @@ class NutParser: NutParserProtocol {
     private var serializedTokens: [String: Any] = [:]
     private let viewType: ViewType
 
+    private let simpleVariable = (regex: "^[a-zA-Z]\\w*$", value: Regex("^[a-zA-Z]\\w*$"))
+    private let chainedVariable = (regex: "^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$", value: Regex("^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$"))
+
     private var _jsonSerialized: String = ""
 
     var jsonSerialized: String {
@@ -488,18 +491,18 @@ extension NutParser {
                 if let keyValue = key {
                     guard checkSimple(variable: keyValue) else {
                         throw NutParserError(
-                            kind: .wrongSimpleVariable(name: keyValue, in: "for" + stm + "{"),
+                            kind: .wrongSimpleVariable(name: keyValue, in: "for" + stm + "{", regex: simpleVariable.regex),
                             line: line)
                     }
                 }
                 guard checkSimple(variable: variable) else {
                     throw NutParserError(
-                        kind: .wrongSimpleVariable(name: variable, in: "for" + stm + "{"),
+                        kind: .wrongSimpleVariable(name: variable, in: "for" + stm + "{", regex: simpleVariable.regex),
                         line: line)
                 }
                 guard checkChained(variable: array) else {
                     throw NutParserError(
-                        kind: .wrongChainedVariable(name: array, in: "for" + stm + "{"),
+                        kind: .wrongChainedVariable(name: array, in: "for" + stm + "{", regex: chainedVariable.regex),
                         line: line)
                 }
                 let token = ForInToken(key: key, variable: variable, array: array, line: line)
@@ -668,14 +671,14 @@ extension NutParser {
                         throw NutParserError(
                             kind: .wrongSimpleVariable(
                                 name: variable,
-                                in: "} else if " + condition + " {"),
+                                in: "} else if " + condition + " {", regex: simpleVariable.regex),
                             line: line)
                     }
                     guard checkSimple(variable: elsifToken.condition) else {
                         throw NutParserError(
                             kind: .wrongChainedVariable(
                                 name: elsifToken.condition,
-                                in: "} else if " + condition + " {"),
+                                in: "} else if " + condition + " {", regex: chainedVariable.regex),
                             line: line)
                     }
                 }
@@ -851,13 +854,13 @@ extension NutParser {
                     guard checkSimple(variable: variable) else {
                         throw NutParserError(
                             kind: .wrongSimpleVariable(
-                                name: variable, in: "if " + condition + " {"),
+                                name: variable, in: "if " + condition + " {", regex: simpleVariable.regex),
                             line: line)
                     }
                     guard checkSimple(variable: token.condition) else {
                         throw NutParserError(
                             kind: .wrongChainedVariable(
-                                name: token.condition, in: "if " + condition + " {"),
+                                name: token.condition, in: "if " + condition + " {", regex: chainedVariable.regex),
                             line: line)
                     }
                 }
@@ -881,12 +884,12 @@ extension NutParser {
 
 extension NutParser {
     private func checkSimple(variable: String) -> Bool {
-        let regex = Regex("^[a-zA-Z]\\w*$")
+        let regex = simpleVariable.value
         return regex.matches(variable)
     }
 
     private func checkChained(variable: String) -> Bool {
-        let regex = Regex("^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$")
+        let regex = chainedVariable.value
         return regex.matches(variable)
     }
 }

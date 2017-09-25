@@ -28,11 +28,12 @@ public extension Response {
     ///
     /// - Parameter html: html response
     /// - Throws: `DataError(kind: dataCodingError(string:)`
-    public convenience init(html: String) throws {
+    public convenience init(status: HTTPStatus = .ok, html: String) throws {
         guard let data = html.data(using: .utf8) else {
             throw DataError(kind: .dataCodingError(string: html))
         }
         self.init(
+            status: status,
             headers: [
                 HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue
             ],
@@ -80,7 +81,7 @@ public extension Response {
 }
 
 extension Response {
-    convenience init(view: ViewProtocol) throws {
+    public convenience init(view: ViewProtocol) throws {
         let content = try view.getContent()
         try self.init(html: content)
     }

@@ -30,8 +30,8 @@ public struct NutParserError: Error, CustomStringConvertible {
         case missingValue(for: String)
         case evaluationError(infix: String, message: String)
         case wrongValue(for: String, expected: String, got: Any)
-        case wrongSimpleVariable(name: String, in: String)
-        case wrongChainedVariable(name: String, in: String)
+        case wrongSimpleVariable(name: String, in: String, regex: String)
+        case wrongChainedVariable(name: String, in: String, regex: String)
     }
     /// Kind of error
     public let kind: ErrorKind
@@ -65,12 +65,12 @@ public struct NutParserError: Error, CustomStringConvertible {
         case .wrongValue(let name, let expected, let got):
             res = "Wrong value for \(name), expected: '\(expected)' "
                 + "but got '\(String(describing: got))'"
-        case .wrongSimpleVariable(let name, let command):
+        case .wrongSimpleVariable(let name, let command, let regex):
             res = "Variable name '\(name)' in '\(command)' does not match "
-                + "regular expression '[a-zA-Z]\\w*'"
-        case .wrongChainedVariable(let name, let command):
+                + "regular expression '\(regex)'"
+        case .wrongChainedVariable(let name, let command, let regex):
             res = "Variable name '\(name)' in '\(command)' does not match "
-                + "regular expression '[a-zA-Z]\\w*(\\.[a-zA-Z]\\w*)*'"
+                + "regular expression '\(regex)'"
         case .unexpectedBlockEnd:
             res = "Unexpected '\\}'"
         }

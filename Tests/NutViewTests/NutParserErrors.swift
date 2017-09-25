@@ -279,85 +279,87 @@ class NutParserErrors: XCTestCase {
     func testVariableName() {
         let name = "Views/Main.nut"
         var content = "\n\\if let 3a = asd {"
-        var expect = NutParserError(kind: .wrongSimpleVariable(name: "3a", in: "if let 3a = asd {"), line: 2)
+        let simple = "^[a-zA-Z]\\w*$"
+        let chained = "^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$"
+        var expect = NutParserError(kind: .wrongSimpleVariable(name: "3a", in: "if let 3a = asd {", regex: simple), line: 2)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "if let '3a'")
 
         content = "\n\n\n\n\\if let name = 3a { \\} {"
-        expect = NutParserError(kind: .wrongChainedVariable(name: "3a", in: "if let name = 3a {"), line: 5)
+        expect = NutParserError(kind: .wrongChainedVariable(name: "3a", in: "if let name = 3a {", regex: chained), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "if let name = '3a'")
 
         content = "\n\n\n\n\\if let name = asd.3a { \\} {"
-        expect = NutParserError(kind: .wrongChainedVariable(name: "asd.3a", in: "if let name = asd.3a {"), line: 5)
+        expect = NutParserError(kind: .wrongChainedVariable(name: "asd.3a", in: "if let name = asd.3a {", regex: chained), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "if let name = asd.'3a'")
 
         content = "\n\n\n\n\\if let name.da = asd { \\} {"
-        expect = NutParserError(kind: .wrongSimpleVariable(name: "name.da", in: "if let name.da = asd {"), line: 5)
+        expect = NutParserError(kind: .wrongSimpleVariable(name: "name.da", in: "if let name.da = asd {", regex: simple), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "if let name'.da' = asd")
 
         // else if
         content = "\n\\} else if let 3a = asd {"
-        expect = NutParserError(kind: .wrongSimpleVariable(name: "3a", in: "} else if let 3a = asd {"), line: 2)
+        expect = NutParserError(kind: .wrongSimpleVariable(name: "3a", in: "} else if let 3a = asd {", regex: simple), line: 2)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "} else if let '3a'")
 
         content = "\n\n\n\n\\} else if let name = 3a { \\} {"
-        expect = NutParserError(kind: .wrongChainedVariable(name: "3a", in: "} else if let name = 3a {"), line: 5)
+        expect = NutParserError(kind: .wrongChainedVariable(name: "3a", in: "} else if let name = 3a {", regex: chained), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "} else if let name = '3a'")
 
         content = "\n\n\n\n\\} else if let name = asd.3a { \\} {"
-        expect = NutParserError(kind: .wrongChainedVariable(name: "asd.3a", in: "} else if let name = asd.3a {"), line: 5)
+        expect = NutParserError(kind: .wrongChainedVariable(name: "asd.3a", in: "} else if let name = asd.3a {", regex: chained), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "} else if let name = asd.'3a'")
 
         content = "\n\n\n\n\\} else if let name.da = asd { \\} {"
-        expect = NutParserError(kind: .wrongSimpleVariable(name: "name.da", in: "} else if let name.da = asd {"), line: 5)
+        expect = NutParserError(kind: .wrongSimpleVariable(name: "name.da", in: "} else if let name.da = asd {", regex: simple), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "} else if let name'.da' = asd")
 
         // for
         content = "\n\n\n\n\\for 4a in sda { \\} {"
-        expect = NutParserError(kind: .wrongSimpleVariable(name: "4a", in: "for 4a in sda {"), line: 5)
+        expect = NutParserError(kind: .wrongSimpleVariable(name: "4a", in: "for 4a in sda {", regex: simple), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "for '4a' in sda {")
 
         content = "\n\n\n\n\\for name.3a in asd3 { \\} {"
-        expect = NutParserError(kind: .wrongSimpleVariable(name: "name.3a", in: "for name.3a in asd3 {"), line: 5)
+        expect = NutParserError(kind: .wrongSimpleVariable(name: "name.3a", in: "for name.3a in asd3 {", regex: simple), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "for name'.3a' in asd3 {")
 
         content = "\n\n\n\n\\for name in asd.3a { \\} {"
-        expect = NutParserError(kind: .wrongChainedVariable(name: "asd.3a", in: "for name in asd.3a {"), line: 5)
+        expect = NutParserError(kind: .wrongChainedVariable(name: "asd.3a", in: "for name in asd.3a {", regex: chained), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "for name in asd'.3a' {")
 
         content = "\n\n\n\n\\for name in 3a { \\} {"
-        expect = NutParserError(kind: .wrongChainedVariable(name: "3a", in: "for name in 3a {"), line: 5)
+        expect = NutParserError(kind: .wrongChainedVariable(name: "3a", in: "for name in 3a {", regex: chained), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "for name in '.3a' {")
 
         // next
         content = "\n\n\n\n\\for (4a, asd) in sda { \\} {"
-        expect = NutParserError(kind: .wrongSimpleVariable(name: "4a", in: "for (4a, asd) in sda {"), line: 5)
+        expect = NutParserError(kind: .wrongSimpleVariable(name: "4a", in: "for (4a, asd) in sda {", regex: simple), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "for ('4a', asd) in sda {")
 
         content = "\n\n\n\n\\for (asd, 4a) in sda { \\} {"
-        expect = NutParserError(kind: .wrongSimpleVariable(name: "4a", in: "for (asd, 4a) in sda {"), line: 5)
+        expect = NutParserError(kind: .wrongSimpleVariable(name: "4a", in: "for (asd, 4a) in sda {", regex: simple), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "for (asd, '4a') in sda {")
 
         content = "\n\n\n\n\\for (name.3a, asd) in asd3 { \\} {"
-        expect = NutParserError(kind: .wrongSimpleVariable(name: "name.3a", in: "for (name.3a, asd) in asd3 {"), line: 5)
+        expect = NutParserError(kind: .wrongSimpleVariable(name: "name.3a", in: "for (name.3a, asd) in asd3 {", regex: simple), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "for (name'.3a', asd) in asd3 {")
 
         content = "\n\n\n\n\\for (asd, name.3a) in asd3 { \\} {"
-        expect = NutParserError(kind: .wrongSimpleVariable(name: "name.3a", in: "for (asd, name.3a) in asd3 {"), line: 5)
+        expect = NutParserError(kind: .wrongSimpleVariable(name: "name.3a", in: "for (asd, name.3a) in asd3 {", regex: simple), line: 5)
         expect.name = name
         XCTAssertTrue(checkError(for: content, expect: expect), "for (asd, name'.3a') in asd3 {")
     }
