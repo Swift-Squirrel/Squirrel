@@ -57,7 +57,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.line == 5)
 
         let serialized = JSON(from: token.serialized)
-        let expected = try! JSON(string: """
+        let expected = try! JSON(json: """
             {"id": "date","date": {"id": "expression","infix": "date",
             "line": 5},"format": {"id": "expression","infix": "\\"MMM dd YY\\"","line": 5},"line": 5}
             """)
@@ -73,8 +73,11 @@ class TokenTests: XCTestCase {
         XCTAssert(token1.id == "date")
         XCTAssert(token1.line == 1)
 
-        let serialized1 = JSON(from: token1.serialized)
-        let expected1 = try! JSON(string: """
+        guard let serialized1 = JSON(from: token1.serialized) else {
+            XCTFail()
+            return
+        }
+        let expected1 = try! JSON(json: """
             {"id": "date","date": {"id": "expression","infix": "date1","line": 1},"line": 1}
             """)
 
@@ -101,7 +104,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token2.line == 2)
 
         let serialized2 = JSON(from: token2.serialized)
-        let expected2 = try! JSON(string: """
+        let expected2 = try! JSON(json: """
             {"id": "date","date": {"id": "expression","infix": "date2",
             "line": 2},"format": {"id": "expression","infix": "\\"MMM YY\\"","line": 2},"line": 2}
             """)
@@ -118,7 +121,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token3.line == 10)
 
         let serialized3 = JSON(from: token3.serialized)
-        let expected3 = try! JSON(string: """
+        let expected3 = try! JSON(json: """
             {"id": "date","date": {"id": "expression","infix": "date19","line": 10},"line": 10}
             """)
         XCTAssert(serialized3 == expected3, "serialized: \(String(describing: serialized3))\nexpected: \(String(describing: expected3))")
@@ -139,7 +142,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.line == 12)
 
         var serialized = JSON(from: token.serialized)
-        var expected = try! JSON(string: """
+        var expected = try! JSON(json: """
             {"id": "if","condition":"b == true","then":[],"line":12}
             """)
 
@@ -147,7 +150,7 @@ class TokenTests: XCTestCase {
 
         token.setElse(body: [NutTokenProtocol]())
         serialized = JSON(from: token.serialized)
-        expected = try! JSON(string: """
+        expected = try! JSON(json: """
             {"id": "if","condition":"b == true","then":[],"line":12, "else": []}
             """)
         XCTAssertNotNil(token.elseBlock)
@@ -168,7 +171,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.line == 11)
 
         serialized = JSON(from: token.serialized)
-        expected = try! JSON(string: """
+        expected = try! JSON(json: """
             {"id": "if let","condition":"true","then":[],"line":11,"variable":"b"}
             """)
 
@@ -176,7 +179,7 @@ class TokenTests: XCTestCase {
 
         token.setElse(body: [NutTokenProtocol]())
         serialized = JSON(from: token.serialized)
-        expected = try! JSON(string: """
+        expected = try! JSON(json: """
             {"id": "if let","condition":"true","then":[],"line":11,"variable":"b", "else": []}
             """)
         XCTAssertNotNil(token.elseBlock)
@@ -193,7 +196,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.line == 15)
 
         serialized = JSON(from: token.serialized)
-        expected = try! JSON(string: """
+        expected = try! JSON(json: """
             {"id": "if let","condition":"true","then":[],"line":15,"variable":"b"}
             """)
 
@@ -201,7 +204,7 @@ class TokenTests: XCTestCase {
 
         token.setElse(body: [NutTokenProtocol]())
         serialized = JSON(from: token.serialized)
-        expected = try! JSON(string: """
+        expected = try! JSON(json: """
             {"id": "if let","condition":"true","then":[],"line":15,"variable":"b", "else": []}
             """)
         XCTAssertNotNil(token.elseBlock)
@@ -223,7 +226,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.variable == nil)
 
         var serialized = JSON(from: token.serialized)
-        var expected = try! JSON(string: """
+        var expected = try! JSON(json: """
             {"id":"else if","condition":"a == 21","then":[],"line":2}
             """)
         XCTAssert(serialized == expected)
@@ -231,7 +234,7 @@ class TokenTests: XCTestCase {
         token.setElse(body: [NutTokenProtocol]())
         XCTAssertNotNil(token.getElse())
         serialized = JSON(from: token.serialized)
-        expected = try! JSON(string: """
+        expected = try! JSON(json: """
             {"id":"else if","condition":"a == 21","then":[],"line":2,"else":[]}
             """)
         XCTAssert(serialized == expected)
@@ -250,7 +253,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.variable == "b")
 
         serialized = JSON(from: token.serialized)
-        expected = try! JSON(string: """
+        expected = try! JSON(json: """
             {"id":"else if let","condition":"a","then":[],"line":21,"variable":"b"}
             """)
         XCTAssert(serialized == expected)
@@ -258,7 +261,7 @@ class TokenTests: XCTestCase {
         token.setElse(body: [NutTokenProtocol]())
         XCTAssertNotNil(token.getElse())
         serialized = JSON(from: token.serialized)
-        expected = try! JSON(string: """
+        expected = try! JSON(json: """
             {"id":"else if let","condition":"a","then":[],"line":21,"variable":"b","else":[]}
             """)
         XCTAssert(serialized == expected)
@@ -272,7 +275,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.line == 4)
 
         let serialized = JSON(from: token.serialized)
-        let expected = try! JSON(string: """
+        let expected = try! JSON(json: """
             {"id":"layout","name":"Page","line":4}
             """)
         XCTAssert(serialized == expected)
@@ -285,7 +288,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token1.line == 2)
 
         let serialized1 = JSON(from: token1.serialized)
-        let expected1 = try! JSON(string: """
+        let expected1 = try! JSON(json: """
             {"id":"layout","name":"Pages","line":2}
             """)
         XCTAssert(serialized1 == expected1)
@@ -298,7 +301,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.name == "Nav")
         XCTAssert(token.line == 1)
         var serialized = JSON(from: token.serialized)
-        var expected = try! JSON(string: """
+        var expected = try! JSON(json: """
             {"id":"subview","name":"Nav","line":1}
             """)
         XCTAssert(serialized == expected)
@@ -310,7 +313,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.name == "Footer")
         XCTAssert(token.line == 42)
         serialized = JSON(from: token.serialized)
-        expected = try! JSON(string: """
+        expected = try! JSON(json: """
             {"id":"subview","name":"Footer","line":42}
             """)
         XCTAssert(serialized == expected)
@@ -323,7 +326,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.id == "title")
         XCTAssert(token.line == 14)
         let serialized = JSON(from: token.serialized)
-        let expected = try! JSON(string: """
+        let expected = try! JSON(json: """
             {"id":"title","expression":{"id":"expression","infix":"title","line":14},"line":14}
             """)
         XCTAssert(serialized == expected)
@@ -340,7 +343,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.variable == "v")
 
         var serialized = JSON(from: token.serialized)
-        var expected = try! JSON(string: """
+        var expected = try! JSON(json: """
             {"id":"for in Dictionary","key":"k","variable":"v","body":[],"array":"dic","line":52}
             """)
         XCTAssert(serialized == expected)
@@ -355,7 +358,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.variable == "val")
 
         serialized = JSON(from: token.serialized)
-        expected = try! JSON(string: """
+        expected = try! JSON(json: """
             {"id":"for in Array","variable":"val","body":[],"array":"arr","line":214}
             """)
         XCTAssert(serialized == expected)
@@ -369,7 +372,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.line == 421)
 
         let serialized = JSON(from: token.serialized)
-        let expected = try! JSON(string: """
+        let expected = try! JSON(json: """
             {"id":"else","line":421}
             """)
         XCTAssert(serialized == expected)
@@ -381,7 +384,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.id == "}")
         XCTAssert(token.line == 1241)
         let serialized = JSON(from: token.serialized)
-        let expected = try! JSON(string: """
+        let expected = try! JSON(json: """
             {"id":"}","line":1241}
             """)
         XCTAssert(serialized == expected)
@@ -397,7 +400,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.infix == "2 * ad")
         XCTAssert(token.line == 31)
         let serialized = JSON(from: token.serialized)
-        let expected = try! JSON(string: """
+        let expected = try! JSON(json: """
             {"id":"expression","line":31,"infix":"2 * ad"}
             """)
         XCTAssert(serialized == expected)
@@ -413,7 +416,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.infix == "2 * ad")
         XCTAssert(token.line == 31)
         let serialized = JSON(from: token.serialized)
-        let expected = try! JSON(string: """
+        let expected = try! JSON(json: """
             {"id":"raw expression","line":31,"infix":"2 * ad"}
             """)
         XCTAssert(serialized == expected)

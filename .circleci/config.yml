@@ -68,7 +68,7 @@ jobs:
             - build-cache
       - run:
           name: Build for release
-          command: swift build
+          command: swift build -c release
       - save_cache:
           key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
           paths:

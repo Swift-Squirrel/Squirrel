@@ -99,6 +99,7 @@ public enum HTTPHeaders {
         case delete = "DELETE"
         case head = "HEAD"
         case options = "OPTIONS"
+        case patch = "PATCH"
     }
 }
 
@@ -106,18 +107,18 @@ public enum HTTPHeaders {
 public enum HTTPStatus: CustomStringConvertible {
     // 2xx
     case ok
-    case created(location: URL)
+    case created(location: String)
     case accepted
     case noContent
     case resetContent
 
     // 3xx
-    case movedPermanently(location: URL)
-    case found(location: URL)
-    case seeOther(location: URL)
+    case movedPermanently(location: String)
+    case found(location: String)
+    case seeOther(location: String)
     case notModified
-    case temporaryRedirect(location: URL)
-    case permanentRedirect(location: URL)
+    case temporaryRedirect(location: String)
+    case permanentRedirect(location: String)
 
     // 4xx
     case badRequest

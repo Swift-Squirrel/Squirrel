@@ -10,19 +10,6 @@ import Foundation
 import NutView
 import SquirrelJSONEncoding
 
-//extension ViewError: SquirrelErrorProtocol {
-//    public var asHTTPError: HTTPError {
-//        switch kind {
-//        case .notExists:
-//            return HTTPError(status: .notFound, description: description)
-//        case .getModif:
-//            return HTTPError(status: .internalError, description: description)
-//        }
-//    }
-//}
-
-// TODO nutview errors
-
 // MARK: - NutError
 extension NutError: SquirrelErrorProtocol {
     /// HTTPError representation
@@ -97,7 +84,7 @@ public struct DataError: SquirrelErrorProtocol {
 
 /// HTTP error
 public struct HTTPError: SquirrelErrorProtocol {
-    let status: HTTPStatus
+    public let status: HTTPStatus
     /// Description of error
     public let description: String
 

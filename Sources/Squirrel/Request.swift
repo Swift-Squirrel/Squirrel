@@ -8,6 +8,9 @@
 
 import Foundation
 import Regex
+#if os(Linux)
+    import Dispatch
+#endif
 
 /// Request class
 open class Request {
@@ -16,15 +19,19 @@ open class Request {
 
     private let _method: HTTPHeaders.Method
 
-    var method: HTTPHeaders.Method {
+    /// Request method
+    public var method: HTTPHeaders.Method {
         return _method
     }
     private let _path: URL
 
     private var _cookies: [String: String] = [:]
-    var acceptEncoding = Set<HTTPHeaders.Encoding.EncodingType>()
 
-    var path: String {
+    /// Accept-Encoding
+    public var acceptEncoding = Set<HTTPHeaders.Encoding.EncodingType>()
+
+    /// Request path
+    public var path: String {
         return _path.path
     }
     private let httpProtocol: String
@@ -33,6 +40,9 @@ open class Request {
     private let rawBody: String
 
     private var headers: [String: String] = [:]
+
+    /// Session
+    private var _session: SessionProtocol? = nil
 
     private var _urlParameters: [String: String] = [:]
     private var _postParameters: [String: String] = [:]
@@ -186,9 +196,11 @@ open class Request {
     }
 
     private func parseURLEncoded(body data: Data) throws {
-        guard let body = String(data: data, encoding: .utf8) else {
+        guard var body = String(data: data, encoding: .utf8) else {
             throw DataError(kind: .dataEncodingError)
         }
+        body.replaceAll(matching: "\\+", with: " ")
+        body.replaceAll(matching: "%2B", with: "+")
         let groups = body.components(separatedBy: "&")
         for group in groups {
             var values = group.components(separatedBy: "=")
@@ -200,43 +212,129 @@ open class Request {
             _postParameters[key] = value
         }
     }
+}
 
+// MARK: - Parameters
+extension Request {
+    /// Set URL parameter
+    ///
+    /// - Parameters:
+    ///   - key: Parameter name
+    ///   - value: Value
     func setURLParameter(key: String, value: String) {
         _urlParameters[key] = value
     }
 
-    func getURLParameter(for key: String) -> String? {
+    /// Return URL parameter
+    ///
+    /// URL parameters beginning with ':' in route for example
+    ///
+    ///     server().route(get: "/posts/:id") {
+    ///         (id: ObjectId) in
+    ///
+    ///         return id
+    ///     }
+    ///
+    /// is URL parameter id thanks to `"/posts/:id"`
+    ///
+    /// - Parameter key: Parameter name
+    /// - Returns: Parameter value
+    public func getURLParameter(for key: String) -> String? {
         return _urlParameters[key]
     }
 
-    var urlParameters: [String: String] {
+    /// Returns all url parameters
+    public var urlParameters: [String: String] {
         return _urlParameters
     }
 
-    func getGetParameter(for key: String) -> String? {
+    /// Returns parameter from URL
+    ///
+    /// GET parameters are after '?' in url for example in
+    ///
+    ///     "http://localhost/posts?name=Leo&age=21"
+    ///
+    /// are GET parameters *name* with value 'Leo' and *age* with value '21'
+    ///
+    /// - Parameter key: Parameter name
+    /// - Returns: Parameter value
+    public func getGetParameter(for key: String) -> String? {
         return _path[key]
     }
 
-    func getPostParameter(for key: String) -> String? {
+    /// Returns parameter coded in body of request
+    ///
+    /// - Parameter key: Parameter name
+    /// - Returns: Parameter value
+    public func getPostParameter(for key: String) -> String? {
         return _postParameters[key]
     }
 
-    var postParameters: [String: String] {
+    /// Returns all parameters coded in body of request
+    public var postParameters: [String: String] {
         return _postParameters
     }
 
-    func getCookie(for key: String) -> String? {
+    /// Returns cookie
+    ///
+    /// - Parameter key: Cookie name
+    /// - Returns: Cookie value
+    public func getCookie(for key: String) -> String? {
         return _cookies[key]
     }
-    var cookies: [String: String] {
+
+    /// Returns all cookies
+    public var cookies: [String: String] {
         return _cookies
     }
 
-    var getParameters: [String: String?] {
+    /// Returns all get parameters
+    public var getParameters: [String: String?] {
         return _path.allQueryParams
     }
 
-    func getHeader(for key: String) -> String? {
+    /// Return header
+    ///
+    /// - Parameter key: Header name
+    /// - Returns: Header value
+    public func getHeader(for key: String) -> String? {
         return headers[key.lowercased()]
+    }
+}
+
+// MARK: - Session control
+extension Request {
+    /// Get new session
+    ///
+    /// - Returns: New session
+    /// - Throws: `SessionError(kind: .cantEstablish)`
+    @discardableResult
+    public func newSession() throws -> SessionProtocol {
+        guard var new = SessionManager().new(for: self) else {
+            throw SessionError(kind: .cantEstablish)
+        }
+        new.isNew = true
+        _session = new
+        return new
+    }
+
+    /// Get current session
+    ///
+    /// - Returns: Current session
+    /// - Throws: `SessionError(kind: .missingSession)` if there is no session
+    public func session() throws -> SessionProtocol {
+        guard let sess = _session else {
+            throw SessionError(kind: .missingSession)
+        }
+        return sess
+    }
+
+    /// Returns true if session exists
+    public var sessionExists: Bool {
+        return _session != nil
+    }
+
+    func setSession(_ session: SessionProtocol) {
+        _session = session
     }
 }

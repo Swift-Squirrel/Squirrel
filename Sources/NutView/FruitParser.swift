@@ -17,7 +17,7 @@ struct FruitParser {
 
     func tokenize() -> ViewToken {
         // swiftlint:disable:next force_try
-        let json = try! JSON(string: content)
+        let json = try! JSON(json: content)
         let name = json["fileName"].stringValue
         let body = parse(body: json["body"].arrayValue)
         let head: [NutHeadProtocol]
