@@ -13,27 +13,19 @@ jobs:
     <<: *default_docker
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
-            - build-cache-{{ .Branch }}
-            - build-cache
       - run:
           name: Resolve
           command: |
            swift package resolve
            swift package update
-      - save_cache:
-          key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
-          paths:
-            - .build/
-            - Package.resolved
+           cp Package.resolved .build/Package.resolved
       - persist_to_workspace:
           root: .build
           paths:
             - checkouts
             - dependencies-state.json
             - repositories/
+            - Package.resolved
 
   build_debug:
     <<: *default_docker
@@ -41,19 +33,21 @@ jobs:
       - checkout
       - attach_workspace:
           at: .build
+      - run:
+          name: "Copy Package.resolved"
+          command: cp .build/Package.resolved ./Package.resolved
       - restore_cache:
           keys:
-            - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+            - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
             - build-cache-{{ .Branch }}
             - build-cache
       - run:
           name: Build for debug
           command: swift build
       - save_cache:
-          key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+          key: build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
           paths:
             - .build/
-            - Package.resolved
 
   build_release:
     <<: *default_docker
@@ -61,19 +55,21 @@ jobs:
       - checkout
       - attach_workspace:
           at: .build
+      - run:
+          name: "Copy Package.resolved"
+          command: cp .build/Package.resolved ./Package.resolved
       - restore_cache:
           keys:
-            - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+            - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
             - build-cache-{{ .Branch }}
             - build-cache
       - run:
           name: Build for release
           command: swift build -c release
       - save_cache:
-          key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+          key: build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
           paths:
             - .build/
-            - Package.resolved
 
   test_parallel:
     <<: *test_docker
@@ -81,19 +77,21 @@ jobs:
       - checkout
       - attach_workspace:
           at: .build
+      - run:
+          name: "Copy Package.resolved"
+          command: cp .build/Package.resolved ./Package.resolved
       - restore_cache:
           keys:
-            - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+            - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
             - build-cache-{{ .Branch }}
             - build-cache
       - run:
           name: Run unit tests
           command: swift test --parallel
       - save_cache:
-          key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+          key: build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
           paths:
             - .build/
-            - Package.resolved
 
   test:
     <<: *test_docker
@@ -101,19 +99,21 @@ jobs:
       - checkout
       - attach_workspace:
           at: .build
+      - run:
+          name: "Copy Package.resolved"
+          command: cp .build/Package.resolved ./Package.resolved
       - restore_cache:
           keys:
-            - build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+            - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
             - build-cache-{{ .Branch }}
             - build-cache
       - run:
           name: Run unit tests
           command: swift test
       - save_cache:
-          key: build-cache-{{ .Branch }}-{{ checksum "Package.swift" }}
+          key: build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
           paths:
             - .build/
-            - Package.resolved
 
 workflows:
   version: 2

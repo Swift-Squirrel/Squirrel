@@ -80,9 +80,16 @@ public extension Response {
     }
 }
 
+// MARK: - Construct view
 extension Response {
-    public convenience init(view: ViewProtocol) throws {
+    /// Construct response from given view
+    ///
+    /// - Parameters:
+    ///   - status: HTTP status
+    ///   - view: View
+    /// - Throws: View error or Data coding error
+    public convenience init(status: HTTPStatus = .ok, view: ViewProtocol) throws {
         let content = try view.getContent()
-        try self.init(html: content)
+        try self.init(status: status, html: content)
     }
 }

@@ -84,6 +84,7 @@ public struct DataError: SquirrelErrorProtocol {
 
 /// HTTP error
 public struct HTTPError: SquirrelErrorProtocol {
+    /// HTTP status
     public let status: HTTPStatus
     /// Description of error
     public let description: String

@@ -135,10 +135,9 @@ open class Server: Router {
             return handler
         }
         let path: Path
+
         if (Config.sharedInstance.webRoot + "Storage").isSymlink
-            && String(
-                Path(request.path).normalize().string.split(separator: "/", maxSplits: 1).first!)
-            == "Storage" {
+            && Path(request.path.lowercased()).normalize().starts(with: ["storage"]) {
 
             var a = Path(request.path).normalize().string.split(separator: "/")
             a.removeFirst()
