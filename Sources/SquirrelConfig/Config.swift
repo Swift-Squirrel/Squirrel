@@ -34,6 +34,10 @@ public class Config {
     private let _assets: Path
     private let _publicStorage: Path
 
+
+    /// Symlink to public storage
+    public let publicStorageSymlink: Path
+
     /// Session directory
     public let session: Path
 
@@ -152,6 +156,7 @@ public class Config {
         }
         domain = domainConfig
         _webRoot = _serverRoot + "Public"
+        publicStorageSymlink = _webRoot + "Storage"
         _cache = _serverRoot + (cacheStorage ?? "Storage/Cache")
         _storage = _serverRoot + "Storage"
         _publicStorage = _storage + "Public"
@@ -167,6 +172,12 @@ public class Config {
 
         initLog()
         createDirectories()
+
+        if !(publicStorageSymlink.exists && publicStorageSymlink.isSymlink) {
+            // TODO remove force try
+            // swiftlint:disable:next force_try
+            try! publicStorageSymlink.symlink(publicStorage)
+        }
 
         NutConfig.fruits = storageViews
         NutConfig.nuts = views

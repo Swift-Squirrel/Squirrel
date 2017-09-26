@@ -21,7 +21,8 @@ class NutParser: NutParserProtocol {
     private let viewType: ViewType
 
     private let simpleVariable = (regex: "^[a-zA-Z]\\w*$", value: Regex("^[a-zA-Z]\\w*$"))
-    private let chainedVariable = (regex: "^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$", value: Regex("^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$"))
+    private let chainedVariable = (regex: "^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$",
+                                   value: Regex("^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$"))
 
     private var _jsonSerialized: String = ""
 
@@ -491,18 +492,27 @@ extension NutParser {
                 if let keyValue = key {
                     guard checkSimple(variable: keyValue) else {
                         throw NutParserError(
-                            kind: .wrongSimpleVariable(name: keyValue, in: "for" + stm + "{", regex: simpleVariable.regex),
+                            kind: .wrongSimpleVariable(
+                                name: keyValue,
+                                in: "for \(stm) {",
+                                regex: simpleVariable.regex),
                             line: line)
                     }
                 }
                 guard checkSimple(variable: variable) else {
                     throw NutParserError(
-                        kind: .wrongSimpleVariable(name: variable, in: "for" + stm + "{", regex: simpleVariable.regex),
+                        kind: .wrongSimpleVariable(
+                            name: variable,
+                            in: "for \(stm) {",
+                            regex: simpleVariable.regex),
                         line: line)
                 }
                 guard checkChained(variable: array) else {
                     throw NutParserError(
-                        kind: .wrongChainedVariable(name: array, in: "for" + stm + "{", regex: chainedVariable.regex),
+                        kind: .wrongChainedVariable(
+                            name: array,
+                            in: "for \(stm) {",
+                            regex: chainedVariable.regex),
                         line: line)
                 }
                 let token = ForInToken(key: key, variable: variable, array: array, line: line)
@@ -854,13 +864,17 @@ extension NutParser {
                     guard checkSimple(variable: variable) else {
                         throw NutParserError(
                             kind: .wrongSimpleVariable(
-                                name: variable, in: "if " + condition + " {", regex: simpleVariable.regex),
+                                name: variable,
+                                in: "if \(condition) {",
+                                regex: simpleVariable.regex),
                             line: line)
                     }
                     guard checkSimple(variable: token.condition) else {
                         throw NutParserError(
                             kind: .wrongChainedVariable(
-                                name: token.condition, in: "if " + condition + " {", regex: chainedVariable.regex),
+                                name: token.condition,
+                                in: "if \(condition) {",
+                                regex: chainedVariable.regex),
                             line: line)
                     }
                 }
