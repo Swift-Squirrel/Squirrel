@@ -34,8 +34,8 @@ jobs:
       - attach_workspace:
           at: .build
       - run:
-        name: "Copy Package.resolved"
-        command: cp .build/Package.resolved ./Package.resolved
+          name: "Copy Package.resolved"
+          command: cp .build/Package.resolved ./Package.resolved
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
@@ -56,8 +56,8 @@ jobs:
       - attach_workspace:
           at: .build
       - run:
-        name: "Copy Package.resolved"
-        command: cp .build/Package.resolved ./Package.resolved
+          name: "Copy Package.resolved"
+          command: cp .build/Package.resolved ./Package.resolved
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
@@ -78,8 +78,8 @@ jobs:
       - attach_workspace:
           at: .build
       - run:
-        name: "Copy Package.resolved"
-        command: cp .build/Package.resolved ./Package.resolved
+          name: "Copy Package.resolved"
+          command: cp .build/Package.resolved ./Package.resolved
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
@@ -100,8 +100,8 @@ jobs:
       - attach_workspace:
           at: .build
       - run:
-        name: "Copy Package.resolved"
-        command: cp .build/Package.resolved ./Package.resolved
+          name: "Copy Package.resolved"
+          command: cp .build/Package.resolved ./Package.resolved
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
