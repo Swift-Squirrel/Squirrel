@@ -34,9 +34,8 @@ public class Config {
     private let _assets: Path
     private let _publicStorage: Path
 
-
     /// Symlink to public storage
-    public let publicStorageSymlink: Path
+    private let publicStorageSymlink: Path
 
     /// Session directory
     public let session: Path
