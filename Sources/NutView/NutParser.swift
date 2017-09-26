@@ -494,7 +494,7 @@ extension NutParser {
                         throw NutParserError(
                             kind: .wrongSimpleVariable(
                                 name: keyValue,
-                                in: "for \(stm) {",
+                                in: "for\(stm){",
                                 regex: simpleVariable.regex),
                             line: line)
                     }
@@ -503,7 +503,7 @@ extension NutParser {
                     throw NutParserError(
                         kind: .wrongSimpleVariable(
                             name: variable,
-                            in: "for \(stm) {",
+                            in: "for\(stm){",
                             regex: simpleVariable.regex),
                         line: line)
                 }
@@ -511,7 +511,7 @@ extension NutParser {
                     throw NutParserError(
                         kind: .wrongChainedVariable(
                             name: array,
-                            in: "for \(stm) {",
+                            in: "for\(stm){",
                             regex: chainedVariable.regex),
                         line: line)
                 }
@@ -706,7 +706,7 @@ extension NutParser {
         throw NutParserError(
             kind: .syntaxError(
                 expected: expected,
-                got: "} else if " + text),
+                got: "} else if \(text)"),
             line: line,
             description: "'{' not found")
     }
@@ -756,7 +756,7 @@ extension NutParser {
             throw NutParserError(
                 kind: .syntaxError(
                     expected: ["RawValue(<expression: Any>)"],
-                    got: "RawValue" + expression),
+                    got: "RawValue\(expression)"),
                 line: line,
                 description: "Empty expression")
         }
