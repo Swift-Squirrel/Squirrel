@@ -495,3 +495,15 @@ extension JSON: Codable {
         case date
     }
 }
+
+// MARK: - JSON String convertible
+extension JSON: CustomStringConvertible {
+    /// String representation of JSON
+    public var description: String {
+        let encoder = JSONEncoder()
+        // swiftlint:disable:next force_try
+        let data = try! encoder.encode(self)
+        let str = String(data: data, encoding: .utf8)!
+        return str
+    }
+}

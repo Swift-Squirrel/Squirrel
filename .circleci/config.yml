@@ -18,7 +18,7 @@ jobs:
           command: |
            swift package resolve
            swift package update
-           cp Package.resolved .build/Package.resolved
+           command: "if [ -f .build/Package.resolved ]; then cp .build/Package.resolved ./Package.resolved; fi"
       - persist_to_workspace:
           root: .build
           paths:
@@ -35,12 +35,10 @@ jobs:
           at: .build
       - run:
           name: "Copy Package.resolved"
-          command: cp .build/Package.resolved ./Package.resolved
+          command: "if [ -f .build/Package.resolved ]; then cp .build/Package.resolved ./Package.resolved; fi"
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
-            - build-cache-{{ .Branch }}
-            - build-cache
       - run:
           name: Build for debug
           command: swift build
@@ -57,12 +55,10 @@ jobs:
           at: .build
       - run:
           name: "Copy Package.resolved"
-          command: cp .build/Package.resolved ./Package.resolved
+          command: "if [ -f .build/Package.resolved ]; then cp .build/Package.resolved ./Package.resolved; fi"
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
-            - build-cache-{{ .Branch }}
-            - build-cache
       - run:
           name: Build for release
           command: swift build -c release
@@ -79,12 +75,10 @@ jobs:
           at: .build
       - run:
           name: "Copy Package.resolved"
-          command: cp .build/Package.resolved ./Package.resolved
+          command: "if [ -f .build/Package.resolved ]; then cp .build/Package.resolved ./Package.resolved; fi"
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
-            - build-cache-{{ .Branch }}
-            - build-cache
       - run:
           name: Run unit tests
           command: swift test --parallel
@@ -101,12 +95,10 @@ jobs:
           at: .build
       - run:
           name: "Copy Package.resolved"
-          command: cp .build/Package.resolved ./Package.resolved
+          command: "if [ -f .build/Package.resolved ]; then cp .build/Package.resolved ./Package.resolved; fi"
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
-            - build-cache-{{ .Branch }}
-            - build-cache
       - run:
           name: Run unit tests
           command: swift test

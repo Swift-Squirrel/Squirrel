@@ -62,8 +62,8 @@ class TokenTests: XCTestCase {
             "line": 5},"format": {"id": "expression","infix": "\\"MMM dd YY\\"","postfix":"[{\\"type\\":{\\"string\\":\\"String\\"},\\"value\\":\\"MMM dd YY\\"}]"
             ,"line": 5},"line": 5}
             """)
-        XCTAssert(serialized == expected, "serialized: \(String(describing: serialized))\nexpected: \(String(describing: expected))")
-        print(token.serialized)
+        XCTAssertEqual(serialized, expected)
+
         let token1 = DateToken(
             date: ExpressionToken(infix: "date1", line: 1)!,
             line: 1)
@@ -89,7 +89,7 @@ class TokenTests: XCTestCase {
         XCTAssert(serialized1["date"]["line"] == expected1["date"]["line"])
         XCTAssert(serialized1["format"] == expected1["format"])
         XCTAssert(serialized1["line"] == expected1["line"])
-        XCTAssert(serialized1 == expected1, "serialized: \(String(describing: serialized1))\nexpected: \(String(describing: expected1))")
+        XCTAssertEqual(serialized1, expected1)
 
         let token2 = DateToken(
             date: ExpressionToken(
@@ -110,7 +110,7 @@ class TokenTests: XCTestCase {
             "line": 2},"format": {"id": "expression","infix": "\\"MMM YY\\"","postfix":"[{\\"type\\":{\\"string\\":\\"String\\"},\\"value\\":\\"MMM YY\\"}]"
             ,"line": 2},"line": 2}
             """)
-        XCTAssert(serialized2 == expected2, "serialized: \(String(describing: serialized2))\nexpected: \(String(describing: expected2))")
+        XCTAssertEqual(serialized2, expected2)
 
         let token3 = DateToken(
             date: ExpressionToken(infix: "date19", line: 10)!,
@@ -148,7 +148,7 @@ class TokenTests: XCTestCase {
             {"id": "if","condition":{"postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"b\\"},{\\"type\\":{\\"bool\\":\\"Bool\\"},\\"value\\":\\"true\\"},{\\"type\\":{\\"operation\\":\\"==\\"},\\"value\\":\\"==\\"}]","infix":"b == true","id":"raw expression","line":12},"then":[],"line":12}
             """)
 
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
 
         token.setElse(body: [NutTokenProtocol]())
         serialized = JSON(from: token.serialized)
@@ -156,7 +156,7 @@ class TokenTests: XCTestCase {
             {"id": "if","condition":{"postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"b\\"},{\\"type\\":{\\"bool\\":\\"Bool\\"},\\"value\\":\\"true\\"},{\\"type\\":{\\"operation\\":\\"==\\"},\\"value\\":\\"==\\"}]","infix":"b == true","id":"raw expression","line":12},"then":[],"line":12, "else": []}
             """)
         XCTAssertNotNil(token.elseBlock)
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
 
         // next
         guard (try? IfToken(condition: "let b = true", line: 11)) != nil else {
@@ -177,7 +177,7 @@ class TokenTests: XCTestCase {
             {"id": "if let","condition":{"postfix": "[{\\"type\\":{\\"bool\\":\\"Bool\\"},\\"value\\":\\"true\\"}]","infix":"true","id":"raw expression","line":11},"then":[],"line":11,"variable":"b"}
             """)
 
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
 
         token.setElse(body: [NutTokenProtocol]())
         serialized = JSON(from: token.serialized)
@@ -185,7 +185,7 @@ class TokenTests: XCTestCase {
             {"id": "if let","condition":{"postfix": "[{\\"type\\":{\\"bool\\":\\"Bool\\"},\\"value\\":\\"true\\"}]","infix":"true","id":"raw expression","line":11},"then":[],"line":11,"variable":"b", "else": []}
             """)
         XCTAssertNotNil(token.elseBlock)
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
 
         // next
         token = IfToken(variable: "b", condition: try! RawExpressionToken(infix: "true", line: 15), line: 15)
@@ -202,7 +202,7 @@ class TokenTests: XCTestCase {
             {"id": "if let","condition":{"postfix": "[{\\"type\\":{\\"bool\\":\\"Bool\\"},\\"value\\":\\"true\\"}]","infix":"true","id":"raw expression","line":15},"then":[],"line":15,"variable":"b"}
             """)
 
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
 
         token.setElse(body: [NutTokenProtocol]())
         serialized = JSON(from: token.serialized)
@@ -231,7 +231,7 @@ class TokenTests: XCTestCase {
         var expected = try! JSON(json: """
             {"id":"else if","condition":{"postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"a\\"},{\\"type\\":{\\"int\\":\\"Int\\"},\\"value\\":\\"21\\"},{\\"type\\":{\\"operation\\":\\"==\\"},\\"value\\":\\"==\\"}]","infix":"a == 21","id":"raw expression","line":2},"then":[],"line":2}
             """)
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
 
         token.setElse(body: [NutTokenProtocol]())
         XCTAssertNotNil(token.getElse())
@@ -239,7 +239,7 @@ class TokenTests: XCTestCase {
         expected = try! JSON(json: """
             {"id":"else if","condition":{"postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"a\\"},{\\"type\\":{\\"int\\":\\"Int\\"},\\"value\\":\\"21\\"},{\\"type\\":{\\"operation\\":\\"==\\"},\\"value\\":\\"==\\"}]","infix":"a == 21","id":"raw expression","line":2},"then":[],"line":2,"else":[]}
             """)
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
 
         guard (try? ElseIfToken(condition: "let b = a", line: 21)) != nil else {
             XCTFail()
@@ -258,7 +258,7 @@ class TokenTests: XCTestCase {
         expected = try! JSON(json: """
             {"id":"else if let","condition":{"postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"a\\"}]","infix":"a","id":"raw expression","line":21},"then":[],"line":21,"variable":"b"}
             """)
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
 
         token.setElse(body: [NutTokenProtocol]())
         XCTAssertNotNil(token.getElse())
@@ -266,7 +266,7 @@ class TokenTests: XCTestCase {
         expected = try! JSON(json: """
             {"id":"else if let","condition":{"postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"a\\"}]","infix":"a","id":"raw expression","line":21},"then":[],"line":21,"variable":"b","else":[]}
             """)
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
     }
 
     func testLayout() {
@@ -331,7 +331,7 @@ class TokenTests: XCTestCase {
         let expected = try! JSON(json: """
             {"id":"title","expression":{"id":"expression","infix":"title","postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"title\\"}]","line":14},"line":14}
             """)
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
     }
 
     func testForIn() {
@@ -402,11 +402,10 @@ class TokenTests: XCTestCase {
         XCTAssert(token.infix == "2 * ad")
         XCTAssert(token.line == 31)
         let serialized = JSON(from: token.serialized)
-        print(token.serialized)
         let expected = try! JSON(json: """
             {"id":"expression","line":31,"infix":"2 * ad","postfix":"[{\\"type\\":{\\"int\\":\\"Int\\"},\\"value\\":\\"2\\"},{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"ad\\"},{\\"type\\":{\\"operation\\":\\"*\\"},\\"value\\":\\"*\\"}]"}
             """)
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
     }
 
     func testRawExpression() {
@@ -422,7 +421,7 @@ class TokenTests: XCTestCase {
         let expected = try! JSON(json: """
             {"id":"raw expression","line":31,"infix":"2 * ad","postfix":"[{\\"type\\":{\\"int\\":\\"Int\\"},\\"value\\":\\"2\\"},{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"ad\\"},{\\"type\\":{\\"operation\\":\\"*\\"},\\"value\\":\\"*\\"}]"}
             """)
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
     }
 
     static let allTests = [
