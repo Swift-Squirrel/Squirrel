@@ -7,7 +7,6 @@
 
 import XCTest
 @testable import Squirrel
-import SquirrelConnector
 
 class RequestTests: XCTestCase {
 
@@ -91,15 +90,6 @@ class RequestTests: XCTestCase {
     }
 
     func testValidInit() {
-        struct asd: Codable {
-            var id = try! ObjectId("59c97679fa621351772c004c")
-        }
-        let obj = try! ObjectId("59c97679fa621351772c004c")
-        let encoder = JSONEncoder()
-        let data = try! encoder.encode(asd())
-        let str = String(data: data, encoding: .utf8)!
-        print(str)
-
         XCTAssertNoThrow(try Request(data: RequestTemplates.get))
         guard let request = try? Request(data: RequestTemplates.get) else {
             XCTFail()

@@ -416,7 +416,12 @@ extension JSON: Equatable {
     }
 }
 
+// MARK: - JSON Codable
 extension JSON: Codable {
+    /// JSON decoder
+    ///
+    /// - Parameter decoder: Decoder
+    /// - Throws: `JSONError(kind: .encodeError, description: "Could not encode")`
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         if let value = try? values.decode(String.self, forKey: .string) {
@@ -453,6 +458,10 @@ extension JSON: Codable {
         throw JSONError(kind: .encodeError, description: "Could not encode")
     }
 
+    /// JSON Encoder
+    ///
+    /// - Parameter encoder: Encoder
+    /// - Throws: encode errors
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         switch type {
@@ -486,76 +495,3 @@ extension JSON: Codable {
         case date
     }
 }
-
-// TODO remove it
-//extension JSON.ValueType: Codable {
-//    init(from decoder: Decoder) throws {
-//        let values = try decoder.container(keyedBy: CodingKeys.self)
-//        if let value = try? values.decode(String.self, forKey: .string) {
-//            self = .string(str: value)
-//            return
-//        }
-//        if let value = try? values.decode([String: JSON].self, forKey: .dictionary) {
-//            self = .dictionary(dic: value)
-//            return
-//        }
-//        if let value = try? values.decode([JSON].self, forKey: .array) {
-//            self = .array(arr: value)
-//            return
-//        }
-//        if let value = try? values.decode(Int.self, forKey: .int) {
-//            self = .int(int: value)
-//            return
-//        }
-//        if let value = try? values.decode(Double.self, forKey: .double) {
-//            self = .double(double: value)
-//            return
-//        }
-//        if let value = try? values.decode(Bool.self, forKey: .bool) {
-//            self = .bool(bool: value)
-//            return
-//        }
-//        if let value = try? values.decode(Date.self, forKey: .date) {
-//            self = .date(date: value)
-//            return
-//        }
-//        if values.contains(.nil) {
-//            self = .nil
-//        }
-//        throw JSONError(kind: .encodeError, description: "Could not encode")
-//    }
-//
-//    func encode(to encoder: Encoder) throws {
-//        var container = encoder.container(keyedBy: CodingKeys.self)
-//        switch self {
-//        case .string(let str):
-//            try container.encode(str, forKey: .string)
-//        case .dictionary(let dic):
-//            try container.encode(dic, forKey: .dictionary)
-//        case .array(let arr):
-//            try container.encode(arr, forKey: .array)
-//        case .int(let int):
-//            try container.encode(int, forKey: .int)
-//        case .double(let double):
-//            try container.encode(double, forKey: .double)
-//        case .bool(let bool):
-//            try container.encode(bool, forKey: .bool)
-//        case .date(let date):
-//            try container.encode(date, forKey: .date)
-//        case .nil:
-//            try container.encode("nil", forKey: .nil)
-//        }
-//    }
-//
-//    private enum CodingKeys: String, CodingKey {
-//        case string
-//        case dictionary
-//        case array
-//        case int
-//        case double
-//        case bool
-//        case `nil`
-//        case date
-//    }
-//}
-

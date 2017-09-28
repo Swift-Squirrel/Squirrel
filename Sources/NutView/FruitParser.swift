@@ -127,9 +127,15 @@ struct FruitParser {
     // swiftlint:enable cyclomatic_complexity
 
     private func parse(expression token: JSON) -> ExpressionToken {
-        return ExpressionToken(infix: token["infix"].stringValue, postfix: token["postfix"].stringValue, line: token["line"].intValue)
+        return ExpressionToken(
+            infix: token["infix"].stringValue,
+            postfix: token["postfix"].stringValue,
+            line: token["line"].intValue)
     }
     private func parse(rawExpression token: JSON) -> RawExpressionToken {
-        return RawExpressionToken(infix: token["infix"].stringValue, postfix: token["postfix"].stringValue, line: token["line"].intValue)
+        return RawExpressionToken(
+            infix: token["infix"].stringValue,
+            postfix: token["postfix"].stringValue,
+            line: token["line"].intValue)
     }
 }

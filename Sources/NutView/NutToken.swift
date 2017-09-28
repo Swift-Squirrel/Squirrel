@@ -6,6 +6,8 @@
 //
 //
 
+// swiftlint:disable file_length
+
 import Foundation
 import Evaluation
 
@@ -13,7 +15,6 @@ protocol NutTokenProtocol {
     var id: String { get }
 
     var serialized: [String: Any] { get }
-
 }
 
 protocol NutCommandTokenProtocol: NutTokenProtocol {
@@ -34,6 +35,14 @@ protocol NutLayoutProtocol: NutViewProtocol {
 
 protocol NutHeadProtocol: NutCommandTokenProtocol {
 
+}
+
+protocol IfTokenProtocol: NutCommandTokenProtocol {
+    init(condition: String, line: Int) throws
+    mutating func setThen(body: [NutTokenProtocol])
+    mutating func setElse(body: [NutTokenProtocol])
+    var variable: String? { get }
+    var condition: RawExpressionToken { get }
 }
 
 struct TextToken: NutTokenProtocol {
@@ -62,14 +71,6 @@ struct InsertViewToken: NutCommandTokenProtocol {
     var serialized: [String: Any] {
         return ["id": id, "line": line]
     }
-}
-
-protocol IfTokenProtocol: NutCommandTokenProtocol {
-    init(condition: String, line: Int) throws
-    mutating func setThen(body: [NutTokenProtocol])
-    mutating func setElse(body: [NutTokenProtocol])
-    var variable: String? { get }
-    var condition: RawExpressionToken { get }
 }
 
 struct DateToken: NutCommandTokenProtocol {
@@ -153,11 +154,16 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
         do {
             expr = try RawExpressionToken(infix: exprCondition, line: line)
         } catch let error as EvaluationError {
-            throw NutParserError(kind: .evaluationError(infix: exprCondition, message: error.description), line: line)
+            throw NutParserError(
+                kind: .evaluationError(infix: exprCondition, message: error.description),
+                line: line)
         } catch let error {
-            throw NutParserError(kind: .expressionError, line: line, description: error.localizedDescription)
+            throw NutParserError(
+                kind: .expressionError,
+                line: line,
+                description: error.localizedDescription)
         }
-        
+
         self.init(variable: variable, condition: expr, line: line)
         try checkVariable()
     }
@@ -180,14 +186,16 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
                 throw NutParserError(
                     kind: .wrongSimpleVariable(
                         name: variable,
-                        in: "if let \(variable) = \(condition.infix) {", regex: VariableCheck.simpleVariable.regex),
+                        in: "if let \(variable) = \(condition.infix) {",
+                        regex: VariableCheck.simpleVariable.regex),
                     line: line)
             }
             guard VariableCheck.checkChained(variable: condition.infix) else {
                 throw NutParserError(
                     kind: .wrongChainedVariable(
                         name: condition.infix,
-                        in: "if let \(variable) = \(condition.infix) {", regex: VariableCheck.chainedVariable.regex),
+                        in: "if let \(variable) = \(condition.infix) {",
+                        regex: VariableCheck.chainedVariable.regex),
                     line: line)
             }
         }
@@ -243,11 +251,12 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let variable: String?
 
+    private let expected = [
+        "} else if <expression: Bool> {",
+        "} else if let <variableName: Any> = <expression: Any?> {"
+    ]
+
     init(condition: String, line: Int) throws {
-        let expected = [
-            "} else if <expression: Bool> {",
-            "} else if let <variableName: Any> = <expression: Any?> {"
-        ]
         let exprCon: String
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
@@ -278,9 +287,14 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
         do {
             expr = try RawExpressionToken(infix: exprCon, line: line)
         } catch let error as EvaluationError {
-            throw NutParserError(kind: .evaluationError(infix: exprCon, message: error.description), line: line)
+            throw NutParserError(
+                kind: .evaluationError(infix: exprCon, message: error.description),
+                line: line)
         } catch let error {
-            throw NutParserError(kind: .expressionError, line: line, description: error.localizedDescription)
+            throw NutParserError(
+                kind: .expressionError,
+                line: line,
+                description: error.localizedDescription)
         }
         self.condition = expr
         self.line = line
@@ -293,14 +307,16 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
                 throw NutParserError(
                     kind: .wrongSimpleVariable(
                         name: variable,
-                        in: "} else if let \(variable) = \(condition.infix) {", regex: VariableCheck.simpleVariable.regex),
+                        in: "} else if let \(variable) = \(condition.infix) {",
+                        regex: VariableCheck.simpleVariable.regex),
                     line: line)
             }
             guard VariableCheck.checkChained(variable: condition.infix) else {
                 throw NutParserError(
                     kind: .wrongChainedVariable(
                         name: condition.infix,
-                        in: "} else if let \(variable) = \(condition.infix) {", regex: VariableCheck.chainedVariable.regex),
+                        in: "} else if let \(variable) = \(condition.infix) {",
+                        regex: VariableCheck.chainedVariable.regex),
                     line: line)
             }
         }
