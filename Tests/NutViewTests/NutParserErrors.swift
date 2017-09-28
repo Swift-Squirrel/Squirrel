@@ -293,7 +293,8 @@ class NutParserErrors: XCTestCase {
         content = "\n\n\n\n\\if let name = asd.3a { \\} {"
         expect = NutParserError(kind: .wrongChainedVariable(name: "asd.3a", in: "if let name = asd.3a {", regex: chained), line: 5)
         expect.name = name
-        XCTAssertTrue(checkError(for: content, expect: expect), "if let name = asd.'3a'")
+        let parser1 = NutParser(content: content, name: name)
+        XCTAssertThrowsError(try parser1.tokenize(), "if let name = asd.'3a'")
 
         content = "\n\n\n\n\\if let name.da = asd { \\} {"
         expect = NutParserError(kind: .wrongSimpleVariable(name: "name.da", in: "if let name.da = asd {", regex: simple), line: 5)
@@ -314,7 +315,8 @@ class NutParserErrors: XCTestCase {
         content = "\n\n\n\n\\} else if let name = asd.3a { \\} {"
         expect = NutParserError(kind: .wrongChainedVariable(name: "asd.3a", in: "} else if let name = asd.3a {", regex: chained), line: 5)
         expect.name = name
-        XCTAssertTrue(checkError(for: content, expect: expect), "} else if let name = asd.'3a'")
+        let parser2 = NutParser(content: content, name: name)
+        XCTAssertThrowsError(try parser2.tokenize(), "} else if let name = asd.'3a'")
 
         content = "\n\n\n\n\\} else if let name.da = asd { \\} {"
         expect = NutParserError(kind: .wrongSimpleVariable(name: "name.da", in: "} else if let name.da = asd {", regex: simple), line: 5)

@@ -14,15 +14,33 @@ struct ExpressionToken: NutCommandTokenProtocol {
     let line: Int
 
     let infix: String
+    let postfix: String
 
     init?(infix: String, line: Int) {
-        self.infix = infix
+        guard let eval = try? InfixEvaluation(expression: infix) else {
+            return nil
+        }
+        guard let postfix: String = try? eval.serializedPostfix() else {
+            return nil
+        }
+        self.postfix = postfix
         self.line = line
-//        let eval = try! Evaluation(expression: infix)
+        self.infix = infix
+    }
+
+    init(infix: String, postfix: String, line: Int) {
+        self.infix = infix
+        self.postfix = postfix
+        self.line = line
+    }
+
+    func evaluate(with data: [String: Any]) throws -> Any? {
+        let eval = try PostfixEvaluation(postfix: postfix)
+        return try eval.evaluate(with: data)
     }
 
     var serialized: [String: Any] {
-        return ["id": id, "infix": infix, "line": line]
+        return ["id": id, "postfix": postfix, "infix": infix, "line": line]
     }
 }
 
@@ -32,14 +50,29 @@ struct RawExpressionToken: NutCommandTokenProtocol {
     let line: Int
 
     let infix: String
+    let postfix: String
 
-    init?(infix: String, line: Int) {
+    init(infix: String, line: Int) throws {
+        let eval = try InfixEvaluation(expression: infix)
+        let postfix: String = try eval.serializedPostfix()
+
+        self.postfix = postfix
         self.infix = infix
         self.line = line
-        //        let eval = try! Evaluation(expression: infix)
+    }
+
+    init(infix: String, postfix: String, line: Int) {
+        self.infix = infix
+        self.postfix = postfix
+        self.line = line
+    }
+
+    func evaluate(with data: [String: Any]) throws -> Any? {
+        let eval = try PostfixEvaluation(postfix: postfix)
+        return try eval.evaluate(with: data)
     }
 
     var serialized: [String: Any] {
-        return ["id": id, "infix": infix, "line": line]
+        return ["id": id, "postfix": postfix, "infix": infix, "line": line]
     }
 }

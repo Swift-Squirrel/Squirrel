@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Evaluation
 
 protocol NutTokenProtocol {
     var id: String { get }
@@ -64,9 +65,11 @@ struct InsertViewToken: NutCommandTokenProtocol {
 }
 
 protocol IfTokenProtocol: NutCommandTokenProtocol {
-    init?(condition: String, line: Int)
+    init(condition: String, line: Int) throws
     mutating func setThen(body: [NutTokenProtocol])
     mutating func setElse(body: [NutTokenProtocol])
+    var variable: String? { get }
+    var condition: RawExpressionToken { get }
 }
 
 struct DateToken: NutCommandTokenProtocol {
@@ -102,7 +105,7 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let line: Int
 
-    let condition: String
+    let condition: RawExpressionToken
 
     var thenBlock = [NutTokenProtocol]()
 
@@ -118,38 +121,82 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let variable: String?
 
-    init(variable: String, condition: String, line: Int) {
-        self.line = line
-        self.id = "if let"
-        self.variable = variable
-        self.condition = condition
-    }
-
-    init?(condition: String, line: Int) {
-        self.line = line
+    init(condition: String, line: Int) throws {
+        let expected = [
+            "if <expression: Bool> {",
+            "if let <variableName: Any> = <expression: Any?> {"
+        ]
+        let exprCondition: String
+        let variable: String?
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
             guard separated.count == 4 else {
-                return nil
+                throw NutParserError(
+                    kind: .syntaxError(expected: expected, got: "if " + condition + " {"),
+                    line: line)
             }
             guard separated[2] == "=" else {
-                return nil
+                throw NutParserError(
+                    kind: .syntaxError(expected: expected, got: "if " + condition + " {"),
+                    line: line)
             }
             variable = separated[1]
             separated.removeFirst(3)
-            self.condition = separated.joined(separator: " ")
-            id = "if let"
+            exprCondition = separated.joined(separator: " ")
+
         } else {
-            self.condition = condition
+            exprCondition = condition
             variable = nil
-            id = "if"
+
+        }
+        let expr: RawExpressionToken
+        do {
+            expr = try RawExpressionToken(infix: exprCondition, line: line)
+        } catch let error as EvaluationError {
+            throw NutParserError(kind: .evaluationError(infix: exprCondition, message: error.description), line: line)
+        } catch let error {
+            throw NutParserError(kind: .expressionError, line: line, description: error.localizedDescription)
+        }
+        
+        self.init(variable: variable, condition: expr, line: line)
+        try checkVariable()
+    }
+
+    init(variable: String? = nil, condition: RawExpressionToken, line: Int) {
+        if let variable = variable {
+            self.id = "if let"
+            self.variable = variable
+        } else {
+            self.id = "if"
+            self.variable = nil
+        }
+        self.line = line
+        self.condition = condition
+    }
+
+    func checkVariable() throws {
+        if let variable = variable {
+            guard VariableCheck.checkSimple(variable: variable) else {
+                throw NutParserError(
+                    kind: .wrongSimpleVariable(
+                        name: variable,
+                        in: "if let \(variable) = \(condition.infix) {", regex: VariableCheck.simpleVariable.regex),
+                    line: line)
+            }
+            guard VariableCheck.checkChained(variable: condition.infix) else {
+                throw NutParserError(
+                    kind: .wrongChainedVariable(
+                        name: condition.infix,
+                        in: "if let \(variable) = \(condition.infix) {", regex: VariableCheck.chainedVariable.regex),
+                    line: line)
+            }
         }
     }
 
     var serialized: [String: Any] {
         var res: [String: Any] = [
             "id": id,
-            "condition": condition,
+            "condition": condition.serialized,
             "then": thenBlock.map({ $0.serialized }),
             "line": line
         ]
@@ -168,7 +215,7 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let line: Int
 
-    let condition: String
+    let condition: RawExpressionToken
 
     private var thenBlock = [NutTokenProtocol]()
 
@@ -182,7 +229,7 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
         return thenBlock
     }
 
-    func getCondition() -> String {
+    func getCondition() -> RawExpressionToken {
         return condition
     }
 
@@ -196,31 +243,73 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let variable: String?
 
-    init?(condition: String, line: Int) {
-        self.line = line
+    init(condition: String, line: Int) throws {
+        let expected = [
+            "} else if <expression: Bool> {",
+            "} else if let <variableName: Any> = <expression: Any?> {"
+        ]
+        let exprCon: String
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
             guard separated.count == 4 else {
-                return nil
+                throw NutParserError(
+                    kind: .syntaxError(
+                        expected: expected,
+                        got: "} else if \(condition) {"),
+                    line: line)
             }
             guard separated[2] == "=" else {
-                return nil
+                throw NutParserError(
+                    kind: .syntaxError(
+                        expected: expected,
+                        got: "} else if \(condition) {"),
+                    line: line)
             }
             variable = separated[1]
             separated.removeFirst(3)
-            self.condition = separated.joined(separator: " ")
+            exprCon = separated.joined(separator: " ")
             id = "else if let"
         } else {
-            self.condition = condition
+            exprCon = condition
             variable = nil
             id = "else if"
+        }
+        let expr: RawExpressionToken
+        do {
+            expr = try RawExpressionToken(infix: exprCon, line: line)
+        } catch let error as EvaluationError {
+            throw NutParserError(kind: .evaluationError(infix: exprCon, message: error.description), line: line)
+        } catch let error {
+            throw NutParserError(kind: .expressionError, line: line, description: error.localizedDescription)
+        }
+        self.condition = expr
+        self.line = line
+        try checkVariable()
+    }
+
+    func checkVariable() throws {
+        if let variable = variable {
+            guard VariableCheck.checkSimple(variable: variable) else {
+                throw NutParserError(
+                    kind: .wrongSimpleVariable(
+                        name: variable,
+                        in: "} else if let \(variable) = \(condition.infix) {", regex: VariableCheck.simpleVariable.regex),
+                    line: line)
+            }
+            guard VariableCheck.checkChained(variable: condition.infix) else {
+                throw NutParserError(
+                    kind: .wrongChainedVariable(
+                        name: condition.infix,
+                        in: "} else if let \(variable) = \(condition.infix) {", regex: VariableCheck.chainedVariable.regex),
+                    line: line)
+            }
         }
     }
 
     var serialized: [String: Any] {
         var res: [String: Any] = [
             "id": id,
-            "condition": condition,
+            "condition": condition.serialized,
             "then": thenBlock.map({ $0.serialized }),
             "line": line
         ]

@@ -92,8 +92,8 @@ struct FruitParser {
                 body.append(parse(rawExpression: token))
             case "if":
                 var ifToken = IfToken(
-                    condition: token["condition"].stringValue,
-                    line: token["line"].intValue)!
+                    condition: parse(rawExpression: token["condition"]),
+                    line: token["line"].intValue)
 
                 ifToken.setThen(body: parse(body: token["then"].arrayValue))
                 if let elseBlock = token["else"].array {
@@ -103,7 +103,7 @@ struct FruitParser {
             case "if let":
                 var ifToken = IfToken(
                     variable: token["variable"].stringValue,
-                    condition: token["condition"].stringValue,
+                    condition: parse(rawExpression: token["condition"]),
                     line: token["line"].intValue)
 
                 ifToken.setThen(body: parse(body: token["then"].arrayValue))
@@ -127,9 +127,9 @@ struct FruitParser {
     // swiftlint:enable cyclomatic_complexity
 
     private func parse(expression token: JSON) -> ExpressionToken {
-        return ExpressionToken(infix: token["infix"].stringValue, line: token["line"].intValue)!
+        return ExpressionToken(infix: token["infix"].stringValue, postfix: token["postfix"].stringValue, line: token["line"].intValue)
     }
     private func parse(rawExpression token: JSON) -> RawExpressionToken {
-        return RawExpressionToken(infix: token["infix"].stringValue, line: token["line"].intValue)!
+        return RawExpressionToken(infix: token["infix"].stringValue, postfix: token["postfix"].stringValue, line: token["line"].intValue)
     }
 }

@@ -204,7 +204,7 @@ extension NutInterpreter {
 extension NutInterpreter {
     private func parse(rawExpression expression: RawExpressionToken) throws -> String {
         do {
-            let res = try expression.infix.evaluate(with: data)
+            let res = try expression.evaluate(with: data)
             let str = String(describing: unwrap(any: res ?? "nil"))
             return str
         } catch let error as EvaluationError {
@@ -216,7 +216,7 @@ extension NutInterpreter {
 
     fileprivate func parse(expression: ExpressionToken) throws -> String {
         do {
-            let res = try expression.infix.evaluate(with: data)
+            let res = try expression.evaluate(with: data)
             let str = String(describing: unwrap(any: res ?? "nil"))
             return convertToSpecialCharacters(string: str)
         } catch let error as EvaluationError {
@@ -296,7 +296,7 @@ extension NutInterpreter {
             any = try ifToken.condition.evaluate(with: data)
         } catch let error as EvaluationError {
             throw NutParserError(
-                kind: .evaluationError(infix: ifToken.condition, message: error.description),
+                kind: .evaluationError(infix: ifToken.condition.infix, message: error.description),
                 line: ifToken.line)
         }
         if let variable = ifToken.variable {
