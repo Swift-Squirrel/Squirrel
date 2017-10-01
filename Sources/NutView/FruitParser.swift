@@ -7,6 +7,8 @@
 //
 
 import SquirrelJSONEncoding
+import Foundation
+import Evaluation
 
 struct FruitParser {
     private let content: String
@@ -43,7 +45,7 @@ struct FruitParser {
         tokens.forEach { (token) in
             switch token["id"].stringValue {
             case "title":
-                let expr = parse(expression: token["expression"])
+                let expr = parse(rawExpression: token["expression"])
                 head.append(TitleToken(expression: expr, line: token["line"].intValue))
             default:
                 break
@@ -61,10 +63,10 @@ struct FruitParser {
             case "text":
                 body.append(TextToken(value: token["value"].stringValue))
             case "date":
-                let date = parse(expression: token["date"])
-                let format: ExpressionToken?
+                let date = parse(rawExpression: token["date"])
+                let format: RawExpressionToken?
                 if !token["format"].isNil {
-                    format = parse(expression: token["format"])
+                    format = parse(rawExpression: token["format"])
                 } else {
                     format = nil
                 }
@@ -92,8 +94,8 @@ struct FruitParser {
                 body.append(parse(rawExpression: token))
             case "if":
                 var ifToken = IfToken(
-                    condition: token["condition"].stringValue,
-                    line: token["line"].intValue)!
+                    condition: parse(rawExpression: token["condition"]),
+                    line: token["line"].intValue)
 
                 ifToken.setThen(body: parse(body: token["then"].arrayValue))
                 if let elseBlock = token["else"].array {
@@ -103,7 +105,7 @@ struct FruitParser {
             case "if let":
                 var ifToken = IfToken(
                     variable: token["variable"].stringValue,
-                    condition: token["condition"].stringValue,
+                    condition: parse(rawExpression: token["condition"]),
                     line: token["line"].intValue)
 
                 ifToken.setThen(body: parse(body: token["then"].arrayValue))
@@ -127,9 +129,23 @@ struct FruitParser {
     // swiftlint:enable cyclomatic_complexity
 
     private func parse(expression token: JSON) -> ExpressionToken {
-        return ExpressionToken(infix: token["infix"].stringValue, line: token["line"].intValue)!
+        let postfix = token["postfix"]
+        let data = postfix.encode!
+        // swiftlint:disable:next force_try
+        let decodedPostfix = try! JSONDecoder().decode([PostfixEvaluation.Token].self, from: data)
+        return ExpressionToken(
+            infix: token["infix"].stringValue,
+            postfix: decodedPostfix,
+            line: token["line"].intValue)
     }
     private func parse(rawExpression token: JSON) -> RawExpressionToken {
-        return RawExpressionToken(infix: token["infix"].stringValue, line: token["line"].intValue)!
+        let postfix = token["postfix"]
+        let data = postfix.encode!
+        // swiftlint:disable:next force_try
+        let decodedPostfix = try! JSONDecoder().decode([PostfixEvaluation.Token].self, from: data)
+        return RawExpressionToken(
+            infix: token["infix"].stringValue,
+            postfix: decodedPostfix,
+            line: token["line"].intValue)
     }
 }

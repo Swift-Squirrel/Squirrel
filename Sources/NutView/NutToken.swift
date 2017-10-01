@@ -6,13 +6,15 @@
 //
 //
 
+// swiftlint:disable file_length
+
 import Foundation
+import Evaluation
 
 protocol NutTokenProtocol {
     var id: String { get }
 
     var serialized: [String: Any] { get }
-
 }
 
 protocol NutCommandTokenProtocol: NutTokenProtocol {
@@ -33,6 +35,14 @@ protocol NutLayoutProtocol: NutViewProtocol {
 
 protocol NutHeadProtocol: NutCommandTokenProtocol {
 
+}
+
+protocol IfTokenProtocol: NutCommandTokenProtocol {
+    init(condition: String, line: Int) throws
+    mutating func setThen(body: [NutTokenProtocol])
+    mutating func setElse(body: [NutTokenProtocol])
+    var variable: String? { get }
+    var condition: RawExpressionToken { get }
 }
 
 struct TextToken: NutTokenProtocol {
@@ -63,22 +73,16 @@ struct InsertViewToken: NutCommandTokenProtocol {
     }
 }
 
-protocol IfTokenProtocol: NutCommandTokenProtocol {
-    init?(condition: String, line: Int)
-    mutating func setThen(body: [NutTokenProtocol])
-    mutating func setElse(body: [NutTokenProtocol])
-}
-
 struct DateToken: NutCommandTokenProtocol {
     let line: Int
 
     let id = "date"
 
-    let date: ExpressionToken
+    let date: RawExpressionToken
 
-    let format: ExpressionToken?
+    let format: RawExpressionToken?
 
-    init(date: ExpressionToken, format: ExpressionToken? = nil, line: Int) {
+    init(date: RawExpressionToken, format: RawExpressionToken? = nil, line: Int) {
         self.date = date
         self.line = line
         self.format = format
@@ -98,11 +102,20 @@ struct DateToken: NutCommandTokenProtocol {
 }
 
 struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
-    let id: String
+    private let _id: IDNames
+
+    var id: String {
+        return _id.rawValue
+    }
+
+    enum IDNames: String {
+        case `if`
+        case `ifLet` = "if let"
+    }
 
     let line: Int
 
-    let condition: String
+    let condition: RawExpressionToken
 
     var thenBlock = [NutTokenProtocol]()
 
@@ -118,38 +131,89 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let variable: String?
 
-    init(variable: String, condition: String, line: Int) {
-        self.line = line
-        self.id = "if let"
-        self.variable = variable
-        self.condition = condition
-    }
-
-    init?(condition: String, line: Int) {
-        self.line = line
+    init(condition: String, line: Int) throws {
+        let expected = [
+            "if <expression: Bool> {",
+            "if let <variableName: Any> = <expression: Any?> {"
+        ]
+        let exprCondition: String
+        let variable: String?
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
             guard separated.count == 4 else {
-                return nil
+                throw NutParserError(
+                    kind: .syntaxError(expected: expected, got: "if " + condition + " {"),
+                    line: line)
             }
             guard separated[2] == "=" else {
-                return nil
+                throw NutParserError(
+                    kind: .syntaxError(expected: expected, got: "if " + condition + " {"),
+                    line: line)
             }
             variable = separated[1]
             separated.removeFirst(3)
-            self.condition = separated.joined(separator: " ")
-            id = "if let"
+            exprCondition = separated.joined(separator: " ")
+
         } else {
-            self.condition = condition
+            exprCondition = condition
             variable = nil
-            id = "if"
+
+        }
+        let expr: RawExpressionToken
+        do {
+            expr = try RawExpressionToken(infix: exprCondition, line: line)
+        } catch let error as EvaluationError {
+            throw NutParserError(
+                kind: .evaluationError(infix: exprCondition, message: error.description),
+                line: line)
+        } catch let error {
+            throw NutParserError(
+                kind: .expressionError,
+                line: line,
+                description: error.localizedDescription)
+        }
+
+        self.init(variable: variable, condition: expr, line: line)
+        try checkVariable()
+    }
+
+    init(variable: String? = nil, condition: RawExpressionToken, line: Int) {
+        if let variable = variable {
+            self._id = IDNames.ifLet
+            self.variable = variable
+        } else {
+            self._id = IDNames.if
+            self.variable = nil
+        }
+        self.line = line
+        self.condition = condition
+    }
+
+    func checkVariable() throws {
+        if let variable = variable {
+            guard VariableCheck.checkSimple(variable: variable) else {
+                throw NutParserError(
+                    kind: .wrongSimpleVariable(
+                        name: variable,
+                        in: "if let \(variable) = \(condition.infix) {",
+                        regex: VariableCheck.simpleVariable.regex),
+                    line: line)
+            }
+            guard VariableCheck.checkChained(variable: condition.infix) else {
+                throw NutParserError(
+                    kind: .wrongChainedVariable(
+                        name: condition.infix,
+                        in: "if let \(variable) = \(condition.infix) {",
+                        regex: VariableCheck.chainedVariable.regex),
+                    line: line)
+            }
         }
     }
 
     var serialized: [String: Any] {
         var res: [String: Any] = [
             "id": id,
-            "condition": condition,
+            "condition": condition.serialized,
             "then": thenBlock.map({ $0.serialized }),
             "line": line
         ]
@@ -164,11 +228,20 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
 }
 
 struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
-    let id: String
+    enum IDNames: String {
+        case elseIf = "else if"
+        case elseIfLet = "else if let"
+    }
+
+    private let _id: IDNames
+
+    var id: String {
+        return _id.rawValue
+    }
 
     let line: Int
 
-    let condition: String
+    let condition: RawExpressionToken
 
     private var thenBlock = [NutTokenProtocol]()
 
@@ -182,7 +255,7 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
         return thenBlock
     }
 
-    func getCondition() -> String {
+    func getCondition() -> RawExpressionToken {
         return condition
     }
 
@@ -196,31 +269,81 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
 
     let variable: String?
 
-    init?(condition: String, line: Int) {
-        self.line = line
+    private let expected = [
+        "} else if <expression: Bool> {",
+        "} else if let <variableName: Any> = <expression: Any?> {"
+    ]
+
+    init(condition: String, line: Int) throws {
+        let exprCon: String
         if condition.hasPrefix("let ") {
             var separated = condition.components(separatedBy: " ")
             guard separated.count == 4 else {
-                return nil
+                throw NutParserError(
+                    kind: .syntaxError(
+                        expected: expected,
+                        got: "} else if \(condition) {"),
+                    line: line)
             }
             guard separated[2] == "=" else {
-                return nil
+                throw NutParserError(
+                    kind: .syntaxError(
+                        expected: expected,
+                        got: "} else if \(condition) {"),
+                    line: line)
             }
             variable = separated[1]
             separated.removeFirst(3)
-            self.condition = separated.joined(separator: " ")
-            id = "else if let"
+            exprCon = separated.joined(separator: " ")
+            _id = IDNames.elseIfLet
         } else {
-            self.condition = condition
+            exprCon = condition
             variable = nil
-            id = "else if"
+            _id = IDNames.elseIf
+        }
+        let expr: RawExpressionToken
+        do {
+            expr = try RawExpressionToken(infix: exprCon, line: line)
+        } catch let error as EvaluationError {
+            throw NutParserError(
+                kind: .evaluationError(infix: exprCon, message: error.description),
+                line: line)
+        } catch let error {
+            throw NutParserError(
+                kind: .expressionError,
+                line: line,
+                description: error.localizedDescription)
+        }
+        self.condition = expr
+        self.line = line
+        try checkVariable()
+    }
+
+    func checkVariable() throws {
+        if let variable = variable {
+            guard VariableCheck.checkSimple(variable: variable) else {
+                throw NutParserError(
+                    kind: .wrongSimpleVariable(
+                        name: variable,
+                        in: "} else if let \(variable) = \(condition.infix) {",
+                        regex: VariableCheck.simpleVariable.regex),
+                    line: line)
+            }
+            guard VariableCheck.checkChained(variable: condition.infix) else {
+                throw NutParserError(
+                    kind: .wrongChainedVariable(
+                        name: condition.infix,
+                        in: "} else if let \(variable) = \(condition.infix) {",
+                        regex: VariableCheck.chainedVariable.regex),
+                    line: line)
+            }
         }
     }
 
     var serialized: [String: Any] {
         var res: [String: Any] = [
             "id": id,
-            "condition": condition,
+            "condition": condition.serialized,
             "then": thenBlock.map({ $0.serialized }),
             "line": line
         ]
@@ -273,9 +396,9 @@ struct TitleToken: NutHeadProtocol {
 
     let line: Int
 
-    let expression: ExpressionToken
+    let expression: RawExpressionToken
 
-    init(expression: ExpressionToken, line: Int) {
+    init(expression: RawExpressionToken, line: Int) {
         self.line = line
         self.expression = expression
     }
@@ -286,7 +409,15 @@ struct TitleToken: NutHeadProtocol {
 }
 
 struct ForInToken: NutCommandTokenProtocol {
-    let id: String
+    enum IDNames: String {
+        case forInArray = "for in Array"
+        case forInDictionary = "for in Dictionary"
+    }
+
+    private let _id: IDNames
+    var id: String {
+        return _id.rawValue
+    }
 
     let line: Int
 
@@ -296,7 +427,7 @@ struct ForInToken: NutCommandTokenProtocol {
 
     let array: String
 
-    var body = [NutTokenProtocol]()
+    var body: [NutTokenProtocol]
 
     mutating func setBody(body: [NutTokenProtocol]) {
         self.body = body
@@ -305,13 +436,14 @@ struct ForInToken: NutCommandTokenProtocol {
     init(key: String? = nil, variable: String, array: String, line: Int) {
         self.line = line
         if key == nil {
-            id = "for in Array"
+            _id = IDNames.forInArray
         } else {
-            id = "for in Dictionary"
+            _id = IDNames.forInDictionary
         }
         self.key = key
         self.variable = variable
         self.array = array
+        self.body = []
     }
 
     var serialized: [String: Any] {
@@ -349,7 +481,7 @@ struct ElseToken: NutCommandTokenProtocol {
     }
 
     var serialized: [String: Any] {
-        return ["id": "else", "line": line]
+        return ["id": id, "line": line]
     }
 }
 

@@ -1,11 +1,6 @@
 default_docker: &default_docker
   docker:
-    - image: klembara/swift4:0.0.1
-
-test_docker: &test_docker
-  docker:
-    - image: klembara/swift4:0.0.1
-    - image: mongo:3.4.4
+    - image: swiftdocker/swift
 
 version: 2.0
 jobs:
@@ -18,7 +13,7 @@ jobs:
           command: |
            swift package resolve
            swift package update
-           cp Package.resolved .build/Package.resolved
+           cp ./Package.resolved .build/Package.resolved
       - persist_to_workspace:
           root: .build
           paths:
@@ -35,12 +30,10 @@ jobs:
           at: .build
       - run:
           name: "Copy Package.resolved"
-          command: cp .build/Package.resolved ./Package.resolved
+          command: "if [ -f .build/Package.resolved ]; then cp .build/Package.resolved ./Package.resolved; fi"
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
-            - build-cache-{{ .Branch }}
-            - build-cache
       - run:
           name: Build for debug
           command: swift build
@@ -57,12 +50,10 @@ jobs:
           at: .build
       - run:
           name: "Copy Package.resolved"
-          command: cp .build/Package.resolved ./Package.resolved
+          command: "if [ -f .build/Package.resolved ]; then cp .build/Package.resolved ./Package.resolved; fi"
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
-            - build-cache-{{ .Branch }}
-            - build-cache
       - run:
           name: Build for release
           command: swift build -c release
@@ -72,19 +63,17 @@ jobs:
             - .build/
 
   test_parallel:
-    <<: *test_docker
+    <<: *default_docker
     steps:
       - checkout
       - attach_workspace:
           at: .build
       - run:
           name: "Copy Package.resolved"
-          command: cp .build/Package.resolved ./Package.resolved
+          command: "if [ -f .build/Package.resolved ]; then cp .build/Package.resolved ./Package.resolved; fi"
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
-            - build-cache-{{ .Branch }}
-            - build-cache
       - run:
           name: Run unit tests
           command: swift test --parallel
@@ -94,19 +83,17 @@ jobs:
             - .build/
 
   test:
-    <<: *test_docker
+    <<: *default_docker
     steps:
       - checkout
       - attach_workspace:
           at: .build
       - run:
           name: "Copy Package.resolved"
-          command: cp .build/Package.resolved ./Package.resolved
+          command: "if [ -f .build/Package.resolved ]; then cp .build/Package.resolved ./Package.resolved; fi"
       - restore_cache:
           keys:
             - build-cache-{{ .Branch }}-{{ checksum "Package.resolved" }}
-            - build-cache-{{ .Branch }}
-            - build-cache
       - run:
           name: Run unit tests
           command: swift test
