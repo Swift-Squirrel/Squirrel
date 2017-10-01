@@ -31,42 +31,9 @@ class JSONTests: XCTestCase {
         XCTAssertNoThrow(try JSON(json: JSONS.oneSubstruct))
         XCTAssertNoThrow(try JSON(json: JSONS.medium))
 
-        do {
-            _ = try JSON(json: "}" + JSONS.simple)
-        } catch let error {
-            if let err = error as? DecodingError {
-                if case .dataCorrupted = err {
-                } else {
-                    fail(err.localizedDescription)
-                }
-            } else {
-                fail(String(describing: error))
-            }
-        }
-        do {
-            _ = try JSON(json: "}" + JSONS.oneSubstruct)
-        } catch let error {
-            if let err = error as? DecodingError {
-                if case .dataCorrupted = err {
-                } else {
-                    fail(err.localizedDescription)
-                }
-            } else {
-                fail(String(describing: error))
-            }
-        }
-        do {
-            _ = try JSON(json: "}" + JSONS.medium)
-        } catch let error {
-            if let err = error as? DecodingError {
-                if case .dataCorrupted = err {
-                } else {
-                    fail(err.localizedDescription)
-                }
-            } else {
-                fail(String(describing: error))
-            }
-        }
+        XCTAssertThrowsError(try JSON(json: "}" + JSONS.simple))
+        XCTAssertThrowsError(try JSON(json: "}" + JSONS.oneSubstruct))
+        XCTAssertThrowsError(try JSON(json: "}" + JSONS.medium))
     }
 
     func testDictionary() {
