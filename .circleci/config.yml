@@ -2,11 +2,6 @@ default_docker: &default_docker
   docker:
     - image: swiftdocker/swift
 
-test_docker: &test_docker
-  docker:
-    - image: swiftdocker/swift
-    - image: mongo:3.4.4
-
 version: 2.0
 jobs:
   resolve:
@@ -72,7 +67,7 @@ jobs:
             - .build/
 
   test_parallel:
-    <<: *test_docker
+    <<: *default_docker
     steps:
       - checkout
       - attach_workspace:
@@ -94,7 +89,7 @@ jobs:
             - .build/
 
   test:
-    <<: *test_docker
+    <<: *default_docker
     steps:
       - checkout
       - attach_workspace:
