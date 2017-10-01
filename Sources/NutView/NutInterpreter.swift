@@ -152,7 +152,7 @@ extension NutInterpreter {
 // Head parsing
 extension NutInterpreter {
     fileprivate func parse(title: TitleToken) throws -> String {
-        let expr = try parse(expression: title.expression)
+        let expr = try parse(rawExpression: title.expression)
         return "<title>\(expr)</title>"
     }
 }
@@ -204,7 +204,7 @@ extension NutInterpreter {
 extension NutInterpreter {
     private func parse(rawExpression expression: RawExpressionToken) throws -> String {
         do {
-            let res = try expression.infix.evaluate(with: data)
+            let res = try expression.evaluate(with: data)
             let str = String(describing: unwrap(any: res ?? "nil"))
             return str
         } catch let error as EvaluationError {
@@ -216,7 +216,7 @@ extension NutInterpreter {
 
     fileprivate func parse(expression: ExpressionToken) throws -> String {
         do {
-            let res = try expression.infix.evaluate(with: data)
+            let res = try expression.evaluate(with: data)
             let str = String(describing: unwrap(any: res ?? "nil"))
             return convertToSpecialCharacters(string: str)
         } catch let error as EvaluationError {
@@ -227,21 +227,21 @@ extension NutInterpreter {
     }
 
     private func parse(date dateToken: DateToken) throws -> String {
-        let dateStr = try parse(expression: dateToken.date)
+        let dateStr = try parse(rawExpression: dateToken.date)
         guard let dateMiliseconds = Double(dateStr) else {
             throw NutParserError(
                 kind: .wrongValue(for: "Date(_:format:)", expected: "Double", got: dateStr),
                 line: dateToken.date.line)
         }
-        let format: ExpressionToken
+        let format: RawExpressionToken
         if dateToken.format == nil {
-            format = ExpressionToken(
+            format = try RawExpressionToken(
                 infix: "\"\(NutConfig.dateDefaultFormat)\"",
-                line: dateToken.line)!
+                line: dateToken.line)
         } else {
             format = dateToken.format!
         }
-        let formatStr = try parse(expression: format)
+        let formatStr = try parse(rawExpression: format)
         let date = Date(timeIntervalSince1970: dateMiliseconds)
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = formatStr
@@ -296,7 +296,7 @@ extension NutInterpreter {
             any = try ifToken.condition.evaluate(with: data)
         } catch let error as EvaluationError {
             throw NutParserError(
-                kind: .evaluationError(infix: ifToken.condition, message: error.description),
+                kind: .evaluationError(infix: ifToken.condition.infix, message: error.description),
                 line: ifToken.line)
         }
         if let variable = ifToken.variable {

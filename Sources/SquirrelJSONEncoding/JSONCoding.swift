@@ -107,7 +107,6 @@ public struct JSONCoding {
         } else if let dic = object as? [String: Any] {
             for (k, v) in dic {
                 res[k] = encode(object: v)
-
             }
         } else {
             let mirror = Mirror(reflecting: object)

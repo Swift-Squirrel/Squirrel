@@ -10,7 +10,7 @@
 import Foundation
 
 /// JSON Representation
-public struct JSON: Codable {
+public struct JSON {
 
     fileprivate enum ValueType {
         case string(str: String)
@@ -30,22 +30,20 @@ public struct JSON: Codable {
     /// - Parameter string: String containing JSON
     /// - Throws: Parsing errors
     public init(json: String) throws {
-        guard let data = JSONCoding.toJSON(json: json) else {
-            throw JSONError(kind: .parseError, description: "Corrupted content")
+        guard let data = json.data(using: .utf8) else {
+            throw JSONError(kind: .dataEncodingError, description: "Can not decode: '\(json)'")
         }
-        if let dic = data as? [String: Any] {
-            guard let jsonDic = JSON(dictionary: dic)?.dictionary else {
-                throw JSONError(kind: .parseError, description: "Not valid dictionary")
-            }
-            type = .dictionary(dic: jsonDic)
-        } else if let arr = data as? [Any] {
-            guard let jsonArr = JSON(array: arr)?.array else {
-                throw JSONError(kind: .parseError, description: "Not valid array")
-            }
-            type = .array(arr: jsonArr)
-        } else {
-            throw JSONError(kind: .parseError, description: "Not valid content")
-        }
+        try self.init(json: data)
+    }
+
+    /// Construct from JSON data
+    ///
+    /// - Parameter data: JSON data
+    /// - Throws: Decoding error
+    public init(json data: Data) throws {
+        let decoder = JSONDecoder()
+        let obj = try decoder.decode(JSON.self, from: data)
+        self.type = obj.type
     }
 
     /// Construct null JSON value
@@ -239,10 +237,18 @@ extension JSON {
 
     /// Int
     public var int: Int? {
-        guard case let .int(intValue) = type else {
+        switch type {
+        case .int(let intValue):
+            return intValue
+        case .bool(let bool):
+            if bool {
+                return 1
+            } else {
+                return 0
+            }
+        default:
             return nil
         }
-        return intValue
     }
 
     /// Int (if nil returns 0)
@@ -286,12 +292,8 @@ extension JSON {
         switch type {
         case .bool(let boolVal):
             return boolVal
-        case .int(let intVal):
-            switch intVal {
-            case 0: return false
-            case 1: return true
-            default: return nil
-            }
+        case .int(let intVal) where intVal == 0 || intVal == 1:
+            return intVal == 1
         default:
             return nil
         }
@@ -371,6 +373,48 @@ public extension JSON {
         let encoder = JSONEncoder()
         return try? encoder.encode(self)
     }
+
+    /// Serialized to [String: Any] or [Any]
+    ///
+    /// - Note: if JSON is array or dictionary it returns its representation
+    /// otherwise return nil.
+    public var serialized: Any? {
+        switch type {
+        case .array:
+            return serialize
+        case .dictionary:
+            return serialize
+        default:
+            return nil
+        }
+    }
+
+    var serialize: Any? {
+        switch type {
+        case .array(let array):
+            return array.flatMap({ $0.serialize })
+        case .bool(let bool):
+            return bool
+        case .date(let date):
+            return date
+        case .dictionary(let dictionary):
+            var res: [String: Any] = [:]
+            for (key, value) in dictionary {
+                if let val = value.serialize {
+                    res[key] = val
+                }
+            }
+            return res
+        case .double(let double):
+            return double
+        case .int(let int):
+            return int
+        case .string(let str):
+            return str
+        case .nil:
+            return nil
+        }
+    }
 }
 
 extension JSON: Equatable {
@@ -397,9 +441,11 @@ extension JSON: Equatable {
             return false
         }
 
+        if let lhsInt = lhs.int, let rhsInt = rhs.int {
+            return lhsInt == rhsInt
+        }
+
         switch (lhs.type, rhs.type) {
-        case let (.int(lint), .int(rint)):
-            return lint == rint
         case let (.double(ldouble), .double(rdouble)):
             return ldouble == rdouble
         case let (.bool(lbool), .bool(rbool)):
@@ -416,73 +462,71 @@ extension JSON: Equatable {
     }
 }
 
-extension JSON.ValueType: Codable {
-    init(from decoder: Decoder) throws {
-        let values = try decoder.container(keyedBy: CodingKeys.self)
-        if let value = try? values.decode(String.self, forKey: .string) {
-            self = .string(str: value)
-            return
+// MARK: - JSON Codable
+extension JSON: Codable {
+    /// JSON decoder
+    ///
+    /// - Parameter decoder: Decoder
+    /// - Throws: `JSONError(kind: .encodeError, description: "Could not encode")`
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let string = try? container.decode(String.self) {
+            type = .string(str: string)
+        } else if let int = try? container.decode(Int.self) {
+            type = .int(int: int)
+        } else if let bool = try? container.decode(Bool.self) {
+            type = .bool(bool: bool)
+        } else if let dictionary = try? container.decode([String: JSON].self) {
+            type = .dictionary(dic: dictionary)
+        } else if let array = try? container.decode([JSON].self) {
+            type = .array(arr: array)
+        } else if let double = try? container.decode(Double.self) {
+            type = .double(double: double)
+        } else if let date = try? container.decode(Date.self) {
+            type = .date(date: date)
+        } else {
+            throw JSONError(kind: .encodeError, description: "Could not encode")
         }
-        if let value = try? values.decode([String: JSON].self, forKey: .dictionary) {
-            self = .dictionary(dic: value)
-            return
-        }
-        if let value = try? values.decode([JSON].self, forKey: .array) {
-            self = .array(arr: value)
-            return
-        }
-        if let value = try? values.decode(Int.self, forKey: .int) {
-            self = .int(int: value)
-            return
-        }
-        if let value = try? values.decode(Double.self, forKey: .double) {
-            self = .double(double: value)
-            return
-        }
-        if let value = try? values.decode(Bool.self, forKey: .bool) {
-            self = .bool(bool: value)
-            return
-        }
-        if let value = try? values.decode(Date.self, forKey: .date) {
-            self = .date(date: value)
-            return
-        }
-        if values.contains(.nil) {
-            self = .nil
-        }
-        throw JSONError(kind: .encodeError, description: "Could not encode")
     }
 
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        switch self {
+    /// JSON Encoder
+    ///
+    /// - Parameter encoder: Encoder
+    /// - Throws: encode errors
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch type {
         case .string(let str):
-            try container.encode(str, forKey: .string)
+            try container.encode(str)
         case .dictionary(let dic):
-            try container.encode(dic, forKey: .dictionary)
+            try container.encode(dic)
         case .array(let arr):
-            try container.encode(arr, forKey: .array)
+            try container.encode(arr)
         case .int(let int):
-            try container.encode(int, forKey: .int)
+            try container.encode(int)
         case .double(let double):
-            try container.encode(double, forKey: .double)
+            try container.encode(double)
         case .bool(let bool):
-            try container.encode(bool, forKey: .bool)
+            try container.encode(bool)
         case .date(let date):
-            try container.encode(date, forKey: .date)
+            try container.encode(date)
         case .nil:
-            try container.encode("nil", forKey: .nil)
+            try container.encodeNil()
         }
     }
+}
 
-    private enum CodingKeys: String, CodingKey {
-        case string
-        case dictionary
-        case array
-        case int
-        case double
-        case bool
-        case `nil`
-        case date
+// MARK: - JSON String convertible
+extension JSON: CustomStringConvertible {
+    /// String representation of JSON
+    public var description: String {
+        let encoder = JSONEncoder()
+        guard let data = try? encoder.encode(self) else {
+            return String(describing: serialized ?? "Unable to serialize")
+        }
+        guard let str = String(data: data, encoding: .utf8) else {
+            return String(describing: serialized ?? "Unable to serialize")
+        }
+        return str
     }
 }

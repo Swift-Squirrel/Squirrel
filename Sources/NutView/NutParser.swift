@@ -12,6 +12,22 @@ import Regex
 // swiftlint:disable cyclomatic_complexity
 // swiftlint:disable function_body_length
 // swiftlint:disable file_length
+
+struct VariableCheck {
+    static let simpleVariable = (regex: "^[a-zA-Z]\\w*$", value: Regex("^[a-zA-Z]\\w*$"))
+    static let chainedVariable = (regex: "^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$",
+                                   value: Regex("^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$"))
+    static func checkSimple(variable: String) -> Bool {
+        let regex = simpleVariable.value
+        return regex.matches(variable)
+    }
+
+    static func checkChained(variable: String) -> Bool {
+        let regex = chainedVariable.value
+        return regex.matches(variable)
+    }
+}
+
 // swiftlint:disable:next type_body_length
 class NutParser: NutParserProtocol {
 
@@ -19,10 +35,6 @@ class NutParser: NutParserProtocol {
     private let name: String
     private var serializedTokens: [String: Any] = [:]
     private let viewType: ViewType
-
-    private let simpleVariable = (regex: "^[a-zA-Z]\\w*$", value: Regex("^[a-zA-Z]\\w*$"))
-    private let chainedVariable = (regex: "^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$",
-                                   value: Regex("^[a-zA-Z]\\w*(?:\\.[a-zA-Z]\\w*)*$"))
 
     private var _jsonSerialized: String = ""
 
@@ -289,7 +301,7 @@ class NutParser: NutParserProtocol {
                                     condition: el.getCondition(),
                                     line: el.line)
                             } else {
-                                ifT = IfToken(condition: el.getCondition(), line: el.line)!
+                                ifT = IfToken(condition: el.getCondition(), line: el.line)
                             }
                             ifT.setThen(body: el.getThen())
                             if let elseBlock = el.getElse() {
@@ -354,19 +366,13 @@ extension NutParser {
         var charIndex = 0
         var inString = false
         var formatIndex = 0
-        var date: ExpressionToken!
+        var date: RawExpressionToken!
         for char in chars {
             if char == "," && !inString {
                 let finalStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
                 var dateString = String(text[..<finalStringIndex])
                 dateString.removeLast()
-                guard let datePom = ExpressionToken(infix: dateString, line: line) else {
-                    throw NutParserError(
-                        kind: .expressionError,
-                        line: line,
-                        description: "Could not resolve '\(dateString)'")
-                }
-                date = datePom
+                date = try RawExpressionToken(infix: dateString, line: line)
                 charIndex += 1
                 formatIndex = charIndex
                 continue
@@ -395,7 +401,7 @@ extension NutParser {
                     got: text),
                 line: line)
         }
-        let format: ExpressionToken?
+        let format: RawExpressionToken?
         if formatIndex > 0 {
             let formatStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
             let formatIndex = text.index(text.startIndex, offsetBy: formatIndex)
@@ -408,25 +414,13 @@ extension NutParser {
             let formatOffset = formatArg.index(formatArg.startIndex, offsetBy: 9)
             var formatExpr = String(formatArg[formatOffset...])
             formatExpr.removeLast()
-            guard let formatPom = ExpressionToken(infix: formatExpr, line: line) else {
-                throw NutParserError(
-                    kind: .expressionError,
-                    line: line,
-                    description: "Could not resolve '\(formatExpr)'")
-            }
-            format = formatPom
+            format = try RawExpressionToken(infix: formatExpr, line: line)
         } else {
             format = nil
             let dateStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
             var dateString = String(text[..<dateStringIndex])
             dateString.removeLast()
-            guard let datePom = ExpressionToken(infix: dateString, line: line) else {
-                throw NutParserError(
-                    kind: .expressionError,
-                    line: line,
-                    description: "Could not resolve '\(dateString)'")
-            }
-            date = datePom
+            date = try RawExpressionToken(infix: dateString, line: line)
         }
         let textIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
         let textToken = TextToken(value: String(text[textIndex...]))
@@ -495,7 +489,7 @@ extension NutParser {
                             kind: .wrongSimpleVariable(
                                 name: keyValue,
                                 in: "for\(stm){",
-                                regex: simpleVariable.regex),
+                                regex: VariableCheck.simpleVariable.regex),
                             line: line)
                     }
                 }
@@ -504,7 +498,7 @@ extension NutParser {
                         kind: .wrongSimpleVariable(
                             name: variable,
                             in: "for\(stm){",
-                            regex: simpleVariable.regex),
+                            regex: VariableCheck.simpleVariable.regex),
                         line: line)
                 }
                 guard checkChained(variable: array) else {
@@ -512,7 +506,7 @@ extension NutParser {
                         kind: .wrongChainedVariable(
                             name: array,
                             in: "for\(stm){",
-                            regex: chainedVariable.regex),
+                            regex: VariableCheck.chainedVariable.regex),
                         line: line)
                 }
                 let token = ForInToken(key: key, variable: variable, array: array, line: line)
@@ -549,7 +543,7 @@ extension NutParser {
         let stringIndex = text.index(text.startIndex, offsetBy: 5)
         let text = String(text[stringIndex...])
         let res = try parseExpression(text: text, line: line)
-        if let expr = res.last! as? ExpressionToken {
+        if let expr = res.last! as? RawExpressionToken {
             let titleToken = TitleToken(expression: expr, line: line)
             if res.count == 2 {
                 return [res[0], titleToken]
@@ -669,29 +663,7 @@ extension NutParser {
                         description: "empty <expression>")
 
                 }
-                guard let elsifToken = ElseIfToken(condition: condition, line: line) else {
-                    throw NutParserError(
-                        kind: .syntaxError(
-                            expected: expected,
-                            got: "} else if " + condition + " {"),
-                        line: line)
-                }
-                if let variable = elsifToken.variable {
-                    guard checkSimple(variable: variable) else {
-                        throw NutParserError(
-                            kind: .wrongSimpleVariable(
-                                name: variable,
-                                in: "} else if " + condition + " {", regex: simpleVariable.regex),
-                            line: line)
-                    }
-                    guard checkSimple(variable: elsifToken.condition) else {
-                        throw NutParserError(
-                            kind: .wrongChainedVariable(
-                                name: elsifToken.condition,
-                                in: "} else if " + condition + " {", regex: chainedVariable.regex),
-                            line: line)
-                    }
-                }
+                let elsifToken = try ElseIfToken(condition: condition, line: line)
                 if text == "" {
                     return [elsifToken]
                 }
@@ -763,7 +735,7 @@ extension NutParser {
         expression.removeLast()
         expression.removeFirst()
         let text1 = String(text[stringIndex...])
-        if let expressionToken = RawExpressionToken(infix: expression, line: line) {
+        if let expressionToken = try? RawExpressionToken(infix: expression, line: line) {
             if text1 == "" {
                 return [expressionToken]
             }
@@ -810,13 +782,11 @@ extension NutParser {
         expression.removeLast()
         expression.removeFirst()
         let text = String(text[stringIndex...])
-        if let expressionToken = ExpressionToken(infix: expression, line: line) {
-            if text == "" {
-                return [expressionToken]
-            }
-            return [TextToken(value: text), expressionToken]
+        let expressionToken = try RawExpressionToken(infix: expression, line: line)
+        if text == "" {
+            return [expressionToken]
         }
-        throw NutParserError(kind: .expressionError, line: line)
+        return [TextToken(value: text), expressionToken]
     }
 
     fileprivate func parseIf(text: String, line: Int) throws -> [NutTokenProtocol] {
@@ -855,26 +825,22 @@ extension NutParser {
                         line: line,
                         description: "empty <expression>")
                 }
-                guard let token = IfToken(condition: condition, line: line) else {
-                    throw NutParserError(
-                        kind: .syntaxError(expected: expected, got: "if " + condition + " {"),
-                        line: line)
-                }
+                let token = try IfToken(condition: condition, line: line)
                 if let variable = token.variable {
                     guard checkSimple(variable: variable) else {
                         throw NutParserError(
                             kind: .wrongSimpleVariable(
                                 name: variable,
                                 in: "if \(condition) {",
-                                regex: simpleVariable.regex),
+                                regex: VariableCheck.simpleVariable.regex),
                             line: line)
                     }
-                    guard checkSimple(variable: token.condition) else {
+                    guard checkChained(variable: token.condition.infix) else {
                         throw NutParserError(
                             kind: .wrongChainedVariable(
-                                name: token.condition,
+                                name: token.condition.infix,
                                 in: "if \(condition) {",
-                                regex: chainedVariable.regex),
+                                regex: VariableCheck.chainedVariable.regex),
                             line: line)
                     }
                 }
@@ -897,14 +863,11 @@ extension NutParser {
 }
 
 extension NutParser {
-    private func checkSimple(variable: String) -> Bool {
-        let regex = simpleVariable.value
-        return regex.matches(variable)
+    func checkSimple(variable: String) -> Bool {
+        return VariableCheck.checkSimple(variable: variable)
     }
-
-    private func checkChained(variable: String) -> Bool {
-        let regex = chainedVariable.value
-        return regex.matches(variable)
+    func checkChained(variable: String) -> Bool {
+        return VariableCheck.checkChained(variable: variable)
     }
 }
 
