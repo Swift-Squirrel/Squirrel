@@ -366,19 +366,13 @@ extension NutParser {
         var charIndex = 0
         var inString = false
         var formatIndex = 0
-        var date: ExpressionToken!
+        var date: RawExpressionToken!
         for char in chars {
             if char == "," && !inString {
                 let finalStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
                 var dateString = String(text[..<finalStringIndex])
                 dateString.removeLast()
-                guard let datePom = ExpressionToken(infix: dateString, line: line) else {
-                    throw NutParserError(
-                        kind: .expressionError,
-                        line: line,
-                        description: "Could not resolve '\(dateString)'")
-                }
-                date = datePom
+                date = try RawExpressionToken(infix: dateString, line: line)
                 charIndex += 1
                 formatIndex = charIndex
                 continue
@@ -407,7 +401,7 @@ extension NutParser {
                     got: text),
                 line: line)
         }
-        let format: ExpressionToken?
+        let format: RawExpressionToken?
         if formatIndex > 0 {
             let formatStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
             let formatIndex = text.index(text.startIndex, offsetBy: formatIndex)
@@ -420,25 +414,13 @@ extension NutParser {
             let formatOffset = formatArg.index(formatArg.startIndex, offsetBy: 9)
             var formatExpr = String(formatArg[formatOffset...])
             formatExpr.removeLast()
-            guard let formatPom = ExpressionToken(infix: formatExpr, line: line) else {
-                throw NutParserError(
-                    kind: .expressionError,
-                    line: line,
-                    description: "Could not resolve '\(formatExpr)'")
-            }
-            format = formatPom
+            format = try RawExpressionToken(infix: formatExpr, line: line)
         } else {
             format = nil
             let dateStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
             var dateString = String(text[..<dateStringIndex])
             dateString.removeLast()
-            guard let datePom = ExpressionToken(infix: dateString, line: line) else {
-                throw NutParserError(
-                    kind: .expressionError,
-                    line: line,
-                    description: "Could not resolve '\(dateString)'")
-            }
-            date = datePom
+            date = try RawExpressionToken(infix: dateString, line: line)
         }
         let textIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
         let textToken = TextToken(value: String(text[textIndex...]))
@@ -561,7 +543,7 @@ extension NutParser {
         let stringIndex = text.index(text.startIndex, offsetBy: 5)
         let text = String(text[stringIndex...])
         let res = try parseExpression(text: text, line: line)
-        if let expr = res.last! as? ExpressionToken {
+        if let expr = res.last! as? RawExpressionToken {
             let titleToken = TitleToken(expression: expr, line: line)
             if res.count == 2 {
                 return [res[0], titleToken]
@@ -800,13 +782,11 @@ extension NutParser {
         expression.removeLast()
         expression.removeFirst()
         let text = String(text[stringIndex...])
-        if let expressionToken = ExpressionToken(infix: expression, line: line) {
-            if text == "" {
-                return [expressionToken]
-            }
-            return [TextToken(value: text), expressionToken]
+        let expressionToken = try RawExpressionToken(infix: expression, line: line)
+        if text == "" {
+            return [expressionToken]
         }
-        throw NutParserError(kind: .expressionError, line: line)
+        return [TextToken(value: text), expressionToken]
     }
 
     fileprivate func parseIf(text: String, line: Int) throws -> [NutTokenProtocol] {

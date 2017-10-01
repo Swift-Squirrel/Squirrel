@@ -27,7 +27,7 @@ extension ViewToken: Cachable {
         if let layout = self.layout {
             res["layout"] = layout
         }
-        res["filName"] = name
+        res["fileName"] = name
         let data: Data? = try? JSONCoding.encodeDataJSON(object: res)
         return data
     }

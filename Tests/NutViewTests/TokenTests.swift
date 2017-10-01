@@ -44,12 +44,12 @@ class TokenTests: XCTestCase {
 
     func testDate() {
         let token = DateToken(
-            date: ExpressionToken(
+            date: try! RawExpressionToken(
                 infix: "date",
-                line: 5)!,
-            format: ExpressionToken(
+                line: 5),
+            format: try! RawExpressionToken(
                 infix: "\"MMM dd YY\"",
-                line: 5)!, line: 5)
+                line: 5), line: 5)
 
         XCTAssert(token.date.infix == "date")
         XCTAssert(token.format?.infix == "\"MMM dd YY\"")
@@ -58,14 +58,14 @@ class TokenTests: XCTestCase {
 
         let serialized = JSON(from: token.serialized)
         let expected = try! JSON(json: """
-            {"id": "date","date": {"id": "expression","infix": "date","postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"date\\"}]",
-            "line": 5},"format": {"id": "expression","infix": "\\"MMM dd YY\\"","postfix":"[{\\"type\\":{\\"string\\":\\"String\\"},\\"value\\":\\"MMM dd YY\\"}]"
+            {"id": "date","date": {"id": "raw expression","infix": "date","postfix": [{"type":{"variable":"Variable"},"value":"date"}],
+            "line": 5},"format": {"id": "raw expression","infix": "\\"MMM dd YY\\"","postfix":[{"type":{"string":"String"},"value":"MMM dd YY"}]
             ,"line": 5},"line": 5}
             """)
-        XCTAssertEqual(serialized, expected)
+        XCTAssertEqual(expected, serialized)
 
         let token1 = DateToken(
-            date: ExpressionToken(infix: "date1", line: 1)!,
+            date: try! RawExpressionToken(infix: "date1", line: 1),
             line: 1)
 
 
@@ -79,7 +79,7 @@ class TokenTests: XCTestCase {
             return
         }
         let expected1 = try! JSON(json: """
-            {"id": "date","date": {"id": "expression","infix": "date1","postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"date1\\"}]","line": 1},"line": 1}
+            {"id": "date","date": {"id": "raw expression","infix": "date1","postfix": [{"type":{"variable":"Variable"},"value":"date1"}],"line": 1},"line": 1}
             """)
 
         XCTAssert(serialized1["id"] == expected1["id"])
@@ -92,12 +92,12 @@ class TokenTests: XCTestCase {
         XCTAssertEqual(serialized1, expected1)
 
         let token2 = DateToken(
-            date: ExpressionToken(
+            date: try! RawExpressionToken(
                 infix: "date2",
-                line: 2)!,
-            format: ExpressionToken(
+                line: 2),
+            format: try! RawExpressionToken(
                 infix: "\"MMM YY\"",
-                line: 2)!, line: 2)
+                line: 2), line: 2)
 
         XCTAssert(token2.date.infix == "date2")
         XCTAssert(token2.format?.infix == "\"MMM YY\"")
@@ -106,14 +106,12 @@ class TokenTests: XCTestCase {
 
         let serialized2 = JSON(from: token2.serialized)
         let expected2 = try! JSON(json: """
-            {"id": "date","date": {"id": "expression","infix": "date2","postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"date2\\"}]",
-            "line": 2},"format": {"id": "expression","infix": "\\"MMM YY\\"","postfix":"[{\\"type\\":{\\"string\\":\\"String\\"},\\"value\\":\\"MMM YY\\"}]"
-            ,"line": 2},"line": 2}
+            {"format":{"infix":"\\"MMM YY\\"","id":"raw expression","line":2,"postfix":[{"type":{"string":"String"},"value":"MMM YY"}]},"id":"date","line":2,"date":{"infix":"date2","id":"raw expression","line":2,"postfix":[{"type":{"variable":"Variable"},"value":"date2"}]}}
             """)
         XCTAssertEqual(serialized2, expected2)
 
         let token3 = DateToken(
-            date: ExpressionToken(infix: "date19", line: 10)!,
+            date: try! RawExpressionToken(infix: "date19", line: 10),
             line: 10)
 
 
@@ -124,7 +122,7 @@ class TokenTests: XCTestCase {
 
         let serialized3 = JSON(from: token3.serialized)
         let expected3 = try! JSON(json: """
-            {"id": "date","date": {"id": "expression","infix": "date19","postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"date19\\"}]","line": 10},"line": 10}
+            {"id":"date","date":{"infix":"date19","id":"raw expression","line":10,"postfix":[{"type":{"variable":"Variable"},"value":"date19"}]},"line":10}
             """)
         XCTAssert(serialized3 == expected3, "serialized: \(String(describing: serialized3))\nexpected: \(String(describing: expected3))")
     }
@@ -145,7 +143,7 @@ class TokenTests: XCTestCase {
 
         var serialized = JSON(from: token.serialized)
         var expected = try! JSON(json: """
-            {"id": "if","condition":{"postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"b\\"},{\\"type\\":{\\"bool\\":\\"Bool\\"},\\"value\\":\\"true\\"},{\\"type\\":{\\"operation\\":\\"==\\"},\\"value\\":\\"==\\"}]","infix":"b == true","id":"raw expression","line":12},"then":[],"line":12}
+            {"id":"if","condition":{"infix":"b == true","id":"raw expression","line":12,"postfix":[{"type":{"variable":"Variable"},"value":"b"},{"type":{"bool":"Bool"},"value":"true"},{"type":{"operation":"=="},"value":"=="}]},"line":12,"then":[]}
             """)
 
         XCTAssertEqual(serialized, expected)
@@ -153,7 +151,7 @@ class TokenTests: XCTestCase {
         token.setElse(body: [NutTokenProtocol]())
         serialized = JSON(from: token.serialized)
         expected = try! JSON(json: """
-            {"id": "if","condition":{"postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"b\\"},{\\"type\\":{\\"bool\\":\\"Bool\\"},\\"value\\":\\"true\\"},{\\"type\\":{\\"operation\\":\\"==\\"},\\"value\\":\\"==\\"}]","infix":"b == true","id":"raw expression","line":12},"then":[],"line":12, "else": []}
+            {"id":"if","else":[],"condition":{"infix":"b == true","id":"raw expression","line":12,"postfix":[{"type":{"variable":"Variable"},"value":"b"},{"type":{"bool":"Bool"},"value":"true"},{"type":{"operation":"=="},"value":"=="}]},"line":12,"then":[]}
             """)
         XCTAssertNotNil(token.elseBlock)
         XCTAssertEqual(serialized, expected)
@@ -174,7 +172,7 @@ class TokenTests: XCTestCase {
 
         serialized = JSON(from: token.serialized)
         expected = try! JSON(json: """
-            {"id": "if let","condition":{"postfix": "[{\\"type\\":{\\"bool\\":\\"Bool\\"},\\"value\\":\\"true\\"}]","infix":"true","id":"raw expression","line":11},"then":[],"line":11,"variable":"b"}
+            {"id":"if let","condition":{"infix":"true","id":"raw expression","line":11,"postfix":[{"type":{"bool":"Bool"},"value":"true"}]},"line":11,"then":[],"variable":"b"}
             """)
 
         XCTAssertEqual(serialized, expected)
@@ -182,7 +180,7 @@ class TokenTests: XCTestCase {
         token.setElse(body: [NutTokenProtocol]())
         serialized = JSON(from: token.serialized)
         expected = try! JSON(json: """
-            {"id": "if let","condition":{"postfix": "[{\\"type\\":{\\"bool\\":\\"Bool\\"},\\"value\\":\\"true\\"}]","infix":"true","id":"raw expression","line":11},"then":[],"line":11,"variable":"b", "else": []}
+            {"id":"if let","else":[],"condition":{"infix":"true","id":"raw expression","line":11,"postfix":[{"type":{"bool":"Bool"},"value":"true"}]},"line":11,"then":[],"variable":"b"}
             """)
         XCTAssertNotNil(token.elseBlock)
         XCTAssertEqual(serialized, expected)
@@ -199,7 +197,7 @@ class TokenTests: XCTestCase {
 
         serialized = JSON(from: token.serialized)
         expected = try! JSON(json: """
-            {"id": "if let","condition":{"postfix": "[{\\"type\\":{\\"bool\\":\\"Bool\\"},\\"value\\":\\"true\\"}]","infix":"true","id":"raw expression","line":15},"then":[],"line":15,"variable":"b"}
+            {"id":"if let","condition":{"infix":"true","id":"raw expression","line":15,"postfix":[{"type":{"bool":"Bool"},"value":"true"}]},"line":15,"then":[],"variable":"b"}
             """)
 
         XCTAssertEqual(serialized, expected)
@@ -207,10 +205,10 @@ class TokenTests: XCTestCase {
         token.setElse(body: [NutTokenProtocol]())
         serialized = JSON(from: token.serialized)
         expected = try! JSON(json: """
-            {"id": "if let","condition":{"postfix": "[{\\"type\\":{\\"bool\\":\\"Bool\\"},\\"value\\":\\"true\\"}]","infix":"true","id":"raw expression","line":15},"then":[],"line":15,"variable":"b", "else": []}
+            {"id":"if let","else":[],"condition":{"infix":"true","id":"raw expression","line":15,"postfix":[{"type":{"bool":"Bool"},"value":"true"}]},"line":15,"then":[],"variable":"b"}
             """)
         XCTAssertNotNil(token.elseBlock)
-        XCTAssert(serialized == expected)
+        XCTAssertEqual(serialized, expected)
     }
 
     func testElseIf() {
@@ -229,7 +227,7 @@ class TokenTests: XCTestCase {
 
         var serialized = JSON(from: token.serialized)
         var expected = try! JSON(json: """
-            {"id":"else if","condition":{"postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"a\\"},{\\"type\\":{\\"int\\":\\"Int\\"},\\"value\\":\\"21\\"},{\\"type\\":{\\"operation\\":\\"==\\"},\\"value\\":\\"==\\"}]","infix":"a == 21","id":"raw expression","line":2},"then":[],"line":2}
+            {"id":"else if","condition":{"infix":"a == 21","id":"raw expression","line":2,"postfix":[{"type":{"variable":"Variable"},"value":"a"},{"type":{"int":"Int"},"value":"21"},{"type":{"operation":"=="},"value":"=="}]},"line":2,"then":[]}
             """)
         XCTAssertEqual(serialized, expected)
 
@@ -237,7 +235,7 @@ class TokenTests: XCTestCase {
         XCTAssertNotNil(token.getElse())
         serialized = JSON(from: token.serialized)
         expected = try! JSON(json: """
-            {"id":"else if","condition":{"postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"a\\"},{\\"type\\":{\\"int\\":\\"Int\\"},\\"value\\":\\"21\\"},{\\"type\\":{\\"operation\\":\\"==\\"},\\"value\\":\\"==\\"}]","infix":"a == 21","id":"raw expression","line":2},"then":[],"line":2,"else":[]}
+            {"id":"else if","else":[],"condition":{"infix":"a == 21","id":"raw expression","line":2,"postfix":[{"type":{"variable":"Variable"},"value":"a"},{"type":{"int":"Int"},"value":"21"},{"type":{"operation":"=="},"value":"=="}]},"line":2,"then":[]}
             """)
         XCTAssertEqual(serialized, expected)
 
@@ -256,7 +254,7 @@ class TokenTests: XCTestCase {
 
         serialized = JSON(from: token.serialized)
         expected = try! JSON(json: """
-            {"id":"else if let","condition":{"postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"a\\"}]","infix":"a","id":"raw expression","line":21},"then":[],"line":21,"variable":"b"}
+            {"id":"else if let","condition":{"infix":"a","id":"raw expression","line":21,"postfix":[{"type":{"variable":"Variable"},"value":"a"}]},"line":21,"then":[],"variable":"b"}
             """)
         XCTAssertEqual(serialized, expected)
 
@@ -264,7 +262,7 @@ class TokenTests: XCTestCase {
         XCTAssertNotNil(token.getElse())
         serialized = JSON(from: token.serialized)
         expected = try! JSON(json: """
-            {"id":"else if let","condition":{"postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"a\\"}]","infix":"a","id":"raw expression","line":21},"then":[],"line":21,"variable":"b","else":[]}
+            {"id":"else if let","else":[],"condition":{"infix":"a","id":"raw expression","line":21,"postfix":[{"type":{"variable":"Variable"},"value":"a"}]},"line":21,"then":[],"variable":"b"}
             """)
         XCTAssertEqual(serialized, expected)
     }
@@ -322,14 +320,14 @@ class TokenTests: XCTestCase {
     }
 
     func testTitle() {
-        let token = TitleToken(expression: ExpressionToken(infix: "title", line: 14)!, line: 14)
+        let token = TitleToken(expression: try! RawExpressionToken(infix: "title", line: 14), line: 14)
 
         XCTAssert(token.expression.infix == "title")
         XCTAssert(token.id == "title")
         XCTAssert(token.line == 14)
         let serialized = JSON(from: token.serialized)
         let expected = try! JSON(json: """
-            {"id":"title","expression":{"id":"expression","infix":"title","postfix": "[{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"title\\"}]","line":14},"line":14}
+            {"id":"title","expression":{"infix":"title","id":"raw expression","line":14,"postfix":[{"type":{"variable":"Variable"},"value":"title"}]},"line":14}
             """)
         XCTAssertEqual(serialized, expected)
     }
@@ -393,7 +391,7 @@ class TokenTests: XCTestCase {
     }
 
     func testExpression() {
-        guard let token = ExpressionToken(infix: "2 * ad", line: 31) else {
+        guard let token = try? ExpressionToken(infix: "2 * ad", line: 31) else {
             XCTFail()
             return
         }
@@ -403,7 +401,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.line == 31)
         let serialized = JSON(from: token.serialized)
         let expected = try! JSON(json: """
-            {"id":"expression","line":31,"infix":"2 * ad","postfix":"[{\\"type\\":{\\"int\\":\\"Int\\"},\\"value\\":\\"2\\"},{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"ad\\"},{\\"type\\":{\\"operation\\":\\"*\\"},\\"value\\":\\"*\\"}]"}
+            {"infix":"2 * ad","id":"expression","line":31,"postfix":[{"type":{"int":"Int"},"value":"2"},{"type":{"variable":"Variable"},"value":"ad"},{"type":{"operation":"*"},"value":"*"}]}
             """)
         XCTAssertEqual(serialized, expected)
     }
@@ -419,7 +417,7 @@ class TokenTests: XCTestCase {
         XCTAssert(token.line == 31)
         let serialized = JSON(from: token.serialized)
         let expected = try! JSON(json: """
-            {"id":"raw expression","line":31,"infix":"2 * ad","postfix":"[{\\"type\\":{\\"int\\":\\"Int\\"},\\"value\\":\\"2\\"},{\\"type\\":{\\"variable\\":\\"Variable\\"},\\"value\\":\\"ad\\"},{\\"type\\":{\\"operation\\":\\"*\\"},\\"value\\":\\"*\\"}]"}
+            {"infix":"2 * ad","id":"raw expression","line":31,"postfix":[{"type":{"int":"Int"},"value":"2"},{"type":{"variable":"Variable"},"value":"ad"},{"type":{"operation":"*"},"value":"*"}]}
             """)
         XCTAssertEqual(serialized, expected)
     }

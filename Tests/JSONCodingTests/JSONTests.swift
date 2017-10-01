@@ -13,7 +13,7 @@ class JSONTests: XCTestCase {
 
     private struct JSONS {
         static let simple = "{\"id\":1,\"name\":\"Thom\",\"age\":21}"
-        static let oneSubstruct = "{\"a\":3,\"c\":{\"a\":\"SubStruct\",\"double\":3.1,\"bool\":true}}"
+        static let oneSubstruct = "{\"a\":3,\"c\":{\"a\":\"SubStruct\",\"double\":3.1,\"bool\":1}}"
         static let medium = """
                     {\"books\":{\"book\":[{\"title\":\"CPP\",\"author\":\"Milton\",\"year\":\"2008\",
                     \"price\":\"456.00\"},{\"title\":\"JAVA\",\"author\":\"Gilson\",\"year\":\"2002\",
@@ -34,9 +34,10 @@ class JSONTests: XCTestCase {
         do {
             _ = try JSON(json: "}" + JSONS.simple)
         } catch let error {
-            if let err = error as? JSONError {
-                if err.kind != JSONError.ErrorKind.parseError {
-                    fail(err.description)
+            if let err = error as? DecodingError {
+                if case .dataCorrupted = err {
+                } else {
+                    fail(err.localizedDescription)
                 }
             } else {
                 fail(String(describing: error))
@@ -45,9 +46,10 @@ class JSONTests: XCTestCase {
         do {
             _ = try JSON(json: "}" + JSONS.oneSubstruct)
         } catch let error {
-            if let err = error as? JSONError {
-                if err.kind != JSONError.ErrorKind.parseError {
-                    fail(err.description)
+            if let err = error as? DecodingError {
+                if case .dataCorrupted = err {
+                } else {
+                    fail(err.localizedDescription)
                 }
             } else {
                 fail(String(describing: error))
@@ -56,9 +58,10 @@ class JSONTests: XCTestCase {
         do {
             _ = try JSON(json: "}" + JSONS.medium)
         } catch let error {
-            if let err = error as? JSONError {
-                if err.kind != JSONError.ErrorKind.parseError {
-                    fail(err.description)
+            if let err = error as? DecodingError {
+                if case .dataCorrupted = err {
+                } else {
+                    fail(err.localizedDescription)
                 }
             } else {
                 fail(String(describing: error))
@@ -232,6 +235,46 @@ class JSONTests: XCTestCase {
         XCTAssert(json2 != json3)
     }
 
+    func testCodableSimple() {
+        XCTAssertTrue(checkCodable(json: JSONS.simple))
+    }
+
+    func testCodableOneSubstruct() {
+        XCTAssertTrue(checkCodable(json: JSONS.oneSubstruct))
+    }
+
+    func testCodableMedium() {
+        XCTAssertTrue(checkCodable(json: JSONS.medium))
+    }
+
+    private func checkCodable(json jsonString: String) -> Bool {
+        guard let json1 = try? JSON(json: jsonString) else {
+            XCTFail()
+            return false
+        }
+        let encoder = JSONEncoder()
+        guard let data = try? encoder.encode(json1) else {
+            XCTFail()
+            return false
+        }
+        guard let string = String(data: data, encoding: .utf8) else {
+            XCTFail()
+            return false
+        }
+        guard let json2 = try? JSON(json: string) else {
+            XCTFail()
+            return false
+        }
+        let decoder = JSONDecoder()
+        guard let json3 = try? decoder.decode(JSON.self, from: data) else {
+            XCTFail()
+            return false
+        }
+        XCTAssertEqual(json1, json2)
+        XCTAssertEqual(json2, json3)
+        XCTAssertEqual(json1, json3)
+        return json1 == json2 && json2 == json3 && json1 == json3
+    }
     static let allTests = [
         ("testConstructors", testConstructors),
         ("testDictionary", testDictionary),
@@ -242,6 +285,9 @@ class JSONTests: XCTestCase {
         ("testBool", testBool),
         ("testNilJSON", testNilJSON),
         ("testIsEmpty", testIsEmpty),
-        ("testEq", testEq)
+        ("testEq", testEq),
+        ("testCodableSimple", testCodableSimple),
+        ("testCodableOneSubstruct", testCodableOneSubstruct),
+        ("testCodableMedium", testCodableMedium)
     ]
 }

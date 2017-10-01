@@ -7,6 +7,8 @@
 //
 
 import SquirrelJSONEncoding
+import Foundation
+import Evaluation
 
 struct FruitParser {
     private let content: String
@@ -43,7 +45,7 @@ struct FruitParser {
         tokens.forEach { (token) in
             switch token["id"].stringValue {
             case "title":
-                let expr = parse(expression: token["expression"])
+                let expr = parse(rawExpression: token["expression"])
                 head.append(TitleToken(expression: expr, line: token["line"].intValue))
             default:
                 break
@@ -61,10 +63,10 @@ struct FruitParser {
             case "text":
                 body.append(TextToken(value: token["value"].stringValue))
             case "date":
-                let date = parse(expression: token["date"])
-                let format: ExpressionToken?
+                let date = parse(rawExpression: token["date"])
+                let format: RawExpressionToken?
                 if !token["format"].isNil {
-                    format = parse(expression: token["format"])
+                    format = parse(rawExpression: token["format"])
                 } else {
                     format = nil
                 }
@@ -127,15 +129,23 @@ struct FruitParser {
     // swiftlint:enable cyclomatic_complexity
 
     private func parse(expression token: JSON) -> ExpressionToken {
+        let postfix = token["postfix"]
+        let data = postfix.encode!
+        // swiftlint:disable:next force_try
+        let decodedPostfix = try! JSONDecoder().decode([PostfixEvaluation.Token].self, from: data)
         return ExpressionToken(
             infix: token["infix"].stringValue,
-            postfix: token["postfix"].stringValue,
+            postfix: decodedPostfix,
             line: token["line"].intValue)
     }
     private func parse(rawExpression token: JSON) -> RawExpressionToken {
+        let postfix = token["postfix"]
+        let data = postfix.encode!
+        // swiftlint:disable:next force_try
+        let decodedPostfix = try! JSONDecoder().decode([PostfixEvaluation.Token].self, from: data)
         return RawExpressionToken(
             infix: token["infix"].stringValue,
-            postfix: token["postfix"].stringValue,
+            postfix: decodedPostfix,
             line: token["line"].intValue)
     }
 }
