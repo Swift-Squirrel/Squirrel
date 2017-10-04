@@ -159,19 +159,7 @@ struct IfToken: NutCommandTokenProtocol, IfTokenProtocol {
             variable = nil
 
         }
-        let expr: RawExpressionToken
-        do {
-            expr = try RawExpressionToken(infix: exprCondition, line: line)
-        } catch let error as EvaluationError {
-            throw NutParserError(
-                kind: .evaluationError(infix: exprCondition, message: error.description),
-                line: line)
-        } catch let error {
-            throw NutParserError(
-                kind: .expressionError,
-                line: line,
-                description: error.localizedDescription)
-        }
+        let expr = RawExpressionToken(infix: exprCondition, line: line)
 
         self.init(variable: variable, condition: expr, line: line)
         try checkVariable()
@@ -301,19 +289,7 @@ struct ElseIfToken: NutCommandTokenProtocol, IfTokenProtocol {
             variable = nil
             _id = IDNames.elseIf
         }
-        let expr: RawExpressionToken
-        do {
-            expr = try RawExpressionToken(infix: exprCon, line: line)
-        } catch let error as EvaluationError {
-            throw NutParserError(
-                kind: .evaluationError(infix: exprCon, message: error.description),
-                line: line)
-        } catch let error {
-            throw NutParserError(
-                kind: .expressionError,
-                line: line,
-                description: error.localizedDescription)
-        }
+        let expr = RawExpressionToken(infix: exprCon, line: line)
         self.condition = expr
         self.line = line
         try checkVariable()

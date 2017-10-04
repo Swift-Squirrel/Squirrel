@@ -235,7 +235,7 @@ extension NutInterpreter {
         }
         let format: RawExpressionToken
         if dateToken.format == nil {
-            format = try RawExpressionToken(
+            format = RawExpressionToken(
                 infix: "\"\(NutConfig.dateDefaultFormat)\"",
                 line: dateToken.line)
         } else {

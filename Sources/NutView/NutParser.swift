@@ -372,7 +372,7 @@ extension NutParser {
                 let finalStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
                 var dateString = String(text[..<finalStringIndex])
                 dateString.removeLast()
-                date = try RawExpressionToken(infix: dateString, line: line)
+                date = RawExpressionToken(infix: dateString, line: line)
                 charIndex += 1
                 formatIndex = charIndex
                 continue
@@ -414,13 +414,13 @@ extension NutParser {
             let formatOffset = formatArg.index(formatArg.startIndex, offsetBy: 9)
             var formatExpr = String(formatArg[formatOffset...])
             formatExpr.removeLast()
-            format = try RawExpressionToken(infix: formatExpr, line: line)
+            format = RawExpressionToken(infix: formatExpr, line: line)
         } else {
             format = nil
             let dateStringIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
             var dateString = String(text[..<dateStringIndex])
             dateString.removeLast()
-            date = try RawExpressionToken(infix: dateString, line: line)
+            date = RawExpressionToken(infix: dateString, line: line)
         }
         let textIndex = text.index(text.startIndex, offsetBy: charIndex + 1)
         let textToken = TextToken(value: String(text[textIndex...]))
@@ -735,13 +735,11 @@ extension NutParser {
         expression.removeLast()
         expression.removeFirst()
         let text1 = String(text[stringIndex...])
-        if let expressionToken = try? RawExpressionToken(infix: expression, line: line) {
-            if text1 == "" {
-                return [expressionToken]
-            }
-            return [TextToken(value: text1), expressionToken]
+        let expressionToken = RawExpressionToken(infix: expression, line: line)
+        if text1 == "" {
+            return [expressionToken]
         }
-        throw NutParserError(kind: .expressionError, line: line)
+        return [TextToken(value: text1), expressionToken]
     }
 
     fileprivate func parseExpression(text: String, line: Int) throws -> [NutTokenProtocol] {
@@ -782,7 +780,7 @@ extension NutParser {
         expression.removeLast()
         expression.removeFirst()
         let text = String(text[stringIndex...])
-        let expressionToken = try RawExpressionToken(infix: expression, line: line)
+        let expressionToken = RawExpressionToken(infix: expression, line: line)
         if text == "" {
             return [expressionToken]
         }
