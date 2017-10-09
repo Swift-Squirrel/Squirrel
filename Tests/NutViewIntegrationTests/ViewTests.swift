@@ -7,6 +7,7 @@
 
 import XCTest
 import SquirrelConnector
+import SquirrelJSON
 import Foundation
 import PathKit
 @testable import NutView
@@ -34,6 +35,12 @@ struct Post: Model {
             let date = dateFormatter.date(from: "Sep 08 2017")!
             return date
         }()
+    }
+}
+
+extension BSON.ObjectId: SquirrelJSONEncodable {
+    public var encodedValue: Any {
+        return hexString
     }
 }
 

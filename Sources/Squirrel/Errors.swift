@@ -8,7 +8,7 @@
 
 import Foundation
 import NutView
-import SquirrelJSONEncoding
+import SquirrelJSON
 
 // MARK: - NutError
 extension NutError: SquirrelErrorProtocol {

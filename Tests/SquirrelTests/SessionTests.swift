@@ -8,7 +8,7 @@
 import XCTest
 @testable import Squirrel
 import PathKit
-import SquirrelJSONEncoding
+import SquirrelJSON
 import SquirrelConfig
 
 class SessionTests: XCTestCase {

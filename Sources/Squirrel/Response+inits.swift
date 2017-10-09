@@ -9,7 +9,7 @@
 import Foundation
 import PathKit
 import NutView
-import SquirrelJSONEncoding
+import SquirrelJSON
 
 // MARK: - JSON and HTML
 public extension Response {
