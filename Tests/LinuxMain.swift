@@ -1,7 +1,5 @@
 import XCTest
 @testable import SquirrelTests
-@testable import JSONCodingTests
-@testable import NutViewTests
 @testable import NutViewIntegrationTests
 
 XCTMain([
