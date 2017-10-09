@@ -34,6 +34,6 @@ let package = Package(
             dependencies: ["Squirrel", "Test"]),
         .testTarget(
             name: "NutViewIntegrationTests",
-            dependencies: ["NutView"])
+            dependencies: ["NutView", "SquirrelConnector"])
     ]
 )
