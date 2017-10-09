@@ -9,13 +9,7 @@ XCTMain([
     testCase(RequestTests.allTests),
     testCase(SessionTests.allTests),
     testCase(ResponseTests.allTests),
-    testCase(TokenTests.allTests),
-    testCase(NutParserTests.allTests),
-    testCase(NutParserErrors.allTests),
-    testCase(FruitParserTests.allTests),
     testCase(NutResolverTests.allTests),
     testCase(InterpreterTests.allTests),
-    testCase(ViewTests.allTests),
-    testCase(JSONCodingTests.allTests),
-    testCase(JSONTests.allTests)
+    testCase(ViewTests.allTests)
 ])
