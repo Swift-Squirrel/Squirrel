@@ -10,6 +10,7 @@ import Foundation
 import PathKit
 import NutView
 import GZip
+import SquirrelCore
 
 /// Responder
 public typealias AnyResponseHandler = ((Request) throws -> Any)
@@ -240,10 +241,10 @@ public extension Response {
         switch any {
         case let response as Response:
             return response
-        case let view as ViewProtocol:
-            return try Response(view: view)
         case let string as String:
             return try Response(html: string)
+        case let presentable as SquirrelPresentable:
+            return try Response(presentable: presentable)
         default:
             return try Response(object: any)
         }
