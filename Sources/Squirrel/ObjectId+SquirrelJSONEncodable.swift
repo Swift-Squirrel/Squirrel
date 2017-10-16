@@ -9,6 +9,7 @@ import SquirrelConnector
 import SquirrelJSON
 
 extension ObjectId: SquirrelJSONEncodable {
+    /// ObjectId hexString
     public var encodedValue: Any {
         return hexString
     }

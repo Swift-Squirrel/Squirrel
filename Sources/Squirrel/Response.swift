@@ -1,6 +1,6 @@
 //
 //  Response.swift
-//  Micros
+//  Squirrel
 //
 //  Created by Filip Klembara on 6/27/17.
 //
@@ -8,7 +8,6 @@
 
 import Foundation
 import PathKit
-import NutView
 import GZip
 import SquirrelCore
 

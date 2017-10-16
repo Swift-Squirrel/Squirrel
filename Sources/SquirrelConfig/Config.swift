@@ -11,7 +11,6 @@ import SquirrelConnector
 import PathKit
 import SwiftyBeaver
 import Yams
-import NutView
 import Cache
 
 /// Squirrel config shared instance
@@ -142,11 +141,6 @@ public class Config {
                         domainConfig = dom
                     }
                 }
-                if let nutView = yaml["nut_view"] as? [String: Any] {
-                    if let defaultDate = nutView["default_date_format"] as? String {
-                        NutConfig.dateDefaultFormat = defaultDate
-                    }
-                }
             } catch {
                 print("config.yaml is not valid, using default values")
             }
@@ -178,14 +172,11 @@ public class Config {
             try! publicStorageSymlink.symlink(publicStorage)
         }
 
-        NutConfig.fruits = storageViews
-        NutConfig.nuts = views
         let cacheConfig = Cache.Config(
             expiry: cacheExpiry,
             maxDiskSize: cacheMaxSize,
             cacheDirectory: _cache.string)
 
-        NutConfig.NutViewCache.setNutViewCache(config: cacheConfig)
         SquirrelConnectorCache.setProjectionCache(config: cacheConfig)
     }
     // swiftlint:enable cyclomatic_complexity
