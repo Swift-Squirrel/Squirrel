@@ -10,6 +10,7 @@ import Foundation
 import PathKit
 import NutView
 import SquirrelJSON
+import SquirrelCore
 
 // MARK: - JSON and HTML
 public extension Response {
@@ -80,16 +81,23 @@ public extension Response {
     }
 }
 
-// MARK: - Construct view
+// MARK: - Construct presentable
 extension Response {
-    /// Construct response from given view
+    /// Construct response from given presentable object
     ///
     /// - Parameters:
     ///   - status: HTTP status
-    ///   - view: View
-    /// - Throws: View error or Data coding error
-    public convenience init(status: HTTPStatus = .ok, view: ViewProtocol) throws {
-        let content = try view.getContent()
-        try self.init(status: status, html: content)
+    ///   - presentable: object to present
+    /// - Throws: Custom object presentation errors
+    public convenience init(status: HTTPStatus = .ok, presentable object: SquirrelPresentable) throws {
+        let data = try object.present()
+        switch object.representAs {
+        case .html:
+            self.init(status: status, headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue], body: data)
+        case .json:
+            self.init(status: status, headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Application.json.rawValue], body: data)
+        case .text:
+            self.init(status: status, body: data)
+        }
     }
 }

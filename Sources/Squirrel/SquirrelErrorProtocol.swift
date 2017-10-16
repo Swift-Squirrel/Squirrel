@@ -7,11 +7,11 @@
 //
 
 /// Protocol used for most of SquirrelErrors
-public protocol SquirrelErrorProtocol: Error, CustomStringConvertible, AsHTTPProtocol {
-
-}
+//public protocol SquirrelErrorProtocol: Error, CustomStringConvertible, AsHTTPProtocol {
+//
+//}
 
 /// Bridge between Error and HTTPErrors
-public protocol AsHTTPProtocol {
+public protocol HTTPErrorConvertible {
     var asHTTPError: HTTPError { get }
 }

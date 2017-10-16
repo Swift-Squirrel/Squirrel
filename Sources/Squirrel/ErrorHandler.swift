@@ -46,7 +46,7 @@ public class ErrorHandler {
             return handler
         }
 
-        if let httpError = error as? AsHTTPProtocol {
+        if let httpError = error as? HTTPErrorConvertible {
             if let handler = findErrorHandler(for: httpError.asHTTPError) {
                 return handler
             }
