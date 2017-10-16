@@ -18,17 +18,16 @@ let package = Package(
         .package(url: "https://github.com/antonmes/GZip.git", from: "5.0.0"),
         .package(url: "https://github.com/tris-foundation/test.git", from: "0.4.3"),
         .package(url: "https://github.com/Swift-Squirrel/SquirrelJSON.git", from: "0.1.0"),
-        .package(url: "https://github.com/Swift-Squirrel/Squirrel-Core.git", from: "0.1.1"),
-        .package(url: "https://github.com/Swift-Squirrel/NutView.git", from: "0.2.1")
+        .package(url: "https://github.com/Swift-Squirrel/Squirrel-Core.git", from: "0.1.1")
         ],
     targets: [
         .target(
             name: "Squirrel",
-            dependencies: ["NutView", "SquirrelConfig", "SquirrelJSON", "Socket", "GZip", "SquirrelCore"]),
+            dependencies: ["SquirrelConfig", "SquirrelJSON", "Socket", "GZip", "SquirrelCore"]),
 
         .target(
             name: "SquirrelConfig",
-            dependencies: ["SquirrelConnector", "PathKit", "SwiftyBeaver", "NutView", "Yams"]),
+            dependencies: ["SquirrelConnector", "PathKit", "SwiftyBeaver", "Yams"]),
 
         .testTarget(
             name: "SquirrelTests",

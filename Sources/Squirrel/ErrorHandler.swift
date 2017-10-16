@@ -6,7 +6,7 @@
 //
 //
 
-import NutView
+import SquirrelCore
 
 /// Error handler protocol
 public protocol ErrorHandlerProtocol {
@@ -20,8 +20,7 @@ public class ErrorHandler {
 
     private init() {
         addErrorHandler(handler: BasicErrors())
-        addErrorHandler(handler: ViewErrors())
-        addErrorHandler(handler: ViewNutErrors())
+        addErrorHandler(handler: HTMLConvertibleErrors())
     }
     private var handlers = [ErrorHandlerProtocol]()
 
@@ -63,31 +62,10 @@ public class ErrorHandler {
                 Error description:
                     '\(description)'
                 """
-            let escapedBody = convertToSpecialCharacters(string: body)
+            let escapedBody = body.escaped
             return Response(status: .internalError, body: escapedBody.data(using: .utf8)!)
         }
         return response
     }
 
-}
-
-extension String {
-    var escaped: String {
-        return convertToSpecialCharacters(string: self)
-    }
-}
-
-func convertToSpecialCharacters(string: String) -> String {
-    var newString = string
-    let char_dictionary: [String: StaticString] = [
-        "&amp;" : "&(?!\\S+;)",
-        "&lt;" : "<",
-        "&gt;" : ">",
-        "&quot;" : "\"",
-        "&apos;" : "'"
-    ]
-    for (escaped, unescaped) in char_dictionary {
-        newString = newString.replacingAll(matching: unescaped, with: escaped)
-    }
-    return newString
 }

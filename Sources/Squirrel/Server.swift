@@ -1,6 +1,6 @@
 //
 //  Server.swift
-//  micros
+//  Squirrel
 //
 //  Created by Filip Klembara on 6/26/17.
 //
@@ -10,7 +10,6 @@ import Foundation
 import Socket
 import Dispatch
 import PathKit
-import NutView
 import SquirrelConfig
 
 /// Server class

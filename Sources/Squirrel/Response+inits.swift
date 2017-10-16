@@ -8,7 +8,6 @@
 
 import Foundation
 import PathKit
-import NutView
 import SquirrelJSON
 import SquirrelCore
 
@@ -89,13 +88,24 @@ extension Response {
     ///   - status: HTTP status
     ///   - presentable: object to present
     /// - Throws: Custom object presentation errors
-    public convenience init(status: HTTPStatus = .ok, presentable object: SquirrelPresentable) throws {
+    public convenience init(status: HTTPStatus = .ok,
+                            presentable object: SquirrelPresentable) throws {
         let data = try object.present()
         switch object.representAs {
         case .html:
-            self.init(status: status, headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue], body: data)
+            self.init(
+                status: status,
+                headers: [
+                    HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue
+                ],
+                body: data)
         case .json:
-            self.init(status: status, headers: [HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Application.json.rawValue], body: data)
+            self.init(
+                status: status,
+                headers: [
+                    HTTPHeaders.ContentType.contentType:
+                        HTTPHeaders.ContentType.Application.json.rawValue],
+                body: data)
         case .text:
             self.init(status: status, body: data)
         }

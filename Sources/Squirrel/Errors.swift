@@ -1,31 +1,14 @@
 //
 //  Errors.swift
-//  Micros
+//  Squirrel
 //
 //  Created by Filip Klembara on 7/23/17.
 //
 //
 
 import Foundation
-import NutView
 import SquirrelJSON
 import SquirrelCore
-
-// MARK: - NutError
-extension NutError: HTTPErrorConvertible {
-    /// HTTPError representation
-    public var asHTTPError: HTTPError {
-        return HTTPError(status: .internalError, description: description)
-    }
-}
-
-// MARK: - NutParserError
-extension NutParserError: HTTPErrorConvertible {
-    /// HTTPError representation
-    public var asHTTPError: HTTPError {
-        return HTTPError(status: .internalError, description: description)
-    }
-}
 
 // MARK: - JSON error
 extension JSONError: SquirrelError, HTTPErrorConvertible {
