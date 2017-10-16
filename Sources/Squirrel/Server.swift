@@ -53,8 +53,6 @@ open class Server: Router {
     ///
     /// - Throws: Socket errors
     public func run() throws {
-        try squirrelConfig.setConnector()
-
         let socket = try Socket.create()
 
         listenSocket = socket

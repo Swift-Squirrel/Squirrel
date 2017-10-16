@@ -10,7 +10,6 @@ let package = Package(
             targets: ["Squirrel"]),
         ],
     dependencies: [
-        .package(url: "https://github.com/Swift-Squirrel/Squirrel-Connector.git",  from: "0.1.6"),
         .package(url: "https://github.com/kylef/PathKit.git",  from: "0.8.0"),
         .package(url: "https://github.com/SwiftyBeaver/SwiftyBeaver.git",  from: "1.4.1"),
         .package(url: "https://github.com/jpsim/Yams.git",  from: "0.3.6"),
@@ -27,7 +26,7 @@ let package = Package(
 
         .target(
             name: "SquirrelConfig",
-            dependencies: ["SquirrelConnector", "PathKit", "SwiftyBeaver", "Yams"]),
+            dependencies: ["PathKit", "SwiftyBeaver", "Yams"]),
 
         .testTarget(
             name: "SquirrelTests",
