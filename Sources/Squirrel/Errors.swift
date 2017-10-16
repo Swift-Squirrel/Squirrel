@@ -1,33 +1,17 @@
 //
 //  Errors.swift
-//  Micros
+//  Squirrel
 //
 //  Created by Filip Klembara on 7/23/17.
 //
 //
 
 import Foundation
-import NutView
-import SquirrelJSONEncoding
-
-// MARK: - NutError
-extension NutError: SquirrelErrorProtocol {
-    /// HTTPError representation
-    public var asHTTPError: HTTPError {
-        return HTTPError(status: .internalError, description: description)
-    }
-}
-
-// MARK: - NutParserError
-extension NutParserError: SquirrelErrorProtocol {
-    /// HTTPError representation
-    public var asHTTPError: HTTPError {
-        return HTTPError(status: .internalError, description: description)
-    }
-}
+import SquirrelJSON
+import SquirrelCore
 
 // MARK: - JSON error
-extension JSONError: SquirrelErrorProtocol {
+extension JSONError: SquirrelError, HTTPErrorConvertible {
     /// JSONError as HTTP error
     public var asHTTPError: HTTPError {
         return HTTPError(status: .internalError, description: description)
@@ -35,7 +19,7 @@ extension JSONError: SquirrelErrorProtocol {
 }
 
 /// Data errors
-public struct DataError: SquirrelErrorProtocol {
+public struct DataError: SquirrelError, HTTPErrorConvertible {
     /// Error kinds
     ///
     /// - dataEncodingError: Encoding filed
@@ -83,7 +67,7 @@ public struct DataError: SquirrelErrorProtocol {
 }
 
 /// HTTP error
-public struct HTTPError: SquirrelErrorProtocol {
+public struct HTTPError: Error, CustomStringConvertible, HTTPErrorConvertible {
     /// HTTP status
     public let status: HTTPStatus
     /// Description of error
@@ -106,7 +90,7 @@ public struct HTTPError: SquirrelErrorProtocol {
 }
 
 /// Route error
-public struct RouteError: Error, CustomStringConvertible {
+public struct RouteError: SquirrelError {
     /// Error kinds
     ///
     /// - addNodeError: Could not add node
@@ -131,7 +115,7 @@ public struct RouteError: Error, CustomStringConvertible {
 }
 
 /// Request error
-public struct RequestError: SquirrelErrorProtocol {
+public struct RequestError: SquirrelError, HTTPErrorConvertible {
     /// Error kinds
     ///
     /// - unseparatableHead: Can not separate head from body (missing: \n\r\n\r

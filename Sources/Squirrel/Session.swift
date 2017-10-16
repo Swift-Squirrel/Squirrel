@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SquirrelJSONEncoding
+import SquirrelJSON
 import PathKit
 import SquirrelConfig
 

@@ -7,12 +7,9 @@
 //
 
 import Foundation
-import SquirrelConnector
 import PathKit
 import SwiftyBeaver
 import Yams
-import NutView
-import Cache
 
 /// Squirrel config shared instance
 public let squirrelConfig = Config.sharedInstance
@@ -101,9 +98,6 @@ public class Config {
     // swiftlint:disable function_body_length
     private init() {
         let configFile = Path().absolute() + ".squirrel.yaml"
-        var cacheStorage: String? = nil
-        var cacheMaxSize: UInt = 0
-        var cacheExpiry: Expiry = .never
         var domainConfig = "127.0.0.1"
         if configFile.exists {
             _configFile = configFile
@@ -111,19 +105,6 @@ public class Config {
                 let content: String = try configFile.read()
                 guard let yaml = try Yams.load(yaml: content) as? [String: Any] else {
                     throw ConfigError(kind: .yamlSyntax)
-                }
-
-                if let cacheYaml = yaml["cache"] as? [String: Any] {
-                    cacheStorage = cacheYaml["storage"] as? String
-                    if let exp = cacheYaml["expiry"] as? [String: Any] {
-                        if let seconds = exp["seconds"] as? Int {
-                            let interval = TimeInterval(seconds)
-                            cacheExpiry = .seconds(interval)
-                        }
-                    }
-                    if let maxSize = cacheYaml["maximum_disk_size"] as? Int {
-                        cacheMaxSize = UInt(maxSize)
-                    }
                 }
 
                 if let serv = yaml["server"] as? [String: Any] {
@@ -142,11 +123,6 @@ public class Config {
                         domainConfig = dom
                     }
                 }
-                if let nutView = yaml["nut_view"] as? [String: Any] {
-                    if let defaultDate = nutView["default_date_format"] as? String {
-                        NutConfig.dateDefaultFormat = defaultDate
-                    }
-                }
             } catch {
                 print("config.yaml is not valid, using default values")
             }
@@ -156,16 +132,16 @@ public class Config {
         domain = domainConfig
         _webRoot = _serverRoot + "Public"
         publicStorageSymlink = _webRoot + "Storage"
-        _cache = _serverRoot + (cacheStorage ?? "Storage/Cache")
         _storage = _serverRoot + "Storage"
+        _cache = _serverRoot + _storage + "Cache"
         _publicStorage = _storage + "Public"
         _logDir = _storage + "Logs"
         session = _storage + "Sessions"
         _logFile = _logDir + logFileName
         _resourcesDir = _serverRoot + "Resources"
         _assets = _serverRoot + "Assets"
-        _viewsDir = _resourcesDir + "Views"
-        _storageViews = _storage + "Views"
+        _viewsDir = _resourcesDir + "NutViews"
+        _storageViews = _storage + "Fruits"
 
         _isAllowedDirBrowsing = false
 
@@ -177,62 +153,11 @@ public class Config {
             // swiftlint:disable:next force_try
             try! publicStorageSymlink.symlink(publicStorage)
         }
-
-        NutConfig.fruits = storageViews
-        NutConfig.nuts = views
-        let cacheConfig = Cache.Config(
-            expiry: cacheExpiry,
-            maxDiskSize: cacheMaxSize,
-            cacheDirectory: _cache.string)
-
-        NutConfig.NutViewCache.setNutViewCache(config: cacheConfig)
-        SquirrelConnectorCache.setProjectionCache(config: cacheConfig)
     }
     // swiftlint:enable cyclomatic_complexity
     // swiftlint:enable function_body_length
 
-
-    /// Set database connector and initialize it
-    ///
-    /// - Throws: Error if *squirrel.yaml* does not contains all important values
-    public func setConnector() throws {
-        let dbData: DBCredentials
-        do {
-            dbData = try getDBData()
-        } catch let error as ConfigError {
-            switch error.kind {
-            case .missingConfigFile:
-                log.warning("Configuration file is missing")
-                return
-            case .missingDBConfig:
-                log.warning("Database is not set because configuration is missing")
-                return
-            default:
-                throw error
-            }
-        }
-        let res: Bool
-        if let user = dbData.user {
-            res = Connector.setConnector(
-                username: user.username,
-                password: user.password,
-               host: dbData.host,
-               port: dbData.port,
-               dbname: dbData.dbname)
-        } else {
-            res = Connector.setConnector(
-                host: dbData.host,
-                port: dbData.port,
-                dbname: dbData.dbname)
-        }
-        if res {
-            log.info("Connected to database with: '\(dbData)'")
-        } else {
-            throw ConfigError(kind: .canNotConnect(using: dbData))
-        }
-    }
-
-    private func getDBData() throws -> DBCredentials {
+    public func getDBData() throws -> DBCredentials {
         guard let configFile = _configFile else {
             throw ConfigError(kind: .missingConfigFile)
         }
