@@ -5,7 +5,9 @@
 //  Created by Filip Klembara on 9/17/17.
 //
 
-struct SessionError: SquirrelErrorProtocol {
+import SquirrelCore
+
+struct SessionError: SquirrelError {
     var asHTTPError: HTTPError {
         switch kind {
         case .missingSession:
