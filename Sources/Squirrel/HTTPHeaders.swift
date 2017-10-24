@@ -82,6 +82,13 @@ public enum HTTPHeaders {
             case json = "application/json"
             case formUrlencoded = "application/x-www-form-urlencoded"
         }
+
+        /// Multipart
+        ///
+        /// - formData: formData `multipart/form-data`
+        public enum Multipart: String {
+            case formData = "multipart/form-data"
+        }
     }
 
     /// HTTP Method
