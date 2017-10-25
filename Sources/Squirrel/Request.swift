@@ -65,7 +65,11 @@ open class Request {
         }
         self.method = HTTPHeaders.Method(rawValue: method)!
 
-        guard let path = URL(string: try buffer.readString(until: .space)) else {
+        let pathString = try buffer.readString(until: .space)
+        guard pathString.first == "/" else {
+            throw RequestError(kind: .headParseError)
+        }
+        guard let path = URL(string: pathString) else {
             throw RequestError(kind: .headParseError, description: "Could not parse url")
         }
         _path = path
@@ -210,7 +214,7 @@ open class Request {
             }
             var name: String? = nil
             var fileName: String? = nil
-            contentDisposition.last!.components(separatedBy: ";").forEach {
+            String(contentDisposition.last!).components(separatedBy: ";").forEach {
                 valueString in
                 let value: String
                 if valueString.first == " " {

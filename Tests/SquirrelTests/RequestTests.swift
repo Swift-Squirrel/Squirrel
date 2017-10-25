@@ -47,29 +47,19 @@ class RequestTests: XCTestCase {
         ]
         static let wrongFirstLine: [(data: Data, expect: RequestError)] = [
             (data: "POST foo.php HTTP/1.1\r\n\r\n".data(using: .utf8)!,
-             expect: RequestError(kind: .parseError(
-                string: "foo.php",
-                expectations: "URL prefix must be '/' not 'f'."))),
+             expect: RequestError(kind: .headParseError)),
             (data: "POST foo.php  HTTP/1.1\r\n\r\n".data(using: .utf8)!,
-             expect: RequestError(kind: .parseError(
-                string: "POST foo.php  HTTP/1.1",
-                expectations: "First line has to be separatable into  three parts divided by ' '."))),
+             expect: RequestError(kind: .headParseError)),
             (data: "POST HTTP/1.1\r\n\r\n".data(using: .utf8)!,
-             expect: RequestError(kind: .parseError(
-                string: "POST HTTP/1.1",
-                expectations: "First line has to be separatable into  three parts divided by ' '."))),
+             expect: RequestError(kind: .headParseError)),
             (data: "POST\r\n\r\n".data(using: .utf8)!,
-             expect: RequestError(kind: .parseError(
-                string: "POST",
-                expectations: "First line has to be separatable into  three parts divided by ' '."))),
+             expect: RequestError(kind: .headParseError)),
             (data: "POST  HTTP/1.1\r\n\r\n".data(using: .utf8)!,
-             expect: RequestError(kind: .parseError(
-                string: "POST  HTTP/1.1",
-                expectations: "Empty component.")))
+             expect: RequestError(kind: .headParseError))
         ]
         static let wrongMethod: [(data: Data, method: String)] = [
             (data: "POSTA /foo//%20.php HTTP/1.1\r\n\r\n".data(using: .utf8)!, method: "POSTA"),
-            (data: "GetG /foo//%20.php HTTP/1.1\r\n\r\n".data(using: .utf8)!, method: "GetG"),
+            (data: "GetG /foo//%20.php HTTP/1.1\r\n\r\n".data(using: .utf8)!, method: "GETG"),
             (data: "NOTHING /foo//%20.php HTTP/1.1\r\n\r\n".data(using: .utf8)!, method: "NOTHING"),
             (data: "BLAH /foo//%20.php HTTP/1.1\r\n\r\n".data(using: .utf8)!, method: "BLAH"),
         ]
@@ -77,15 +67,13 @@ class RequestTests: XCTestCase {
         static let unknownProtocol: [(data: Data, prot: String)] = [
             (data: "POST /foo//%20.php HTTP/1\r\n\r\n".data(using: .utf8)!, prot: "HTTP/1"),
             (data: "GET /foo//%20.php HTTP/1.0\r\n\r\n".data(using: .utf8)!, prot: "HTTP/1.0"),
-            (data: "HEAD /foo//%20.php HTTP\r\n\r\n".data(using: .utf8)!, prot: "HTTP"),
+            (data: "PUT /foo//%20.php HTTP\r\n\r\n".data(using: .utf8)!, prot: "HTTP"),
             (data: "DELETE /foo//%20.php SMTHASD\r\n\r\n".data(using: .utf8)!, prot: "SMTHASD"),
         ]
 
         static let wrongHead: [(data: Data, expect: RequestError)] = [
             (data: "POST /foo.php HTTP/1.1\r\nKeep-Alive 300\r\n\r\n".data(using: .utf8)!,
-             expect: RequestError(kind: .parseError(
-                string: "Keep-Alive 300",
-                expectations: "Header line has to be separatable by ': ' to two parts"))),
+             expect: RequestError(kind: .headParseError)),
         ]
     }
 
@@ -177,7 +165,7 @@ class RequestTests: XCTestCase {
     }
 
     func testUnseparatableHead() {
-        let expect = RequestError(kind: .unseparatableHead)
+        let expect = RequestError(kind: .headParseError)
         RequestErrors.unseparatedHead.forEach({
             XCTAssertTrue(checkInitError(data: $0, expect: expect), String(data: $0, encoding: .utf8)!)
         })
