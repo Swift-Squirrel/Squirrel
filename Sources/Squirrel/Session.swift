@@ -219,7 +219,7 @@ public struct SessionMiddleware: Middleware {
 /// - Returns: Random string
 func randomString(length: Int = 32) -> String {
     enum ValidCharacters {
-        static let chars = Array("abcdefghjklmnopqrstuvwxyz012345789")
+        static let chars = Array("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
         #if os(Linux)
             static let count = chars.count

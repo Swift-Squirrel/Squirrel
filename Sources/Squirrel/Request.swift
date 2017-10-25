@@ -500,34 +500,3 @@ extension Request {
 
     }
 }
-
-// MARK: - Multipart
-public extension Request {
-    /// post multipart body
-    public struct Multipart {
-        private let name: String
-        private let fileName: String?
-        private let content: Data
-
-        init(name: String, fileName: String?, content: Data) {
-            self.name = name
-            self.fileName = fileName
-            self.content = content
-        }
-
-        /// check if content is file
-        public var isFile: Bool {
-            return fileName != nil
-        }
-
-        /// Returns data
-        public var fileContent: Data {
-            return content
-        }
-
-        /// Returns data as String
-        public var stringContent: String? {
-            return String(data: content, encoding: .utf8)
-        }
-    }
-}
