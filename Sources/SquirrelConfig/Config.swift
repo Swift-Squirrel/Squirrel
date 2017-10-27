@@ -94,6 +94,36 @@ public class Config {
     /// Shared instance
     public static let sharedInstance = Config()
 
+    private static func getEnviromentVariable(name: String) -> String? {
+        let start = name.index(after: name.startIndex)
+        let key = String(name[start..<name.endIndex])
+        return ProcessInfo.processInfo.environment[key]
+    }
+
+    private static func getStringVariable(from node: Node?) -> String? {
+        guard let string = node?.string else {
+            return nil
+        }
+        if string.first == "$" {
+            return getEnviromentVariable(name: string)
+        }
+        return string
+    }
+
+    private static func getIntVariable(from node: Node?) -> Int? {
+        guard let node = node else {
+            return nil
+        }
+
+        if let string = node.string, string.first == "$" {
+            guard let value = getEnviromentVariable(name: string) else {
+                return nil
+            }
+            return Int(value)
+        }
+        return node.int
+    }
+
     // swiftlint:disable cyclomatic_complexity
     // swiftlint:disable function_body_length
     private init() {
@@ -103,12 +133,12 @@ public class Config {
             _configFile = configFile
             do {
                 let content: String = try configFile.read()
-                guard let yaml = try Yams.load(yaml: content) as? [String: Any] else {
+                guard let yaml = try compose(yaml: content) else {
                     throw ConfigError(kind: .yamlSyntax)
                 }
 
-                if let serv = yaml["server"] as? [String: Any] {
-                    if let serverRoot = serv["serverRoot"] as? String {
+                if let serv = yaml["server"] {
+                    if let serverRoot = Config.getStringVariable(from: serv["serverRoot"]) {
                         let sr = Path(serverRoot).absolute()
                         if sr.exists {
                             _serverRoot = sr
@@ -116,10 +146,10 @@ public class Config {
                             print(sr.string + " does not exists using default server root")
                         }
                     }
-                    if let port = serv["port"] as? Int {
+                    if let port = Config.getIntVariable(from: serv["port"]) {
                         _port = UInt16(port)
                     }
-                    if let dom = serv["domain"] as? String {
+                    if let dom = Config.getStringVariable(from: serv["domain"]) {
                         domainConfig = dom
                     }
                 }
