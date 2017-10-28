@@ -169,7 +169,7 @@ public struct RequestError: SquirrelError, HTTPErrorConvertible {
             return HTTPError(status: .notImplemented, description: description)
         case .unknownProtocol:
             return HTTPError(status: .httpVersionUnsupported, description: description)
-        case .postBodyParseError, .headParseError:
+        case .postBodyParseError, .headParseError, .nonsupportedUpgradeInsecure:
             return HTTPError(status: .badRequest, description: description)
         }
     }
