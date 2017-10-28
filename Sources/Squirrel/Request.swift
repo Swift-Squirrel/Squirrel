@@ -108,20 +108,13 @@ open class Request {
         parseCookies()
         parseEncoding()
 
-        if self.method == .post {
-            try parsePostRequest()
+        if getHeader(for: "Upgrade-Insecure-Requests") == "1" {
+            throw RequestError(kind: .nonsupportedUpgradeInsecure)
         }
 
-
-
-
-//        rawHeader = lines[0]
-//        rawBody = lines[1]
-//
-//
-//        if _method == .post {
-//            try parsePostRequest()
-//        }
+        if self.method == .post && !body.isEmpty {
+            try parsePostRequest()
+        }
     }
     // swiftlint:enable function_body_length
     // swiftlint:enable cyclomatic_complexity
