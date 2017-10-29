@@ -17,8 +17,6 @@ import Regex
 /// Request class
 open class Request {
 
-    private var requestType = ""
-
     /// Request method
     public let method: HTTPHeaders.Method
 
@@ -27,13 +25,18 @@ open class Request {
     private var _cookies: [String: String] = [:]
 
     /// Accept-Encoding
-    public var acceptEncoding = Set<HTTPHeaders.Encoding.EncodingType>()
+    var acceptEncoding = Set<HTTPHeaders.Encoding.EncodingType>()
 
     /// Request path
     public var path: String {
         return _path.path
     }
-    private let httpProtocol: HTTPHeaders.HTTPProtocol
+
+    /// Request path with query parameters
+    public let originalPath: String
+
+    /// Protocol
+    public let httpProtocol: HTTPHeaders.HTTPProtocol
 
     private var headers: [String: String] = [:]
 
@@ -69,6 +72,7 @@ open class Request {
         guard pathString.first == "/" else {
             throw RequestError(kind: .headParseError)
         }
+        originalPath = pathString
         guard let path = URL(string: pathString) else {
             throw RequestError(kind: .headParseError, description: "Could not parse url")
         }
@@ -131,7 +135,6 @@ open class Request {
                 break
             }
         })
-
     }
 
     private func parseCookies() {
