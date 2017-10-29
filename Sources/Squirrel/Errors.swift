@@ -121,13 +121,11 @@ public struct RequestError: SquirrelError, HTTPErrorConvertible {
     /// - unknownMethod: Unknown method
     /// - unknownProtocol: Unknown protocol
     /// - postBodyParseError: Can not decode body from POST request
-    /// - nonsupportedUpgradeInsecure: Secure connection is not supported
     /// - headParseError: Can not parse head
     public enum ErrorKind {
         case unknownMethod(method: String)
         case unknownProtocol(prot: String)
         case postBodyParseError(errorString: String)
-        case nonsupportedUpgradeInsecure
         case headParseError
     }
 
@@ -155,8 +153,6 @@ public struct RequestError: SquirrelError, HTTPErrorConvertible {
                 msg = "Unknown protocol \(prot)"
             case .postBodyParseError(let errorString):
                 msg = "Can not parse: \(errorString)"
-            case .nonsupportedUpgradeInsecure:
-                msg = "Secure connection is not supported"
             }
         }
         return msg
@@ -169,7 +165,7 @@ public struct RequestError: SquirrelError, HTTPErrorConvertible {
             return HTTPError(status: .notImplemented, description: description)
         case .unknownProtocol:
             return HTTPError(status: .httpVersionUnsupported, description: description)
-        case .postBodyParseError, .headParseError, .nonsupportedUpgradeInsecure:
+        case .postBodyParseError, .headParseError:
             return HTTPError(status: .badRequest, description: description)
         }
     }

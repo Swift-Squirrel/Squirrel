@@ -108,10 +108,6 @@ open class Request {
         parseCookies()
         parseEncoding()
 
-        if getHeader(for: "Upgrade-Insecure-Requests") == "1" {
-            throw RequestError(kind: .nonsupportedUpgradeInsecure)
-        }
-
         if self.method == .post && !body.isEmpty {
             try parsePostRequest()
         }
