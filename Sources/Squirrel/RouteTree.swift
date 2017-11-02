@@ -19,9 +19,10 @@ class RouteTree {
         log.debug("Adding route for method \(method.rawValue) in route: \(route)")
 
         guard !(route.contains("/./") || !route.hasPrefix("/") || route.contains("/../")) else {
-            log.error("Route can not contains with \"/./\""
-                + " or \"/../\" and must has prefix with \"/\"")
-            exit(1)
+            let msg = "Route can not contains \"/./\""
+                + " or \"/../\" and must has prefix with \"/\""
+            log.error(msg)
+            fatalError(msg)
         }
 
         if route == "/" {
@@ -32,10 +33,10 @@ class RouteTree {
                 try root!.set(method: method, handler: handler)
             } catch let error as RouteError {
                 log.error(error.description)
-                exit(1)
+                fatalError(error.description)
             } catch let error {
                 log.error(error.localizedDescription)
-                exit(1)
+                fatalError(error.localizedDescription)
             }
         } else {
             let routes = route.components(separatedBy: "/").filter { $0 != "" }
@@ -48,10 +49,10 @@ class RouteTree {
                 try root.addNode(routes: routes, method: method, handler: handler)
             } catch let error as RouteError {
                 log.error(error.description)
-                exit(1)
+                fatalError(error.description)
             } catch let error {
                 log.error(error.localizedDescription)
-                exit(1)
+                fatalError(error.localizedDescription)
             }
         }
     }
