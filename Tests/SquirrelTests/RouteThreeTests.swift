@@ -141,7 +141,7 @@ class RouteThreeTests: XCTestCase {
         handlerExists(for: .get, in: "/admin/statistics")
     }
 
-    private func addStaticNodes(for method: HTTPHeaders.Method, in route: String, handler: AnyResponseHandler? = nil) {
+    private func addStaticNodes(for method: RequestLine.Method, in route: String, handler: AnyResponseHandler? = nil) {
         let routes = ["/"] + route.components(separatedBy: "/")
         var hand: AnyResponseHandler
         if handler == nil {
@@ -156,11 +156,11 @@ class RouteThreeTests: XCTestCase {
         handlerExists(for: method, in: route)
     }
 
-    private func handlerExists(for method: HTTPHeaders.Method, in route: String) {
+    private func handlerExists(for method: RequestLine.Method, in route: String) {
         let routes = ["/"] + route.components(separatedBy: "/")
         assertNoThrow(try rootNode.findHandler(for: method, in: routes) != nil, "Handler does not exists for \(method.rawValue) \(route)")
     }
-    private func handlerNotExists(for method: HTTPHeaders.Method, in route: String) {
+    private func handlerNotExists(for method: RequestLine.Method, in route: String) {
         let routes = ["/"] + route.components(separatedBy: "/")
         assertNil(try rootNode.findHandler(for: method, in: routes), "Handler does exists for \(method.rawValue) \(route)")
     }

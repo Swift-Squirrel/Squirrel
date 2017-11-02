@@ -8,90 +8,7 @@
 
 import Foundation
 
-// swiftlint:disable nesting
-
-/// HTTP Headers
-public enum HTTPHeaders {
-
-    /// HTTP protocol types
-    ///
-    /// - http11: HTTP/1.1
-    public enum HTTPProtocol: String {
-        case http11 = "HTTP/1.1"
-    }
-    /// `Content-Length`
-    public static let contentLength = "Content-Length"
-    /// `Location`
-    public static let location = "Location"
-    /// `Authenticate`
-    public static let wwwAuthenticate = "WWW-Authenticate"
-    /// `Retry`
-    public static let retryAfter = "Retry-After"
-    /// `Allow`
-    public static let allow = "Allow"
-
-    /// Content-Encoding values
-    public enum Encoding {
-        /// Content-Encoding
-        public static let contentEncoding = "Content-Encoding"
-        /// Accept-Encoding
-        public static let acceptEncoding = "Accept-Encoding"
-        /// Values
-        ///
-        /// - gzip: gzip
-        public enum EncodingType: String {
-            case gzip
-            case deflate
-        }
-    }
-
-    /// Content type
-    public enum ContentType {
-        /// `Content-Type`
-        public static let contentType = "Content-Type"
-
-        /// Image
-        ///
-        /// - png: `image/png`
-        /// - jpeg: `image/jpeg`
-        /// - svg: `image/svg+xml`
-        public enum Image: String {
-            case png = "image/png"
-            case jpeg = "image/jpeg"
-            case svg = "image/svg+xml"
-        }
-
-        /// Textx
-        ///
-        /// - html: `text/html`
-        /// - plain: `text/plain`
-        /// - css: `text/css`
-        public enum Text: String {
-            case html = "text/html"
-            case plain = "text/plain"
-            case css = "text/css"
-        }
-
-        /// Application
-        ///
-        /// - js: `application/javascript`
-        /// - json: `application/json`
-        /// - formUrlencoded: `application/x-www-form-urlencoded`
-        public enum Application: String {
-            case js = "application/javascript"
-            case json = "application/json"
-            case formUrlencoded = "application/x-www-form-urlencoded"
-            case forceDownload = "application/force-download"
-        }
-
-        /// Multipart
-        ///
-        /// - formData: formData `multipart/form-data`
-        public enum Multipart: String {
-            case formData = "multipart/form-data"
-        }
-    }
-
+public enum RequestLine {
     /// HTTP Method
     ///
     /// - post: POST
@@ -100,7 +17,7 @@ public enum HTTPHeaders {
     /// - delete: DELETE
     /// - head: HEAD
     /// - option: OPTIONS
-    public enum Method: String {
+    public enum Method: String, CustomStringConvertible {
         case post = "POST"
         case get = "GET"
         case put = "PUT"
@@ -108,7 +25,176 @@ public enum HTTPHeaders {
         case head = "HEAD"
         case options = "OPTIONS"
         case patch = "PATCH"
+
+        public var description: String {
+            return rawValue
+        }
     }
+
+    public enum HTTPProtocol: String, CustomStringConvertible {
+        case http11 = "1.1"
+
+        init?(rawHTTPValue value: String) {
+            guard value == "HTTP/1.1" else {
+                return nil
+            }
+
+            self = .http11
+        }
+
+        /// - Note: Return Uppercased
+        public var description: String {
+            return "HTTP/\(rawValue)"
+        }
+    }
+
+}
+
+public enum HTTPHeader {
+    case contentLength(size: Int)
+    case contentEncoding(HTTPHeader.Encoding)
+    case contentType(HTTPHeader.ContentType)
+    case location(location: String)
+}
+
+extension HTTPHeader: Hashable {
+    public var hashValue: Int {
+        switch self {
+        case .contentType:
+            return 0
+        case .contentEncoding:
+            return 1
+        case .contentLength:
+            return 2
+        case .location:
+            return 3
+        }
+    }
+    
+    public static func ==(lhs: HTTPHeader, rhs: HTTPHeader) -> Bool {
+        return lhs.description == rhs.description
+    }
+}
+
+public extension HTTPHeader {
+    enum Encoding: String, CustomStringConvertible {
+        case gzip
+        case deflate
+        public var description: String {
+            return self.rawValue
+        }
+    }
+
+    enum ContentType: String, CustomStringConvertible {
+        // Image
+        case png
+        case jpeg
+        case svg = "svg+xml"
+
+        //Text
+        case html
+        case plain
+        case css
+
+        // Applocation
+        case js = "javascript"
+        case json = "json"
+        case formUrlencoded = "x-www-form-urlencoded"
+        case forceDownload = "force-download"
+
+        // multipart
+        case formData = "form-data"
+
+        public var description: String {
+            let mime: String
+            switch self {
+            case .png, .jpeg, .svg:
+                mime = "image"
+            case .html, .plain, .css:
+                mime = "text"
+            case .js, .json, .formUrlencoded, .forceDownload:
+                mime = "application"
+            case .formData:
+                mime = "multipart"
+            }
+            return "\(mime)/\(rawValue)"
+        }
+    }
+}
+
+extension HTTPHeader: CustomStringConvertible {
+    public var description: String {
+        let (key, value) = keyValue
+        return "\(key): \(value)"
+    }
+
+    public var keyValue: (key: String, value: String) {
+        let key: HTTPHeaderKey
+        let value: String
+        switch self {
+        case .contentLength(let size):
+            key = .contentLength
+            value = size.description
+        case .contentEncoding(let encoding):
+            key = .contentEncoding
+            value = encoding.description
+        case .contentType(let type):
+            key = .contentType
+            value = type.description
+        case .location(let location):
+            key = .location
+            value = location
+        }
+        return (key.description, value)
+    }
+}
+
+
+public enum HTTPHeaderKey {
+    case contentLength
+    case location
+    case wwwAuthenticate
+    case retryAfter
+    case allow
+    case contentEncoding
+    case acceptEncoding
+    case contentType
+    case setCookie
+}
+
+extension HTTPHeaderKey: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .contentLength:
+            return "Content-Length"
+        case .location:
+            return "Location"
+        case .wwwAuthenticate:
+            return "WWW-Authenticate"
+        case .retryAfter:
+            return "Retry-After"
+        case .allow:
+            return "Allow"
+        case .contentEncoding:
+            return "Content-Encoding"
+        case .acceptEncoding:
+            return "Accept-Encoding"
+        case .contentType:
+            return "Content-Type"
+        case .setCookie:
+            return "Set-Cookie"
+        }
+    }
+}
+
+public func ==(lhs: String, rhs: HTTPHeader.ContentType) -> Bool {
+    return lhs.lowercased() == rhs.description.lowercased()
+}
+public func ==(lhs: String, rhs: HTTPHeader.Encoding) -> Bool {
+    return lhs.lowercased() == rhs.description.lowercased()
+}
+public func ==(lhs: String, rhs: HTTPHeaderKey) -> Bool {
+    return lhs.lowercased() == rhs.description.lowercased()
 }
 
 /// HTTP Statuses
@@ -134,7 +220,7 @@ public enum HTTPStatus: CustomStringConvertible {
     case paymentRequired
     case forbidden
     case notFound
-    case notAllowed(allowed: [HTTPHeaders.Method])
+    case notAllowed(allowed: [RequestLine.Method])
     case notAcceptable
     case requestTimeout
     case conflict
@@ -298,4 +384,3 @@ public enum HTTPStatus: CustomStringConvertible {
         return "\(code) \(message)"
     }
 }
-// swiftlint:enable nesting

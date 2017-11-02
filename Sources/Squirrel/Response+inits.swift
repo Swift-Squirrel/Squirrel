@@ -19,9 +19,7 @@ public extension Response {
     /// - Throws: Filesystem errors
     public convenience init(html path: Path) throws {
         try self.init(pathToFile: path)
-        setHeader(
-            for: HTTPHeaders.ContentType.contentType,
-            to: HTTPHeaders.ContentType.Text.html.rawValue)
+        setHeader(to: .contentType(.html))
     }
 
     /// Construct html response from given string
@@ -34,9 +32,7 @@ public extension Response {
         }
         self.init(
             status: status,
-            headers: [
-                HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue
-            ],
+            headers: [.contentType(.html)],
             body: data
         )
     }
@@ -48,10 +44,7 @@ public extension Response {
     public convenience init<T>(object: T) throws {
         let data = try JSONCoding.encodeDataJSON(object: object)
         self.init(
-            headers: [
-                HTTPHeaders.ContentType.contentType:
-                    HTTPHeaders.ContentType.Application.json.rawValue
-            ],
+            headers: [.contentType(.json)],
             body: data
         )
     }
@@ -71,10 +64,7 @@ public extension Response {
         }
 
         self.init(
-            headers: [
-                HTTPHeaders.ContentType.contentType:
-                    HTTPHeaders.ContentType.Application.json.rawValue
-            ],
+            headers: [.contentType(.json)],
             body: data
         )
     }
@@ -95,16 +85,12 @@ extension Response {
         case .html:
             self.init(
                 status: status,
-                headers: [
-                    HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue
-                ],
+                headers: [.contentType(.html)],
                 body: data)
         case .json:
             self.init(
                 status: status,
-                headers: [
-                    HTTPHeaders.ContentType.contentType:
-                        HTTPHeaders.ContentType.Application.json.rawValue],
+                headers: [.contentType(.json)],
                 body: data)
         case .text:
             self.init(status: status, body: data)
@@ -135,10 +121,9 @@ public extension Response {
     }
 
     private func setDownloadHeaders(fileName: String) {
+        // TODO use enum
         setHeader(for: "Content-Disposition", to: "attachment; filename=\"\(fileName)\"")
-        setHeader(
-            for: HTTPHeaders.ContentType.contentType,
-            to: HTTPHeaders.ContentType.Application.forceDownload.rawValue)
+        setHeader(to: .contentType(.forceDownload))
         setHeader(for: "Content-Transfer-Encoding", to: "binary")
     }
 }

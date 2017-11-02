@@ -13,7 +13,7 @@ class RouteTree {
 
     func add(
         route: String,
-        forMethod method: HTTPHeaders.Method,
+        forMethod method: RequestLine.Method,
         handler: @escaping AnyResponseHandler) {
 
         log.debug("Adding route for method \(method.rawValue) in route: \(route)")
@@ -57,7 +57,7 @@ class RouteTree {
     }
 
     func findHandler(
-        for method: HTTPHeaders.Method,
+        for method: RequestLine.Method,
         in route: String)
         throws -> AnyResponseHandler? {
 

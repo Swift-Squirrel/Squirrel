@@ -169,9 +169,7 @@ open class Server: Router {
             }
             // TODO Directory browsing
             return Response(
-                headers: [
-                    HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue
-                ],
+                headers: [.contentType(.html)],
                 body: "Not implemented".data(using: .utf8)!
             ).responeHandler()
         }

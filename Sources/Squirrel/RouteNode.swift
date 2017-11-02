@@ -12,9 +12,9 @@ class RouteNode {
 
     let route: String
 
-    private var values: [HTTPHeaders.Method: AnyResponseHandler] = [:]
+    private var values: [RequestLine.Method: AnyResponseHandler] = [:]
 
-    private var defaultHandlers: [HTTPHeaders.Method: AnyResponseHandler] = [:]
+    private var defaultHandlers: [RequestLine.Method: AnyResponseHandler] = [:]
 
     private var childrens = [RouteNode]()
 
@@ -26,7 +26,7 @@ class RouteNode {
 
     func addNode(
         routes: [String],
-        method: HTTPHeaders.Method,
+        method: RequestLine.Method,
         handler: @escaping AnyResponseHandler)
         throws {
 
@@ -67,7 +67,7 @@ class RouteNode {
 
     private func nodeSetAdd(routes: [String],
                             node: RouteNode,
-                            method: HTTPHeaders.Method,
+                            method: RequestLine.Method,
                             handler: @escaping AnyResponseHandler) throws {
         var newRoutes = routes
         newRoutes.remove(at: 0)
@@ -79,7 +79,7 @@ class RouteNode {
     }
 
     private func setDefault(
-        method: HTTPHeaders.Method,
+        method: RequestLine.Method,
         handler: @escaping AnyResponseHandler)
         throws {
 
@@ -89,14 +89,14 @@ class RouteNode {
         defaultHandlers[method] = handler
     }
 
-    func set(method: HTTPHeaders.Method, handler: @escaping AnyResponseHandler) throws {
+    func set(method: RequestLine.Method, handler: @escaping AnyResponseHandler) throws {
         guard values[method] == nil else {
             throw RouteError(kind: .methodHandlerOverwrite)
         }
         values[method] = handler
     }
 
-    func findHandler(for method: HTTPHeaders.Method, in routes: [String])
+    func findHandler(for method: RequestLine.Method, in routes: [String])
         throws -> AnyResponseHandler? {
 
         guard routes.count > 0 else {
@@ -108,7 +108,7 @@ class RouteNode {
                 if values.count == 0 && defaultHandlers.count == 0 {
                     return nil
                 }
-                var methods: [HTTPHeaders.Method] = values.keys.flatMap({ $0 })
+                var methods: [RequestLine.Method] = values.keys.flatMap({ $0 })
                 methods.append(contentsOf: defaultHandlers.keys.flatMap({ $0 }))
                 throw HTTPError(
                     status: .notAllowed(allowed: methods),

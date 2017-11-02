@@ -23,14 +23,12 @@ open class Response {
 
     private let httpProtocolVersion = "HTTP/1.1"
 
-    var contentEncoding: HTTPHeaders.Encoding.EncodingType? = nil
+    var contentEncoding: HTTPHeader.Encoding? = nil
 
     /// Cookies
     public var cookies: [String: String] = [:]
 
-    private var headers: [String: String] = [
-        HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.plain.rawValue
-    ]
+    private var headers = HTTPHead()
 
     private var body = Data() {
         didSet {
@@ -53,20 +51,21 @@ open class Response {
     /// - Parameter status: HTTP Status
     public init(status: HTTPStatus) {
         self.status = status
+        setHeader(to: .contentType(.plain))
 
         if let location = getLocationFor(status: status) {
-            headers[HTTPHeaders.location] = location
+            setHeader(to: .location(location: location))
         }
 
         switch status {
         case .unauthorized(let wwwAuthenticate):
-            headers[HTTPHeaders.wwwAuthenticate] = wwwAuthenticate
+            setHeader(for: .wwwAuthenticate, to: wwwAuthenticate)
         case .tooManyRequests(let retryAfter),
              .serviceUnavailable(let retryAfter):
-            headers[HTTPHeaders.retryAfter] = retryAfter
+            setHeader(for: .retryAfter, to: retryAfter)
         case .notAllowed(let allowed):
-            let value = allowed.flatMap({ $0.rawValue.uppercased() }).joined(separator: ", ")
-            headers[HTTPHeaders.allow] = value
+            let value = allowed.map { $0.rawValue }.joined(separator: ", ")
+            setHeader(for: .allow, to: value)
         default:
             break
         }
@@ -85,6 +84,15 @@ open class Response {
         for (key, value) in headers {
             self.headers[key] = value
         }
+    }
+
+    public convenience init(status: HTTPStatus = .ok, headers: Set<HTTPHeader>, body: Data) {
+        var hds = [String: String]()
+        for header in headers {
+            let (key, value) = header.keyValue
+            hds[key] = value
+        }
+        self.init(status: status, headers: hds, body: body)
     }
 
     private func getLocationFor(status: HTTPStatus) -> String? {
@@ -111,6 +119,15 @@ open class Response {
         headers[key] = value
     }
 
+    public func setHeader(for key: HTTPHeaderKey, to value: String) {
+        setHeader(for: key.description, to: value)
+    }
+
+    public func setHeader(to keyValue: HTTPHeader) {
+        let (key, value) = keyValue.keyValue
+        setHeader(for: key, to: value)
+    }
+
     // swiftlint:disable cyclomatic_complexity
     // swiftlint:disable function_body_length
 
@@ -134,50 +151,29 @@ open class Response {
         if let fileExtension = path.`extension` {
             switch fileExtension.lowercased() {
             case "json":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Application.json.rawValue
-                )
+                setHeader(to: .contentType(.json))
             case "js":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Application.js.rawValue)
+                setHeader(to: .contentType(.js))
 
             case "jpg", "jpeg":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Image.jpeg.rawValue)
+                setHeader(to: .contentType(.jpeg))
             case "png":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Image.png.rawValue)
+                setHeader(to: .contentType(.png))
             case "svg":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Image.svg.rawValue)
+                setHeader(to: .contentType(.svg))
 
             case "css":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Text.css.rawValue)
+                setHeader(to: .contentType(.css))
             case "html":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Text.html.rawValue)
+                setHeader(to: .contentType(.html))
             case "txt":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Text.plain.rawValue)
+                setHeader(to: .contentType(.plain))
             default:
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Text.plain.rawValue)
+                setHeader(to: .contentType(.plain))
             }
         } else {
             // TODO Binary data
-            setHeader(
-                for: HTTPHeaders.ContentType.contentType,
-                to: HTTPHeaders.ContentType.Text.plain.rawValue)
+            setHeader(to: .contentType(.plain))
         }
     }
     // swiftlint:enable cyclomatic_complexity
@@ -198,16 +194,16 @@ extension Response {
             finalBody = rawBody
         }
         var header = httpProtocolVersion + " " + status.description + "\r\n"
-        header += HTTPHeaders.contentLength + ": " + String(bodyLength) + "\r\n"
+        header += HTTPHeader.contentLength(size: bodyLength).description + "\r\n"
         if let encoding = contentEncoding {
-            header += HTTPHeaders.Encoding.contentEncoding + ": "
-                + encoding.rawValue + "\r\n"
+            header += HTTPHeader.contentEncoding(encoding).description + "\r\n"
         }
+
         for (key, value) in headers {
             header += key + ": " + value + "\r\n"
         }
         for (key, value) in cookies {
-            header += "Set-Cookie: " + "\(key)=\(value)\r\n"
+            header += "\(HTTPHeaderKey.setCookie): \(key)=\(value)\r\n"
         }
         header += "\r\n"
         return header.data(using: .utf8)!

@@ -18,14 +18,14 @@ import Regex
 open class Request {
 
     /// Request method
-    public let method: HTTPHeaders.Method
+    public let method: RequestLine.Method
 
     private let _path: URL
 
     private var _cookies: [String: String] = [:]
 
     /// Accept-Encoding
-    var acceptEncoding = Set<HTTPHeaders.Encoding.EncodingType>()
+    var acceptEncoding = Set<HTTPHeader.Encoding>()
 
     /// Request path
     public var path: String {
@@ -36,9 +36,9 @@ open class Request {
     public let originalPath: String
 
     /// Protocol
-    public let httpProtocol: HTTPHeaders.HTTPProtocol
+    public let httpProtocol: RequestLine.HTTPProtocol
 
-    private var headers: [String: String] = [:]
+    private var headers: HTTPHead = [:]
 
     private let body: Data
 
@@ -59,14 +59,13 @@ open class Request {
     ///
     /// - Parameter data: Data of request
     /// - Throws: `DataError` and other parse errors
-    /// - Bug: When body contains binary data, init will fail
     init(data: Data) throws {
         var buffer = Buffer(buffer: data)
         let method = (try buffer.readString(until: .space)).uppercased()
         guard ["GET", "POST", "DELETE", "PUT", "PATCH"].contains(method) else {
             throw RequestError(kind: .unknownMethod(method: method))
         }
-        self.method = HTTPHeaders.Method(rawValue: method)!
+        self.method = RequestLine.Method(rawValue: method)!
 
         let pathString = try buffer.readString(until: .space)
         guard pathString.first == "/" else {
@@ -78,11 +77,11 @@ open class Request {
         }
         _path = path
 
-        let prot = (try buffer.readString(until: .crlf)).uppercased()
-        guard prot == HTTPHeaders.HTTPProtocol.http11.rawValue else {
-            throw RequestError(kind: .unknownProtocol(prot: prot))
+        let protString = (try buffer.readString(until: .crlf)).uppercased()
+        guard let prot = RequestLine.HTTPProtocol(rawHTTPValue: protString) else {
+            throw RequestError(kind: .unknownProtocol(prot: protString))
         }
-        httpProtocol = HTTPHeaders.HTTPProtocol(rawValue: prot)!
+        httpProtocol = prot
         var line = try buffer.readString(until: .crlf, allowEmpty: true)
         while !line.isEmpty {
             let arr = line.split(separator: ":", maxSplits: 1)
@@ -103,7 +102,7 @@ open class Request {
             line = try buffer.readString(until: .crlf, allowEmpty: true)
         }
 
-        if let lengthString = headers[HTTPHeaders.contentLength.lowercased()],
+        if let lengthString = headers[.contentLength],
             let length = Int(lengthString) {
                 body = buffer.read(bytes: length)
         } else {
@@ -153,15 +152,15 @@ open class Request {
     }
 
     private func parsePostRequest() throws {
-        guard let contentType = getHeader(for: HTTPHeaders.ContentType.contentType) else {
+        guard let contentType = getHeader(for: .contentType) else {
             throw HTTPError(
                 status: .unsupportedMediaType,
-                description: "Missing \(HTTPHeaders.ContentType.contentType)")
+                description: "Missing \(HTTPHeaderKey.contentType)")
         }
         let lowercasedType = contentType.lowercased()
-        if lowercasedType == HTTPHeaders.ContentType.Application.formUrlencoded.rawValue {
+        if lowercasedType == HTTPHeader.ContentType.formUrlencoded {
             try parseURLEncoded()
-        } else if lowercasedType.hasPrefix(HTTPHeaders.ContentType.Multipart.formData.rawValue) {
+        } else if lowercasedType.hasPrefix(HTTPHeader.ContentType.formData.rawValue) {
             try parseMultipart(contentType: contentType)
         }
         // TODO JSON
@@ -344,7 +343,11 @@ extension Request {
     /// - Parameter key: Header name
     /// - Returns: Header value
     public func getHeader(for key: String) -> String? {
-        return headers[key.lowercased()]
+        return headers[key]
+    }
+
+    public func getHeader(for key: HTTPHeaderKey) -> String? {
+        return headers[key]
     }
 }
 

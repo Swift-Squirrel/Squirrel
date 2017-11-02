@@ -18,7 +18,7 @@ class ResponseManager {
     }
 
     private func route(
-        method: HTTPHeaders.Method,
+        method: RequestLine.Method,
         url: String,
         middlewares: [Middleware],
         handler: @escaping AnyResponseHandler) {
@@ -279,7 +279,7 @@ extension ResponseManager {
 
         var values = request.urlParameters
 
-        if request.method == HTTPHeaders.Method.post {
+        if request.method == RequestLine.Method.post {
             for (k, v) in request.postParameters {
                 if values[k] == nil {
                     values[k] = v
