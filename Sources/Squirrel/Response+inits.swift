@@ -121,7 +121,6 @@ public extension Response {
     }
 
     private func setDownloadHeaders(fileName: String) {
-        // TODO use enum
         setHeader(for: "Content-Disposition", to: "attachment; filename=\"\(fileName)\"")
         setHeader(to: .contentType(.forceDownload))
         setHeader(for: "Content-Transfer-Encoding", to: "binary")

@@ -86,6 +86,12 @@ open class Response {
         }
     }
 
+    /// Construct response with HTTP status, headers and body
+    ///
+    /// - Parameters:
+    ///   - status: HTTP Status
+    ///   - headers: HTTP Headers
+    ///   - body: HTTP Body
     public convenience init(status: HTTPStatus = .ok, headers: Set<HTTPHeader>, body: Data) {
         var hds = [String: String]()
         for header in headers {
@@ -119,10 +125,18 @@ open class Response {
         headers[key] = value
     }
 
+    /// Set HTTP Header
+    ///
+    /// - Parameters:
+    ///   - key: Header Key
+    ///   - value: Header Value
     public func setHeader(for key: HTTPHeaderKey, to value: String) {
         setHeader(for: key.description, to: value)
     }
 
+    /// Set HTTP Header
+    ///
+    /// - Parameter keyValue: Header
     public func setHeader(to keyValue: HTTPHeader) {
         let (key, value) = keyValue.keyValue
         setHeader(for: key, to: value)

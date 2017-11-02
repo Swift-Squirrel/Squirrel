@@ -346,6 +346,10 @@ extension Request {
         return headers[key]
     }
 
+    /// Get header
+    ///
+    /// - Parameter key: HTTP header key
+    /// - Returns: Header value
     public func getHeader(for key: HTTPHeaderKey) -> String? {
         return headers[key]
     }
