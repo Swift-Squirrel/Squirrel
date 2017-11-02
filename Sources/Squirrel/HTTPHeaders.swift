@@ -81,6 +81,14 @@ public enum HTTPHeaders {
             case js = "application/javascript"
             case json = "application/json"
             case formUrlencoded = "application/x-www-form-urlencoded"
+            case forceDownload = "application/force-download"
+        }
+
+        /// Multipart
+        ///
+        /// - formData: formData `multipart/form-data`
+        public enum Multipart: String {
+            case formData = "multipart/form-data"
         }
     }
 

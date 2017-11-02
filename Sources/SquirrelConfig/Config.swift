@@ -187,6 +187,10 @@ public class Config {
     // swiftlint:enable cyclomatic_complexity
     // swiftlint:enable function_body_length
 
+    /// Get database config from config file
+    ///
+    /// - Returns: dabase config data
+    /// - Throws: Yaml error, File read error
     public func getDBData() throws -> DBCredentials {
         guard let configFile = _configFile else {
             throw ConfigError(kind: .missingConfigFile)
@@ -234,17 +238,6 @@ public class Config {
         }
         try? dir.mkpath()
         log.info("creating folder: \(dir.string)")
-    }
-
-    private func createDir(url: String) {
-        let fileManager = FileManager.default
-        if !fileManager.fileExists(atPath: url) {
-            try? fileManager.createDirectory(
-                atPath: url,
-                withIntermediateDirectories: true) // TODO handle
-
-            log.info("creating folder: \(url)")
-        }
     }
 
     private func createDirectories() {

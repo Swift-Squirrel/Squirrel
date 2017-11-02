@@ -118,17 +118,15 @@ public struct RouteError: SquirrelError {
 public struct RequestError: SquirrelError, HTTPErrorConvertible {
     /// Error kinds
     ///
-    /// - unseparatableHead: Can not separate head from body (missing: \n\r\n\r
-    /// - parseError: Can not parse request
     /// - unknownMethod: Unknown method
     /// - unknownProtocol: Unknown protocol
     /// - postBodyParseError: Can not decode body from POST request
+    /// - headParseError: Can not parse head
     public enum ErrorKind {
-        case unseparatableHead
-        case parseError(string: String, expectations: String)
         case unknownMethod(method: String)
         case unknownProtocol(prot: String)
         case postBodyParseError(errorString: String)
+        case headParseError
     }
 
     init(kind: ErrorKind, description: String? = nil) {
@@ -147,10 +145,8 @@ public struct RequestError: SquirrelError, HTTPErrorConvertible {
             msg = _description
         } else {
             switch kind {
-            case .unseparatableHead:
-                msg = "Can not separate head due to missing '\r\n\r\n' in data."
-            case .parseError:
-                msg = "Parse error."
+            case .headParseError:
+                msg = "Can not parse head"
             case .unknownMethod(let method):
                 msg = "Unknown method \(method)"
             case .unknownProtocol(let prot):
@@ -159,27 +155,17 @@ public struct RequestError: SquirrelError, HTTPErrorConvertible {
                 msg = "Can not parse: \(errorString)"
             }
         }
-        switch kind {
-        case .parseError(let string, let expectations):
-            msg += "\nRecieved:\n\t\(string)\nExpectations:\n\t\(expectations)"
-        default:
-            break
-        }
         return msg
     }
 
     /// HTTPError representation
     public var asHTTPError: HTTPError {
         switch kind {
-        case .unseparatableHead:
-            return HTTPError(status: .badRequest, description: "Can not separate head of request")
-        case .parseError:
-            return HTTPError(status: .badRequest, description: description)
         case .unknownMethod:
             return HTTPError(status: .notImplemented, description: description)
         case .unknownProtocol:
             return HTTPError(status: .httpVersionUnsupported, description: description)
-        case .postBodyParseError:
+        case .postBodyParseError, .headParseError:
             return HTTPError(status: .badRequest, description: description)
         }
     }

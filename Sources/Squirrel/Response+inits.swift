@@ -111,3 +111,34 @@ extension Response {
         }
     }
 }
+
+// MARK: - Download
+public extension Response {
+    /// Response which force download
+    ///
+    /// - Parameter file: Path to file
+    /// - Throws: file read Errors
+    convenience init (download file: Path) throws {
+        let fileName = file.lastComponent
+        try self.init(pathToFile: file)
+        setDownloadHeaders(fileName: fileName)
+    }
+
+    /// Response which force download
+    ///
+    /// - Parameters:
+    ///   - data: Data to download
+    ///   - name: Name
+    convenience init(download data: Data, name: String) {
+        self.init(body: data)
+        setDownloadHeaders(fileName: name)
+    }
+
+    private func setDownloadHeaders(fileName: String) {
+        setHeader(for: "Content-Disposition", to: "attachment; filename=\"\(fileName)\"")
+        setHeader(
+            for: HTTPHeaders.ContentType.contentType,
+            to: HTTPHeaders.ContentType.Application.forceDownload.rawValue)
+        setHeader(for: "Content-Transfer-Encoding", to: "binary")
+    }
+}
