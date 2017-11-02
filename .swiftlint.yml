@@ -3,7 +3,7 @@ included:
 
 excluded:
   - "Sources/App"
-    #  - "Sources/ResponseManager+addRoutes.swift"
+  - "Sources/Squirrel/TrisFoundationKeyValueDecoder.swift"
     #- Sources/HTTPHeaders.swift
 
 disabled_rules:
