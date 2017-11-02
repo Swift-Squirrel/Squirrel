@@ -152,7 +152,6 @@ open class Server: Router {
                 }
             }
         }
-
         guard path.exists else {
             throw HTTPError(status: .notFound, description: "\(request.path) is not found.")
         }
@@ -160,20 +159,27 @@ open class Server: Router {
         if path.isDirectory {
             let index = path + "index.html"
             if index.exists {
-                return try Response(pathToFile: index).responeHandler()
+                return chain(middlewares: middlewareGroup, handler: { _ in
+                    return try Response(pathToFile: index).responeHandler()
+                })
             }
             guard Config.sharedInstance.isAllowedDirBrowsing else {
                 throw HTTPError(
                     status: .forbidden,
                     description: "Directory browsing is not allowed")
             }
+
             // TODO Directory browsing
-            return Response(
-                headers: [.contentType(.html)],
-                body: "Not implemented".data(using: .utf8)!
-            ).responeHandler()
+            return chain(middlewares: middlewareGroup, handler: { _ in
+                return Response(
+                    headers: [.contentType(.html)],
+                    body: "Not implemented".data(using: .utf8)!
+                )
+            })
         }
-        return try Response(pathToFile: path).responeHandler()
+        return chain(middlewares: middlewareGroup, handler: { _ in
+            return try Response(pathToFile: path)
+        })
     }
 
     private func send(socket: Socket, response: Response) {
