@@ -33,8 +33,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route(
-        get url: String,
+    public func get(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (Request) throws -> Any) {
 
@@ -50,8 +50,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route(
-        get url: String,
+    public func get(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping () throws -> Any) {
 
@@ -67,8 +67,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route<T>(
-        get url: String,
+    public func get<T>(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (Request, T) throws -> Any) where T: Decodable {
 
@@ -84,8 +84,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route<T>(
-        get url: String,
+    public func get<T>(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (T) throws -> Any) where T: Decodable {
 
@@ -101,8 +101,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route(
-        post url: String,
+    public func post(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (Request) throws -> Any) {
 
@@ -117,8 +117,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route(
-        post url: String,
+    public func post(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping () throws -> Any) {
 
@@ -134,8 +134,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route<T>(
-        post url: String,
+    public func post<T>(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (Request, T) throws -> Any) where T: Decodable {
 
@@ -151,8 +151,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route<T>(
-        post url: String,
+    public func post<T>(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (T) throws -> Any) where T: Decodable {
 
@@ -168,8 +168,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route(
-        put url: String,
+    public func put(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (Request) throws -> Any) {
 
@@ -185,8 +185,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route(
-        put url: String,
+    public func put(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping () throws -> Any) {
 
@@ -202,8 +202,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route<T>(
-        put url: String,
+    public func put<T>(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (Request, T) throws -> Any) where T: Decodable {
 
@@ -219,8 +219,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route<T>(
-        put url: String,
+    public func put<T>(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (T) throws -> Any) where T: Decodable {
 
@@ -236,8 +236,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route(
-        delete url: String,
+    public func delete(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (Request) throws -> Any) {
 
@@ -253,8 +253,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route(
-        delete url: String,
+    public func delete(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping () throws -> Any) {
 
@@ -270,8 +270,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route<T>(
-        delete url: String,
+    public func delete<T>(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (Request, T) throws -> Any) where T: Decodable {
 
@@ -287,8 +287,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route<T>(
-        delete url: String,
+    public func delete<T>(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (T) throws -> Any) where T: Decodable {
 
@@ -304,8 +304,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route(
-        patch url: String,
+    public func patch(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (Request) throws -> Any) {
 
@@ -321,8 +321,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route(
-        patch url: String,
+    public func patch(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping () throws -> Any) {
 
@@ -338,8 +338,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route<T>(
-        patch url: String,
+    public func patch<T>(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (Request, T) throws -> Any) where T: Decodable {
 
@@ -355,8 +355,8 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
-    public func route<T>(
-        patch url: String,
+    public func patch<T>(
+        _ url: String,
         middlewares: [Middleware] = [],
         handler: @escaping (T) throws -> Any) where T: Decodable {
 

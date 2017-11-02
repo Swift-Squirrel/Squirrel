@@ -60,7 +60,7 @@ extension ResponseManager {
 
             let closure: AnyResponseHandler = {
                 [unowned self] (req: Request) in
-                let converted = try self.convertParameters(request: req, object: T.self)
+                let converted = try self.convertParameters(request: req, type: T.self)
                 return try handler(req, converted)
             }
             route(get: url, middlewares: middlewares, handler: closure)
@@ -73,7 +73,7 @@ extension ResponseManager {
 
         let closure: AnyResponseHandler = {
             [unowned self] (req: Request) in
-            let converted = try self.convertParameters(request: req, object: T.self)
+            let converted = try self.convertParameters(request: req, type: T.self)
             return try handler(converted)
         }
         route(get: url, middlewares: middlewares, handler: closure)
@@ -107,7 +107,7 @@ extension ResponseManager {
 
             let closure: AnyResponseHandler = {
                 [unowned self] (req: Request) in
-                let converted = try self.convertParameters(request: req, object: T.self)
+                let converted = try self.convertParameters(request: req, type: T.self)
                 return try handler(req, converted)
             }
             route(post: url, middlewares: middlewares, handler: closure)
@@ -120,7 +120,7 @@ extension ResponseManager {
 
         let closure: AnyResponseHandler = {
             [unowned self] (req: Request) in
-            let converted = try self.convertParameters(request: req, object: T.self)
+            let converted = try self.convertParameters(request: req, type: T.self)
             return try handler(converted)
         }
         route(post: url, middlewares: middlewares, handler: closure)
@@ -155,7 +155,7 @@ extension ResponseManager {
 
             let closure: AnyResponseHandler = {
                 [unowned self] (req: Request) in
-                let converted = try self.convertParameters(request: req, object: T.self)
+                let converted = try self.convertParameters(request: req, type: T.self)
                 return try handler(req, converted)
             }
             route(put: url, middlewares: middlewares, handler: closure)
@@ -168,7 +168,7 @@ extension ResponseManager {
 
         let closure: AnyResponseHandler = {
             [unowned self] (req: Request) in
-            let converted = try self.convertParameters(request: req, object: T.self)
+            let converted = try self.convertParameters(request: req, type: T.self)
             return try handler(converted)
         }
         route(put: url, middlewares: middlewares, handler: closure)
@@ -203,7 +203,7 @@ extension ResponseManager {
 
             let closure: AnyResponseHandler = {
                 [unowned self] (req: Request) in
-                let converted = try self.convertParameters(request: req, object: T.self)
+                let converted = try self.convertParameters(request: req, type: T.self)
                 return try handler(req, converted)
             }
             route(delete: url, middlewares: middlewares, handler: closure)
@@ -216,7 +216,7 @@ extension ResponseManager {
 
         let closure: AnyResponseHandler = {
             [unowned self] (req: Request) in
-            let converted = try self.convertParameters(request: req, object: T.self)
+            let converted = try self.convertParameters(request: req, type: T.self)
             return try handler(converted)
         }
         route(delete: url, middlewares: middlewares, handler: closure)
@@ -251,7 +251,7 @@ extension ResponseManager {
 
             let closure: AnyResponseHandler = {
                 [unowned self] (req: Request) in
-                let converted = try self.convertParameters(request: req, object: T.self)
+                let converted = try self.convertParameters(request: req, type: T.self)
                 return try handler(req, converted)
             }
             route(patch: url, middlewares: middlewares, handler: closure)
@@ -264,7 +264,7 @@ extension ResponseManager {
 
         let closure: AnyResponseHandler = {
             [unowned self] (req: Request) in
-            let converted = try self.convertParameters(request: req, object: T.self)
+            let converted = try self.convertParameters(request: req, type: T.self)
             return try handler(converted)
         }
         route(patch: url, middlewares: middlewares, handler: closure)
@@ -275,31 +275,29 @@ extension ResponseManager {
 extension ResponseManager {
     private func convertParameters<T>(
         request: Request,
-        object: T.Type)
-        throws -> T where T: Decodable {
+        type: T.Type) throws -> T where T: Decodable {
 
-            var values = request.urlParameters
+        var values = request.urlParameters
 
-            if request.method == HTTPHeaders.Method.post {
-                for (k, v) in request.postParameters {
-                    if values[k] == nil {
-                        values[k] = v
-                    }
-                }
-            }
-            for (k, v) in request.getParameters {
+        if request.method == HTTPHeaders.Method.post {
+            for (k, v) in request.postParameters {
                 if values[k] == nil {
                     values[k] = v
                 }
             }
-            do {
-                let jsonDecoder = JSONDecoder()
-                let jsonData = try JSONSerialization.data(withJSONObject: values)
-                return try jsonDecoder.decode(object, from: jsonData)
-            } catch {
-                throw HTTPError(
-                    status: .badRequest,
-                    description: "Wrong parameters type or missing parameters")
+        }
+        for (k, v) in request.getParameters {
+            if values[k] == nil {
+                values[k] = v
             }
+        }
+
+        let decoder = KeyValueDecoder()
+        guard let decoded = try? decoder.decode(type, from: values) else {
+            throw HTTPError(
+                status: .badRequest,
+                description: "Wrong parameters type or missing parameters")
+        }
+        return decoded
     }
 }
