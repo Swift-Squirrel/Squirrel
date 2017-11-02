@@ -5,10 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License
  *
- * See LICENSE.txt in the project root for license information
- * See CONTRIBUTORS.txt for the list of the project authors
+ * See https://github.com/tris-foundation/http/blob/master/LICENSE.txt in the project root for license information
+ * See https://github.com/tris-foundation/http/blob/master/CONTRIBUTORS.txt for the list of the project authors
  */
-// swiftlint:disable
 
 public struct KeyValueDecoder {
     public init() {}
