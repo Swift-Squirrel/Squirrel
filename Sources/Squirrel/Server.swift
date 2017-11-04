@@ -82,8 +82,8 @@ open class Server: Router {
                         let request = try Request(data: dataRead)
                         log.info(request.method.rawValue + " " + request.path)
 
-                        if (request.getHeader(for: "Connection") != nil)
-                            && request.getHeader(for: "Connection") != "keep-alive" {
+                        if let connection = request.headers[.connection],
+                            connection != "keep-alive" {
                             cont = false
                         }
                         let response = handle(request: request)

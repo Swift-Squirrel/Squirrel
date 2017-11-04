@@ -44,12 +44,9 @@ public struct ProtectedPageMiddleware: Middleware {
     public func respond(to request: Request, next: (Request) throws -> Any) throws -> Any {
         let anyResponse = try next(request)
         let response = try Response.parseAnyResponse(any: anyResponse)
-        response.setHeader(
-            for: "Cache-Control",
-            to: "nocache, no-store, max-age=0, must-revalidate")
-
-        response.setHeader(for: "Pragma", to: "no-cache")
-        response.setHeader(for: "Expires", to: "Fri, 01 Jan 1990 00:00:00 GMT")
+        response.headers[.cacheControl] = "nocache, no-store, max-age=0, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "Fri, 01 Jan 1990 00:00:00 GMT"
         return response
     }
 

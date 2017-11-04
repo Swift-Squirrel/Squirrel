@@ -232,6 +232,8 @@ public enum HTTPHeaderKey {
     case range
     case contentRange
     case acceptRanges
+    case cacheControl
+    case connection
 }
 
 // MARK: - CustomStringConvertible
@@ -267,6 +269,10 @@ extension HTTPHeaderKey: CustomStringConvertible {
             return "Content-Range"
         case .acceptRanges:
             return "Accept-Ranges"
+        case .cacheControl:
+            return "Cache-Control"
+        case .connection:
+            return "Connection"
         }
     }
 }

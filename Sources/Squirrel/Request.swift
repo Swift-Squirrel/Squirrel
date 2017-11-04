@@ -135,7 +135,7 @@ open class Request {
     // swiftlint:enable cyclomatic_complexity
 
     private func parseEncoding() {
-        guard var acceptLine = getHeader(for: "accept-encoding") else {
+        guard var acceptLine = headers[.acceptEncoding] else {
             return
         }
         acceptLine.replaceAll(matching: " ", with: "")
@@ -153,7 +153,7 @@ open class Request {
     }
 
     private func parseCookies() {
-        guard let cookieLine = getHeader(for: "Cookie") else {
+        guard let cookieLine = headers["Cookie"] else {
             return
         }
 
@@ -168,7 +168,7 @@ open class Request {
     }
 
     private func parsePostRequest() throws {
-        guard let contentType = getHeader(for: .contentType) else {
+        guard let contentType = headers[.contentType] else {
             throw HTTPError(
                 status: .unsupportedMediaType,
                 description: "Missing \(HTTPHeaderKey.contentType)")

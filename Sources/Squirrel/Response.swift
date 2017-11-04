@@ -43,21 +43,21 @@ open class Response {
     /// - Parameter status: HTTP Status
     public init(status: HTTPStatus) {
         self.status = status
-        setHeader(to: .contentType(.plain))
+        headers.set(to: .contentType(.plain))
 
         if let location = getLocationFor(status: status) {
-            setHeader(to: .location(location: location))
+            headers.set(to: .location(location: location))
         }
 
         switch status {
         case .unauthorized(let wwwAuthenticate):
-            setHeader(for: .wwwAuthenticate, to: wwwAuthenticate)
+            headers[.wwwAuthenticate] = wwwAuthenticate
         case .tooManyRequests(let retryAfter),
              .serviceUnavailable(let retryAfter):
-            setHeader(for: .retryAfter, to: retryAfter)
+            headers[.retryAfter] = retryAfter
         case .notAllowed(let allowed):
             let value = allowed.map { $0.rawValue }.joined(separator: ", ")
-            setHeader(for: .allow, to: value)
+            headers[.allow] = value
         default:
             break
         }
@@ -160,50 +160,50 @@ open class Response {
         if let fileExtension = path.`extension` {
             switch fileExtension.lowercased() {
             case "json":
-                setHeader(to: .contentType(.json))
+                headers.set(to: .contentType(.json))
             case "js":
-                setHeader(to: .contentType(.js))
+                headers.set(to: .contentType(.js))
 
             case "jpg", "jpeg":
-                setHeader(to: .contentType(.jpeg))
+                headers.set(to: .contentType(.jpeg))
             case "png":
-                setHeader(to: .contentType(.png))
+                headers.set(to: .contentType(.png))
             case "svg":
-                setHeader(to: .contentType(.svg))
+                headers.set(to: .contentType(.svg))
 
             case "css":
-                setHeader(to: .contentType(.css))
+                headers.set(to: .contentType(.css))
             case "html":
-                setHeader(to: .contentType(.html))
+                headers.set(to: .contentType(.html))
             case "txt":
-                setHeader(to: .contentType(.plain))
+                headers.set(to: .contentType(.plain))
 
             case "mp4":
-                setHeader(to: .contentType(.mp4))
+                headers.set(to: .contentType(.mp4))
                 headers[.acceptRanges] = "bytes"
             case "ogg":
-                setHeader(to: .contentType(.ogg))
+                headers.set(to: .contentType(.ogg))
                 headers[.acceptRanges] = "bytes"
             case "mov", "gt":
-                setHeader(to: .contentType(.mov))
+                headers.set(to: .contentType(.mov))
                 headers[.acceptRanges] = "bytes"
             case "webm":
-                setHeader(to: .contentType(.webm))
+                headers.set(to: .contentType(.webm))
                 headers[.acceptRanges] = "bytes"
             case "avi":
-                setHeader(to: .contentType(.avi))
+                headers.set(to: .contentType(.avi))
                 headers[.acceptRanges] = "bytes"
             case "wmv":
-                setHeader(to: .contentType(.wmv))
+                headers.set(to: .contentType(.wmv))
                 headers[.acceptRanges] = "bytes"
 
 
             default:
-                setHeader(to: .contentType(.plain))
+                headers.set(to: .contentType(.plain))
             }
         } else {
             // TODO Binary data
-            setHeader(to: .contentType(.plain))
+            headers.set(to: .contentType(.plain))
         }
     }
     // swiftlint:enable cyclomatic_complexity
