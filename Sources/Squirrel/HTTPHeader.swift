@@ -206,76 +206,6 @@ extension HTTPHeader: CustomStringConvertible {
 }
 
 
-/// HTTP header keys
-///
-/// - contentLength
-/// - location
-/// - wwwAuthenticate
-/// - retryAfter
-/// - allow
-/// - contentEncoding
-/// - acceptEncoding
-/// - contentType
-/// - setCookie
-public enum HTTPHeaderKey {
-    case contentLength
-    case location
-    case wwwAuthenticate
-    case retryAfter
-    case allow
-    case contentEncoding
-    case acceptEncoding
-    case contentType
-    case setCookie
-    case host
-    case version
-    case range
-    case contentRange
-    case acceptRanges
-    case cacheControl
-    case connection
-}
-
-// MARK: - CustomStringConvertible
-extension HTTPHeaderKey: CustomStringConvertible {
-    /// String representation of key
-    public var description: String {
-        switch self {
-        case .contentLength:
-            return "Content-Length"
-        case .location:
-            return "Location"
-        case .wwwAuthenticate:
-            return "WWW-Authenticate"
-        case .retryAfter:
-            return "Retry-After"
-        case .allow:
-            return "Allow"
-        case .contentEncoding:
-            return "Content-Encoding"
-        case .acceptEncoding:
-            return "Accept-Encoding"
-        case .contentType:
-            return "Content-Type"
-        case .setCookie:
-            return "Set-Cookie"
-        case .host:
-            return "Host"
-        case .version:
-            return "Version"
-        case .range:
-            return "Range"
-        case .contentRange:
-            return "Content-Range"
-        case .acceptRanges:
-            return "Accept-Ranges"
-        case .cacheControl:
-            return "Cache-Control"
-        case .connection:
-            return "Connection"
-        }
-    }
-}
 
 
 /// Check lowercased equality
@@ -295,19 +225,5 @@ public func == (lhs: String?, rhs: HTTPHeader.ContentType) -> Bool {
 ///   - rhs: rhs
 /// - Returns: If string representation in lowercased is same
 public func == (lhs: String?, rhs: HTTPHeader.Encoding) -> Bool {
-    return lhs?.lowercased() == rhs.description.lowercased()
-}
-// TODO remove
-//public func == (lhs: String?, rhs: HTTPHeader) -> Bool {
-//    return lhs?.lowercased() == rhs.description.lowercased()
-//}
-
-/// Check lowercased equality
-///
-/// - Parameters
-///   - lhs: lhs
-///   - rhs: rhs
-/// - Returns: If string representation in lowercased is same
-public func == (lhs: String?, rhs: HTTPHeaderKey) -> Bool {
     return lhs?.lowercased() == rhs.description.lowercased()
 }
