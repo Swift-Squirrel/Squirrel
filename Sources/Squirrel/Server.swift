@@ -191,7 +191,11 @@ open class Server: Router {
         let data = bodyBytes[range.bottom..<range.top + 1]
         response.headers["connection"] = "keep-alive"
         response.headers[.acceptRanges] = nil
-        response.headers.set(to: .contentRange(start: range.bottom, end: range.top, from: UInt(bodyBytes.count)))
+        response.headers.set(to: .contentRange(
+            start: range.bottom,
+            end: range.top,
+            from: UInt(bodyBytes.count)))
+
         let size = Int(range.top + 1 - range.bottom)
         response.headers.set(to: .contentLength(size: size))
 

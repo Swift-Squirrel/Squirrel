@@ -38,6 +38,7 @@ open class Request {
     /// Protocol
     public let httpProtocol: RequestLine.HTTPProtocol
 
+    /// HTTP Head
     public private(set) var headers: HTTPHead = [:]
 
     private let body: Data
@@ -48,6 +49,7 @@ open class Request {
     private var _urlParameters: [String: String] = [:]
     private var _postParameters: [String: String] = [:]
 
+    /// Requested range
     public let range: (bottom: UInt, top: UInt)?
 
     /// Post parameters when body is multipart

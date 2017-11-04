@@ -29,6 +29,7 @@ open class Response {
     /// Cookies
     public var cookies: [String: String] = [:]
 
+    /// HTTP head
     public var headers = HTTPHead()
 
     private var body = Data()
@@ -223,6 +224,7 @@ extension Response {
     }
 
     var gzippedBody: Data {
+        // swiftlint:disable:next force_try
         return try! body.gzipped()
     }
 }
