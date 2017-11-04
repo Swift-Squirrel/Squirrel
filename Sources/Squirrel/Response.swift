@@ -19,7 +19,8 @@ open class Response {
 
     private let routeTree = RouteTree()
 
-    private let status: HTTPStatus
+    /// Response status
+    public let status: HTTPStatus
 
     private let httpProtocolVersion = "HTTP/1.1"
 
@@ -28,22 +29,13 @@ open class Response {
     /// Cookies
     public var cookies: [String: String] = [:]
 
-    private var headers = HTTPHead()
+    public var headers = HTTPHead()
 
-    private var body = Data() {
-        didSet {
-            finalBody = nil
-        }
-    }
-
-    private var finalBody: Data? = nil
+    private var body = Data()
 
     /// Body length
     var bodyLength: Int {
-        if finalBody == nil {
-            finalBody = body
-        }
-        return Array<UInt8>(finalBody!).count
+        return body.count
     }
 
     /// Construct response with HTTP status
@@ -121,6 +113,7 @@ open class Response {
     /// - Parameters:
     ///   - key: Header Key
     ///   - value: Header Value
+    @available(*, deprecated: 0.3.1, message: "Use headers directly")
     public func setHeader(for key: String, to value: String) {
         headers[key] = value
     }
@@ -130,6 +123,7 @@ open class Response {
     /// - Parameters:
     ///   - key: Header Key
     ///   - value: Header Value
+    @available(*, deprecated: 0.3.1, message: "Use headers directly")
     public func setHeader(for key: HTTPHeaderKey, to value: String) {
         setHeader(for: key.description, to: value)
     }
@@ -137,6 +131,7 @@ open class Response {
     /// Set HTTP Header
     ///
     /// - Parameter keyValue: Header
+    @available(*, deprecated: 0.3.1, message:"Use headers directly")
     public func setHeader(to keyValue: HTTPHeader) {
         let (key, value) = keyValue.keyValue
         setHeader(for: key, to: value)
@@ -182,6 +177,27 @@ open class Response {
                 setHeader(to: .contentType(.html))
             case "txt":
                 setHeader(to: .contentType(.plain))
+
+            case "mp4":
+                setHeader(to: .contentType(.mp4))
+                headers[.acceptRanges] = "bytes"
+            case "ogg":
+                setHeader(to: .contentType(.ogg))
+                headers[.acceptRanges] = "bytes"
+            case "mov", "gt":
+                setHeader(to: .contentType(.mov))
+                headers[.acceptRanges] = "bytes"
+            case "webm":
+                setHeader(to: .contentType(.webm))
+                headers[.acceptRanges] = "bytes"
+            case "avi":
+                setHeader(to: .contentType(.avi))
+                headers[.acceptRanges] = "bytes"
+            case "wmv":
+                setHeader(to: .contentType(.wmv))
+                headers[.acceptRanges] = "bytes"
+
+
             default:
                 setHeader(to: .contentType(.plain))
             }
@@ -203,10 +219,18 @@ open class Response {
 
 // MARK: - Raw head and body
 extension Response {
-    var rawHeader: Data {
-        if finalBody == nil {
-            finalBody = rawBody
+    var rawPartialHeader: Data {
+        var header = httpProtocolVersion + " " + HTTPStatus.partialContent.description + "\r\n"
+
+        for (key, value) in headers {
+            header += key + ": " + value + "\r\n"
         }
+
+        header += "\r\n"
+        return header.data(using: .utf8)!
+    }
+
+    var rawHeader: Data {
         var header = httpProtocolVersion + " " + status.description + "\r\n"
         header += HTTPHeader.contentLength(size: bodyLength).description + "\r\n"
         if let encoding = contentEncoding {
@@ -224,18 +248,11 @@ extension Response {
     }
 
     var rawBody: Data {
-        if let final = finalBody {
-            return final
-        }
-        let res: Data
-        if contentEncoding != nil {
-            // swiftlint:disable:next force_try
-            res = try! body.gzipped()
-        } else {
-            res = body
-        }
-        finalBody = res
-        return res
+        return body
+    }
+
+    var gzippedBody: Data {
+        return try! body.gzipped()
     }
 }
 

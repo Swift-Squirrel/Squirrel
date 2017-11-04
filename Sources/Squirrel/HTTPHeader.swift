@@ -67,6 +67,8 @@ public enum HTTPHeader {
     case contentEncoding(HTTPHeader.Encoding)
     case contentType(HTTPHeader.ContentType)
     case location(location: String)
+    case range(UInt, UInt)
+    case contentRange(start: UInt, end: UInt, from: UInt)
 }
 
 // MARK: - Hashable
@@ -82,6 +84,10 @@ extension HTTPHeader: Hashable {
             return 2
         case .location:
             return 3
+        case .range:
+            return 4
+        case .contentRange:
+            return 5
         }
     }
 
@@ -134,6 +140,15 @@ public extension HTTPHeader {
         // multipart
         case formData = "form-data"
 
+        // video
+        case mp4
+        case ogg
+        case mov = "quicktime"
+        case webm
+        case wmv = "x-ms-wmv"
+        case avi = "x-msvideo"
+
+
         /// MIME representation
         public var description: String {
             let mime: String
@@ -146,6 +161,8 @@ public extension HTTPHeader {
                 mime = "application"
             case .formData:
                 mime = "multipart"
+            case .mp4, .ogg, .mov, .webm, .wmv, .avi:
+                mime = "video"
             }
             return "\(mime)/\(rawValue)"
         }
@@ -177,6 +194,12 @@ extension HTTPHeader: CustomStringConvertible {
         case .location(let location):
             key = .location
             value = location
+        case .range(let bottom, let top):
+            key = .range
+            value = "bytes=\(bottom)-\(top)"
+        case .contentRange(let start, let end, let from):
+            key = .contentRange
+            value = "bytes \(start)-\(end)/\(from)"
         }
         return (key.description, value)
     }
@@ -206,6 +229,9 @@ public enum HTTPHeaderKey {
     case setCookie
     case host
     case version
+    case range
+    case contentRange
+    case acceptRanges
 }
 
 // MARK: - CustomStringConvertible
@@ -235,6 +261,12 @@ extension HTTPHeaderKey: CustomStringConvertible {
             return "Host"
         case .version:
             return "Version"
+        case .range:
+            return "Range"
+        case .contentRange:
+            return "Content-Range"
+        case .acceptRanges:
+            return "Accept-Ranges"
         }
     }
 }
@@ -246,8 +278,8 @@ extension HTTPHeaderKey: CustomStringConvertible {
 ///   - lhs: lhs
 ///   - rhs: rhs
 /// - Returns: If string representation in lowercased is same
-public func == (lhs: String, rhs: HTTPHeader.ContentType) -> Bool {
-    return lhs.lowercased() == rhs.description.lowercased()
+public func == (lhs: String?, rhs: HTTPHeader.ContentType) -> Bool {
+    return lhs?.lowercased() == rhs.description.lowercased()
 }
 
 /// Check lowercased equality
@@ -256,16 +288,20 @@ public func == (lhs: String, rhs: HTTPHeader.ContentType) -> Bool {
 ///   - lhs: lhs
 ///   - rhs: rhs
 /// - Returns: If string representation in lowercased is same
-public func == (lhs: String, rhs: HTTPHeader.Encoding) -> Bool {
-    return lhs.lowercased() == rhs.description.lowercased()
+public func == (lhs: String?, rhs: HTTPHeader.Encoding) -> Bool {
+    return lhs?.lowercased() == rhs.description.lowercased()
 }
+// TODO remove
+//public func == (lhs: String?, rhs: HTTPHeader) -> Bool {
+//    return lhs?.lowercased() == rhs.description.lowercased()
+//}
 
 /// Check lowercased equality
 ///
-/// - Parameters:
+/// - Parameters
 ///   - lhs: lhs
 ///   - rhs: rhs
 /// - Returns: If string representation in lowercased is same
-public func == (lhs: String, rhs: HTTPHeaderKey) -> Bool {
-    return lhs.lowercased() == rhs.description.lowercased()
+public func == (lhs: String?, rhs: HTTPHeaderKey) -> Bool {
+    return lhs?.lowercased() == rhs.description.lowercased()
 }

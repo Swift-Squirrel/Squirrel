@@ -92,7 +92,11 @@ open class Server: Router {
                                 response.contentEncoding = .gzip
                             }
                         }
-                        send(socket: socket, response: response)
+                        if let range = request.range {
+                            sendPartial(socket: socket, range: range, response: response)
+                        } else {
+                            send(socket: socket, response: response)
+                        }
                     } catch let error {
                         let response = ErrorHandler.sharedInstance.response(for: error)
                         send(socket: socket, response: response)
@@ -182,22 +186,29 @@ open class Server: Router {
         })
     }
 
+    private func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt), response: Response) {
+        let bodyBytes = response.rawBody
+        let data = bodyBytes[range.bottom..<range.top + 1]
+        response.headers["connection"] = "keep-alive"
+        response.headers[.acceptRanges] = nil
+        response.headers.set(to: .contentRange(start: range.bottom, end: range.top, from: UInt(bodyBytes.count)))
+        let size = Int(range.top + 1 - range.bottom)
+        response.headers.set(to: .contentLength(size: size))
+
+        let head = response.rawPartialHeader
+        let _ = try? socket.write(from: head + data)
+    }
+
     private func send(socket: Socket, response: Response) {
-        let body = response.rawBody
-        let bodyBytes: [UInt8] = Array(body)
-        if bodyBytes.count <= 4096 {
-            let _ = try? socket.write(from: response.rawHeader + body)
-        } else {
-            response.setHeader(for: "Transfer-Encoding", to: "chunked")
-
-            var c = bodyBytes.count
+        func sendChunked(head: Data, body: Data) {
+            response.headers["Transfer-Encoding"] = "chunked"
+            var c = body.count
             var i = 0
-            let _ = try? socket.write(from: response.rawHeader)
-
+            let _ = try? socket.write(from: head)
             let chunkSize = 2048
 
             while c >= chunkSize {
-                let d: [UInt8] = Array(bodyBytes[(i*chunkSize)...(chunkSize*(i+1) - 1)])
+                let d = body[(i*chunkSize)..<(chunkSize*(i+1))]
                 var d1: Data = (String(format: "%X", d.count) + "\r\n").data(using: .utf8)!
                 d1.append(contentsOf: d)
                 d1.append("\r\n".data(using: .utf8)!)
@@ -207,15 +218,25 @@ open class Server: Router {
                 i += 1
             }
             if c > 0 {
-                let d: [UInt8] = Array(bodyBytes[(bodyBytes.count - c)...(bodyBytes.count - 1)])
+                let d = body[(body.count - c)..<(body.count)]
                 var d1: Data = (String(format: "%X", c) + "\r\n").data(using: .utf8)!
                 d1.append(contentsOf: d)
                 d1.append("\r\n".data(using: .utf8)!)
 
                 let _ = try? socket.write(from: d1)
-                c = 0
             }
             let _ = try? socket.write(from: "0\r\n\r\n".data(using: .utf8)!)
         }
+
+        let body: Data
+        if response.contentEncoding == .gzip {
+            body = response.gzippedBody
+            response.headers.set(to: .contentEncoding(.gzip))
+        } else {
+            body = response.rawBody
+        }
+        response.headers.set(to: .contentLength(size: body.count))
+        let head = response.rawHeader
+        let _ = try? socket.write(from: head + body)
     }
 }
