@@ -92,7 +92,7 @@ class RequestTests: XCTestCase {
         XCTAssertTrue(request.getParameters.isEmpty)
         XCTAssertEqual(request.getCookie(for: "PHPSESSID"), "r2t5uvjq435r4q7ib3vtdjq120")
         XCTAssertEqual(request.cookies.count, 1)
-        XCTAssertEqual(request.getHeader(for: "Accept-Charset"), "ISO-8859-1,utf-8;q=0.7,*;q=0.7")
+        XCTAssertEqual(request.headers[.acceptCharset], "ISO-8859-1,utf-8;q=0.7,*;q=0.7")
     }
 
     func testGetParams() {
@@ -132,7 +132,7 @@ class RequestTests: XCTestCase {
         XCTAssertEqual(request.method, .post)
         XCTAssertEqual(request.path, "/foo.php")
         XCTAssertEqual(request.urlParameters.count, 0)
-        XCTAssertEqual(request.getHeader(for: "Referer"), "http://localhost/test.php")
+        XCTAssertEqual(request.headers[.referer], "http://localhost/test.php")
         XCTAssertTrue(request.getParameters.isEmpty)
         XCTAssertEqual(request.postParameters.count, 3)
         let postParams: [String: String] = [
