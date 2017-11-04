@@ -5,22 +5,33 @@
 //  Created by Filip Klembara on 11/2/17.
 //
 
-struct HTTPHead {
-    typealias DictionaryType = [String: String]
+/// HTTP head
+public struct HTTPHead {
+    /// Inner dictionary type
+    public typealias DictionaryType = [String: String]
     private var headers: DictionaryType
 
-    init(headers: [String: String] = [:]) {
+    /// Constructs from key value dictionary
+    ///
+    /// - Parameter headers: New headers
+    public init(headers: [String: String] = [:]) {
         self.headers = headers
     }
 
-    init(headers: [HTTPHeaderKey: String]) {
+    /// Constructs from key value dictionary
+    ///
+    /// - Parameter headers: New headers
+    public init(headers: [HTTPHeaderKey: String]) {
         self.headers = [:]
         for (key, value) in headers {
             self[key] = value
         }
     }
 
-    init(headers: [HTTPHeader]) {
+    /// Constructs from HTTPHeader array
+    ///
+    /// - Parameter headers: New headers
+    public init(headers: [HTTPHeader]) {
         self.headers = [:]
         for head in headers {
             set(to: head)
@@ -28,24 +39,40 @@ struct HTTPHead {
     }
 }
 
+// MARK: - Collection
 extension HTTPHead: Collection {
-    typealias Index = DictionaryType.Index
-    typealias Element = DictionaryType.Element
+    /// Index type
+    public typealias Index = DictionaryType.Index
+    /// Element type
+    public typealias Element = DictionaryType.Element
 
-    var startIndex: Index { return headers.startIndex }
-    var endIndex: Index { return headers.endIndex }
-    // Required subscript, based on a dictionary index
-    subscript(index: Index) -> (key: String, value: String) {
+    /// Start index
+    public var startIndex: Index { return headers.startIndex }
+    /// End index
+    public var endIndex: Index { return headers.endIndex }
+
+    /// Index subscript
+    ///
+    /// - Parameter index: Index
+    public subscript(index: Index) -> (key: String, value: String) {
         get { return headers[index] }
     }
-    // Method that returns the next index when iterating
-    func index(after index: DictionaryType.Index) -> DictionaryType.Index {
+
+    /// Returns next index
+    ///
+    /// - Parameter index: Index
+    /// - Returns: Index after passed index
+    public func index(after index: DictionaryType.Index) -> DictionaryType.Index {
         return headers.index(after: index)
     }
 }
 
+// MARK: - Subscripts
 extension HTTPHead {
-    subscript(key: String) -> String? {
+    /// String key subscript (case-insensitive)
+    ///
+    /// - Parameter key: Key
+    public subscript(key: String) -> String? {
         set {
             headers[key.lowercased()] = newValue
         }
@@ -54,7 +81,10 @@ extension HTTPHead {
         }
     }
 
-    subscript(key: HTTPHeaderKey) -> String? {
+    /// HTTPHeaderKey subscript
+    ///
+    /// - Parameter key: Key
+    public subscript(key: HTTPHeaderKey) -> String? {
         set {
             headers[key.description.lowercased()] = newValue
         }
@@ -63,14 +93,21 @@ extension HTTPHead {
         }
     }
 
-    mutating func set(to keyValue: HTTPHeader) {
+    /// Set header
+    ///
+    /// - Parameter keyValue: HTTPHeader key value
+    public mutating func set(to keyValue: HTTPHeader) {
         let (key, value) = keyValue.keyValue
         headers[key] = value
     }
 }
 
+// MARK: - ExpressibleByDictionaryLiteral
 extension HTTPHead: ExpressibleByDictionaryLiteral {
-    init(dictionaryLiteral elements: (String, String)...) {
+    /// Constructs from dictionary literal
+    ///
+    /// - Parameter elements: dictionary literal
+    public init(dictionaryLiteral elements: (String, String)...) {
         self.headers = [:]
         for (key, value) in elements {
             headers[key] = value
@@ -78,8 +115,12 @@ extension HTTPHead: ExpressibleByDictionaryLiteral {
     }
 }
 
+// MARK: - ExpressibleByArrayLiteral
 extension HTTPHead: ExpressibleByArrayLiteral {
-    init(arrayLiteral elements: HTTPHeader...) {
+    /// Constructs from array literal
+    ///
+    /// - Parameter elements: Array literal
+    public init(arrayLiteral elements: HTTPHeader...) {
         self.headers = [:]
         for head in elements {
             set(to: head)

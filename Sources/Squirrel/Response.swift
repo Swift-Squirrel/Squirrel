@@ -19,7 +19,8 @@ open class Response {
 
     private let routeTree = RouteTree()
 
-    private let status: HTTPStatus
+    /// Response status
+    public let status: HTTPStatus
 
     private let httpProtocolVersion = "HTTP/1.1"
 
@@ -28,22 +29,14 @@ open class Response {
     /// Cookies
     public var cookies: [String: String] = [:]
 
-    private var headers = HTTPHead()
+    /// HTTP head
+    public var headers = HTTPHead()
 
-    private var body = Data() {
-        didSet {
-            finalBody = nil
-        }
-    }
-
-    private var finalBody: Data? = nil
+    private var body = Data()
 
     /// Body length
     var bodyLength: Int {
-        if finalBody == nil {
-            finalBody = body
-        }
-        return Array<UInt8>(finalBody!).count
+        return body.count
     }
 
     /// Construct response with HTTP status
@@ -51,21 +44,21 @@ open class Response {
     /// - Parameter status: HTTP Status
     public init(status: HTTPStatus) {
         self.status = status
-        setHeader(to: .contentType(.plain))
+        headers.set(to: .contentType(.plain))
 
         if let location = getLocationFor(status: status) {
-            setHeader(to: .location(location: location))
+            headers.set(to: .location(location: location))
         }
 
         switch status {
         case .unauthorized(let wwwAuthenticate):
-            setHeader(for: .wwwAuthenticate, to: wwwAuthenticate)
+            headers[.wwwAuthenticate] = wwwAuthenticate
         case .tooManyRequests(let retryAfter),
              .serviceUnavailable(let retryAfter):
-            setHeader(for: .retryAfter, to: retryAfter)
+            headers[.retryAfter] = retryAfter
         case .notAllowed(let allowed):
             let value = allowed.map { $0.rawValue }.joined(separator: ", ")
-            setHeader(for: .allow, to: value)
+            headers[.allow] = value
         default:
             break
         }
@@ -116,32 +109,6 @@ open class Response {
         }
     }
 
-    /// Set HTTP Header
-    ///
-    /// - Parameters:
-    ///   - key: Header Key
-    ///   - value: Header Value
-    public func setHeader(for key: String, to value: String) {
-        headers[key] = value
-    }
-
-    /// Set HTTP Header
-    ///
-    /// - Parameters:
-    ///   - key: Header Key
-    ///   - value: Header Value
-    public func setHeader(for key: HTTPHeaderKey, to value: String) {
-        setHeader(for: key.description, to: value)
-    }
-
-    /// Set HTTP Header
-    ///
-    /// - Parameter keyValue: Header
-    public func setHeader(to keyValue: HTTPHeader) {
-        let (key, value) = keyValue.keyValue
-        setHeader(for: key, to: value)
-    }
-
     // swiftlint:disable cyclomatic_complexity
     // swiftlint:disable function_body_length
 
@@ -165,29 +132,50 @@ open class Response {
         if let fileExtension = path.`extension` {
             switch fileExtension.lowercased() {
             case "json":
-                setHeader(to: .contentType(.json))
+                headers.set(to: .contentType(.json))
             case "js":
-                setHeader(to: .contentType(.js))
+                headers.set(to: .contentType(.js))
 
             case "jpg", "jpeg":
-                setHeader(to: .contentType(.jpeg))
+                headers.set(to: .contentType(.jpeg))
             case "png":
-                setHeader(to: .contentType(.png))
+                headers.set(to: .contentType(.png))
             case "svg":
-                setHeader(to: .contentType(.svg))
+                headers.set(to: .contentType(.svg))
 
             case "css":
-                setHeader(to: .contentType(.css))
+                headers.set(to: .contentType(.css))
             case "html":
-                setHeader(to: .contentType(.html))
+                headers.set(to: .contentType(.html))
             case "txt":
-                setHeader(to: .contentType(.plain))
+                headers.set(to: .contentType(.plain))
+
+            case "mp4":
+                headers.set(to: .contentType(.mp4))
+                headers[.acceptRanges] = "bytes"
+            case "ogg":
+                headers.set(to: .contentType(.ogg))
+                headers[.acceptRanges] = "bytes"
+            case "mov", "gt":
+                headers.set(to: .contentType(.mov))
+                headers[.acceptRanges] = "bytes"
+            case "webm":
+                headers.set(to: .contentType(.webm))
+                headers[.acceptRanges] = "bytes"
+            case "avi":
+                headers.set(to: .contentType(.avi))
+                headers[.acceptRanges] = "bytes"
+            case "wmv":
+                headers.set(to: .contentType(.wmv))
+                headers[.acceptRanges] = "bytes"
+
+
             default:
-                setHeader(to: .contentType(.plain))
+                headers.set(to: .contentType(.plain))
             }
         } else {
             // TODO Binary data
-            setHeader(to: .contentType(.plain))
+            headers.set(to: .contentType(.plain))
         }
     }
     // swiftlint:enable cyclomatic_complexity
@@ -203,10 +191,18 @@ open class Response {
 
 // MARK: - Raw head and body
 extension Response {
-    var rawHeader: Data {
-        if finalBody == nil {
-            finalBody = rawBody
+    var rawPartialHeader: Data {
+        var header = httpProtocolVersion + " " + HTTPStatus.partialContent.description + "\r\n"
+
+        for (key, value) in headers {
+            header += key + ": " + value + "\r\n"
         }
+
+        header += "\r\n"
+        return header.data(using: .utf8)!
+    }
+
+    var rawHeader: Data {
         var header = httpProtocolVersion + " " + status.description + "\r\n"
         header += HTTPHeader.contentLength(size: bodyLength).description + "\r\n"
         if let encoding = contentEncoding {
@@ -224,18 +220,12 @@ extension Response {
     }
 
     var rawBody: Data {
-        if let final = finalBody {
-            return final
-        }
-        let res: Data
-        if contentEncoding != nil {
-            // swiftlint:disable:next force_try
-            res = try! body.gzipped()
-        } else {
-            res = body
-        }
-        finalBody = res
-        return res
+        return body
+    }
+
+    var gzippedBody: Data {
+        // swiftlint:disable:next force_try
+        return try! body.gzipped()
     }
 }
 

@@ -19,7 +19,7 @@ public extension Response {
     /// - Throws: Filesystem errors
     public convenience init(html path: Path) throws {
         try self.init(pathToFile: path)
-        setHeader(to: .contentType(.html))
+        headers.set(to: .contentType(.html))
     }
 
     /// Construct html response from given string
@@ -133,8 +133,8 @@ public extension Response {
     }
 
     private func setDownloadHeaders(fileName: String) {
-        setHeader(for: "Content-Disposition", to: "attachment; filename=\"\(fileName)\"")
-        setHeader(to: .contentType(.forceDownload))
-        setHeader(for: "Content-Transfer-Encoding", to: "binary")
+        headers.set(to: .contentType(.forceDownload))
+        headers["Content-Disposition"] = "attachment; filename=\"\(fileName)\""
+        headers["Content-Transfer-Encoding"] = "binary"
     }
 }

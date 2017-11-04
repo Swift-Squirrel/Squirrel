@@ -38,7 +38,8 @@ open class Request {
     /// Protocol
     public let httpProtocol: RequestLine.HTTPProtocol
 
-    private var headers: HTTPHead = [:]
+    /// HTTP Head
+    public private(set) var headers: HTTPHead = [:]
 
     private let body: Data
 
@@ -47,6 +48,9 @@ open class Request {
 
     private var _urlParameters: [String: String] = [:]
     private var _postParameters: [String: String] = [:]
+
+    /// Requested range
+    public let range: (bottom: UInt, top: UInt)?
 
     /// Post parameters when body is multipart
     public private(set) var postMultipart: [String: Multipart] = [:]
@@ -108,6 +112,20 @@ open class Request {
         } else {
             body = Data()
         }
+        var _range: (bottom: UInt, top: UInt)? = nil
+        if let range = headers[.range] {
+            if range.hasPrefix("bytes=") {
+                let index = range.index(range.startIndex, offsetBy: 6)
+                let inter = range[index...]
+                let numbers = inter.split(separator: "-", maxSplits: 1)
+                if numbers.count == 2 {
+                    if let bottom = UInt(numbers.first!), let top = UInt(numbers.last!) {
+                        _range = (bottom: bottom, top: top)
+                    }
+                }
+            }
+        }
+        self.range = _range
         parseCookies()
         parseEncoding()
 
@@ -119,7 +137,7 @@ open class Request {
     // swiftlint:enable cyclomatic_complexity
 
     private func parseEncoding() {
-        guard var acceptLine = getHeader(for: "accept-encoding") else {
+        guard var acceptLine = headers[.acceptEncoding] else {
             return
         }
         acceptLine.replaceAll(matching: " ", with: "")
@@ -137,7 +155,7 @@ open class Request {
     }
 
     private func parseCookies() {
-        guard let cookieLine = getHeader(for: "Cookie") else {
+        guard let cookieLine = headers["Cookie"] else {
             return
         }
 
@@ -152,7 +170,7 @@ open class Request {
     }
 
     private func parsePostRequest() throws {
-        guard let contentType = getHeader(for: .contentType) else {
+        guard let contentType = headers[.contentType] else {
             throw HTTPError(
                 status: .unsupportedMediaType,
                 description: "Missing \(HTTPHeaderKey.contentType)")
@@ -336,22 +354,6 @@ extension Request {
     /// Returns all get parameters
     public var getParameters: [String: String?] {
         return _path.allQueryParams
-    }
-
-    /// Return header
-    ///
-    /// - Parameter key: Header name
-    /// - Returns: Header value
-    public func getHeader(for key: String) -> String? {
-        return headers[key]
-    }
-
-    /// Get header
-    ///
-    /// - Parameter key: HTTP header key
-    /// - Returns: Header value
-    public func getHeader(for key: HTTPHeaderKey) -> String? {
-        return headers[key]
     }
 }
 

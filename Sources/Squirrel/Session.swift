@@ -140,7 +140,7 @@ struct SessionConfig {
 struct SessionManager: SessionBuilder {
 
     func new(for request: Request) -> SessionProtocol? {
-        guard let userAgent = request.getHeader(for: SessionConfig.userAgent) else {
+        guard let userAgent = request.headers[SessionConfig.userAgent] else {
             return nil
         }
         let id = randomString()
@@ -152,7 +152,7 @@ struct SessionManager: SessionBuilder {
     }
 
     func get(for request: Request) -> SessionProtocol? {
-        guard let userAgent = request.getHeader(for: SessionConfig.userAgent) else {
+        guard let userAgent = request.headers[SessionConfig.userAgent] else {
             return nil
         }
         guard let id = request.getCookie(for: SessionConfig.sessionName) else {

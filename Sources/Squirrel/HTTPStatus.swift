@@ -13,6 +13,7 @@ public enum HTTPStatus: CustomStringConvertible {
     case accepted
     case noContent
     case resetContent
+    case partialContent
 
     // 3xx
     case movedPermanently(location: String)
@@ -58,6 +59,8 @@ public enum HTTPStatus: CustomStringConvertible {
             return "No Content"
         case .resetContent:
             return "Reset Content"
+        case .partialContent:
+            return "Partial Content"
 
         case .movedPermanently:
             return "Moved Permanently"
@@ -128,6 +131,8 @@ public enum HTTPStatus: CustomStringConvertible {
             return 204
         case .resetContent:
             return 205
+        case .partialContent:
+            return 206
 
         case .movedPermanently:
             return 301
