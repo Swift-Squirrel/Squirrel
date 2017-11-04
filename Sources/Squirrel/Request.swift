@@ -353,24 +353,6 @@ extension Request {
     public var getParameters: [String: String?] {
         return _path.allQueryParams
     }
-
-    /// Return header
-    ///
-    /// - Parameter key: Header name
-    /// - Returns: Header value
-    @available(*, deprecated: 0.3.1, message: "Use headers directly")
-    public func getHeader(for key: String) -> String? {
-        return headers[key]
-    }
-
-    /// Get header
-    ///
-    /// - Parameter key: HTTP header key
-    /// - Returns: Header value
-    @available(*, deprecated: 0.3.1, message: "Use headers directly")
-    public func getHeader(for key: HTTPHeaderKey) -> String? {
-        return headers[key]
-    }
 }
 
 // MARK: - Session control

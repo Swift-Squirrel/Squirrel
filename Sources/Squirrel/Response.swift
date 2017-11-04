@@ -108,35 +108,6 @@ open class Response {
         }
     }
 
-    /// Set HTTP Header
-    ///
-    /// - Parameters:
-    ///   - key: Header Key
-    ///   - value: Header Value
-    @available(*, deprecated: 0.3.1, message: "Use headers directly")
-    public func setHeader(for key: String, to value: String) {
-        headers[key] = value
-    }
-
-    /// Set HTTP Header
-    ///
-    /// - Parameters:
-    ///   - key: Header Key
-    ///   - value: Header Value
-    @available(*, deprecated: 0.3.1, message: "Use headers directly")
-    public func setHeader(for key: HTTPHeaderKey, to value: String) {
-        setHeader(for: key.description, to: value)
-    }
-
-    /// Set HTTP Header
-    ///
-    /// - Parameter keyValue: Header
-    @available(*, deprecated: 0.3.1, message:"Use headers directly")
-    public func setHeader(to keyValue: HTTPHeader) {
-        let (key, value) = keyValue.keyValue
-        setHeader(for: key, to: value)
-    }
-
     // swiftlint:disable cyclomatic_complexity
     // swiftlint:disable function_body_length
 
