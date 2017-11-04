@@ -204,6 +204,8 @@ public enum HTTPHeaderKey {
     case acceptEncoding
     case contentType
     case setCookie
+    case host
+    case version
 }
 
 // MARK: - CustomStringConvertible
@@ -229,6 +231,10 @@ extension HTTPHeaderKey: CustomStringConvertible {
             return "Content-Type"
         case .setCookie:
             return "Set-Cookie"
+        case .host:
+            return "Host"
+        case .version:
+            return "Version"
         }
     }
 }

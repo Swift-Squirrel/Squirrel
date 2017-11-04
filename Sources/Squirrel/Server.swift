@@ -160,7 +160,7 @@ open class Server: Router {
             let index = path + "index.html"
             if index.exists {
                 return chain(middlewares: middlewareGroup, handler: { _ in
-                    return try Response(pathToFile: index).responeHandler()
+                    return try Response(pathToFile: index)
                 })
             }
             guard Config.sharedInstance.isAllowedDirBrowsing else {

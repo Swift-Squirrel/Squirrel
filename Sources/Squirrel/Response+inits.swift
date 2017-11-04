@@ -41,6 +41,18 @@ public extension Response {
     ///
     /// - Parameter json: Object to serialize
     /// - Throws: `JSONError` and swift JSON errors
+    public convenience init<T: Encodable>(encodable object: T) throws {
+        let data = try JSONCoding.encodeDataJSON(object: object)
+        self.init(
+            headers: [.contentType(.json)],
+            body: data
+        )
+    }
+
+    /// Constructs JSON response from given object
+    ///
+    /// - Parameter json: Object to serialize
+    /// - Throws: `JSONError` and swift JSON errors
     public convenience init<T>(object: T) throws {
         let data = try JSONCoding.encodeDataJSON(object: object)
         self.init(
