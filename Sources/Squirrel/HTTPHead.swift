@@ -15,7 +15,10 @@ public struct HTTPHead {
     ///
     /// - Parameter headers: New headers
     public init(headers: [String: String] = [:]) {
-        self.headers = headers
+        self.headers = [:]
+        for (key, value) in headers {
+            self[key] = value
+        }
     }
 
     /// Constructs from key value dictionary
