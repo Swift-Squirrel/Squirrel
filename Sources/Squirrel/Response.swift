@@ -204,10 +204,6 @@ extension Response {
 
     var rawHeader: Data {
         var header = httpProtocolVersion + " " + status.description + "\r\n"
-        header += HTTPHeader.contentLength(size: bodyLength).description + "\r\n"
-        if let encoding = contentEncoding {
-            header += HTTPHeader.contentEncoding(encoding).description + "\r\n"
-        }
 
         for (key, value) in headers {
             header += key + ": " + value + "\r\n"
@@ -225,7 +221,7 @@ extension Response {
 
     var gzippedBody: Data {
         // swiftlint:disable:next force_try
-        return try! body.gzipped()
+        return try! rawBody.gzipped()
     }
 }
 
