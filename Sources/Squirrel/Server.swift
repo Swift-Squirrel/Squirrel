@@ -14,32 +14,40 @@ import SquirrelConfig
 
 /// Server class
 open class Server: Router {
-
     private let port: UInt16
     let bufferSize = 20
     var listenSocket: Socket? = nil
     var connected = [Int32: Socket]()
     var acceptNewConnection = true
     let serverRoot: Path
-
+    /// url
+    public let url: String
     /// global middlewares used for all routes
     public let middlewareGroup: [Middleware]
-
-    /// Construct server
+    /// Constructs erver
     ///
     /// - Parameters:
-    ///   - port: Port for HTTP requests
-    ///   - root: Root directory of server
+    ///   - base: Base url (default: "/")
+    ///   - port: Port for HTTP requests (default: 8080)
+    ///   - root: Root directory of server (default: "Public")
     ///   - globalMiddlewares: Middlewares used on all routes (default: [])
     public init(
+        base: String = "/",
         port: UInt16 = Config.sharedInstance.port,
         serverRoot root: Path = Config.sharedInstance.serverRoot,
         globalMiddlewares: [Middleware] = []) {
 
+        if base.first == "/" {
+            self.url = base
+        } else {
+            squirrelConfig.log.warning(
+                "Server base url should start with '/', (added automatically)")
+
+            self.url = "/\(base)"
+        }
         self.port = port
         self.serverRoot = root
         self.middlewareGroup = globalMiddlewares
-
     }
 
     deinit {

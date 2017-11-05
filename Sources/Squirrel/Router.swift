@@ -8,15 +8,18 @@
 import Foundation
 
 /// Router
-public protocol Router: MiddlewareGroup {
+public protocol Router: RouteGroup {
 
 }
 
 struct CommonRouter: Router {
+    var url: String
+
     var middlewareGroup: [Middleware]
 
-    init(middlewares: [Middleware]) {
+    init(_ url: String, middlewares: [Middleware]) {
         middlewareGroup = middlewares
+        self.url = url
     }
 }
 
@@ -39,7 +42,7 @@ extension Router {
         handler: @escaping (Request) throws -> Any) {
 
         responseManager.route(
-            get: url,
+            get: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -56,7 +59,7 @@ extension Router {
         handler: @escaping () throws -> Any) {
 
         responseManager.route(
-            get: url,
+            get: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -73,7 +76,7 @@ extension Router {
         handler: @escaping (Request, T) throws -> Any) where T: Decodable {
 
         responseManager.route(
-            get: url,
+            get: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -90,7 +93,7 @@ extension Router {
         handler: @escaping (T) throws -> Any) where T: Decodable {
 
         responseManager.route(
-            get: url,
+            get: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -107,7 +110,7 @@ extension Router {
         handler: @escaping (Request) throws -> Any) {
 
         responseManager.route(
-            post: url,
+            post: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares, handler: handler)
     }
 
@@ -123,7 +126,7 @@ extension Router {
         handler: @escaping () throws -> Any) {
 
         responseManager.route(
-            post: url,
+            post: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -140,7 +143,7 @@ extension Router {
         handler: @escaping (Request, T) throws -> Any) where T: Decodable {
 
         responseManager.route(
-            post: url,
+            post: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -157,7 +160,7 @@ extension Router {
         handler: @escaping (T) throws -> Any) where T: Decodable {
 
         responseManager.route(
-            post: url,
+            post: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -174,7 +177,7 @@ extension Router {
         handler: @escaping (Request) throws -> Any) {
 
         responseManager.route(
-            put: url,
+            put: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -191,7 +194,7 @@ extension Router {
         handler: @escaping () throws -> Any) {
 
         responseManager.route(
-            put: url,
+            put: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -208,7 +211,7 @@ extension Router {
         handler: @escaping (Request, T) throws -> Any) where T: Decodable {
 
         responseManager.route(
-            put: url,
+            put: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -225,7 +228,7 @@ extension Router {
         handler: @escaping (T) throws -> Any) where T: Decodable {
 
         responseManager.route(
-            put: url,
+            put: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -242,7 +245,7 @@ extension Router {
         handler: @escaping (Request) throws -> Any) {
 
         responseManager.route(
-            delete: url,
+            delete: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -259,7 +262,7 @@ extension Router {
         handler: @escaping () throws -> Any) {
 
         responseManager.route(
-            delete: url,
+            delete: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -276,7 +279,7 @@ extension Router {
         handler: @escaping (Request, T) throws -> Any) where T: Decodable {
 
         responseManager.route(
-            delete: url,
+            delete: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -293,7 +296,7 @@ extension Router {
         handler: @escaping (T) throws -> Any) where T: Decodable {
 
         responseManager.route(
-            delete: url,
+            delete: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -310,7 +313,7 @@ extension Router {
         handler: @escaping (Request) throws -> Any) {
 
         responseManager.route(
-            patch: url,
+            patch: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -327,7 +330,7 @@ extension Router {
         handler: @escaping () throws -> Any) {
 
         responseManager.route(
-            patch: url,
+            patch: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -344,7 +347,7 @@ extension Router {
         handler: @escaping (Request, T) throws -> Any) where T: Decodable {
 
         responseManager.route(
-            patch: url,
+            patch: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
@@ -361,7 +364,7 @@ extension Router {
         handler: @escaping (T) throws -> Any) where T: Decodable {
 
         responseManager.route(
-            patch: url,
+            patch: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
     }
