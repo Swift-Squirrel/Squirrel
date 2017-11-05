@@ -28,7 +28,6 @@ public class Config {
     private let _storage: Path
     private let _storageViews: Path
     private let _configFile: Path?
-    private let _assets: Path
     private let _publicStorage: Path
 
     /// Symlink to public storage
@@ -74,11 +73,6 @@ public class Config {
     /// Storage views destination
     public var storageViews: Path {
         return _storageViews
-    }
-
-    /// Assets destination
-    public var assets: Path {
-        return _assets
     }
 
     /// Views *.nut* destination
@@ -169,7 +163,6 @@ public class Config {
         session = _storage + "Sessions"
         _logFile = _logDir + logFileName
         _resourcesDir = _serverRoot + "Resources"
-        _assets = _serverRoot + "Assets"
         _viewsDir = _resourcesDir + "NutViews"
         _storageViews = _storage + "Fruits"
 
@@ -246,7 +239,6 @@ public class Config {
         createDir(path: webRoot)
         createDir(path: storageViews)
         createDir(path: cache)
-        createDir(path: assets)
         createDir(path: publicStorage)
         createDir(path: session)
     }
