@@ -157,7 +157,7 @@ public class Config {
         _webRoot = _serverRoot + "Public"
         publicStorageSymlink = _webRoot + "Storage"
         _storage = _serverRoot + "Storage"
-        _cache = _serverRoot + _storage + "Cache"
+        _cache = _storage + "Cache"
         _publicStorage = _storage + "Public"
         _logDir = _storage + "Logs"
         session = _storage + "Sessions"
@@ -238,6 +238,7 @@ public class Config {
         createDir(path: serverRoot)
         createDir(path: webRoot)
         createDir(path: storageViews)
+        createDir(path: views)
         createDir(path: cache)
         createDir(path: publicStorage)
         createDir(path: session)
