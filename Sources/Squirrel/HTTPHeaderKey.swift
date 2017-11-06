@@ -33,6 +33,7 @@ public enum HTTPHeaderKey {
     case contentRange
     case contentSecurityPolicy
     case contentSecurityPolicyReportOnly
+    case contentTransferEncoding
     case contentType
     case cookie
     case dnt
@@ -156,6 +157,8 @@ extension HTTPHeaderKey: CustomStringConvertible {
             return "Content-Security-Policy"
         case .contentSecurityPolicyReportOnly:
             return "Content-Security-Policy-Report-Only"
+        case .contentTransferEncoding:
+            return "Content-Transfer-Encoding"
         case .cookie:
             return "Cookie"
         case .dnt:

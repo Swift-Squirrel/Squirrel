@@ -155,7 +155,7 @@ open class Request {
     }
 
     private func parseCookies() {
-        guard let cookieLine = headers["Cookie"] else {
+        guard let cookieLine = headers[.cookie] else {
             return
         }
 

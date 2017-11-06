@@ -196,15 +196,27 @@ open class Server: Router {
 
     private func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt), response: Response) {
         let bodyBytes = response.rawBody
-        let data = bodyBytes[range.bottom..<range.top + 1]
-        response.headers["connection"] = "keep-alive"
+        let top: UInt
+        if range.top < response.bodyLength {
+            top = range.top
+        } else {
+            top = UInt(response.bodyLength - 1)
+        }
+        let bottom: UInt
+        if range.bottom <= top {
+            bottom = range.bottom
+        } else {
+            bottom = top
+        }
+        let data = bodyBytes[bottom..<top + 1]
+        response.headers[.connection] = "keep-alive"
         response.headers[.acceptRanges] = nil
         response.headers.set(to: .contentRange(
-            start: range.bottom,
-            end: range.top,
+            start: bottom,
+            end: top,
             from: UInt(bodyBytes.count)))
 
-        let size = Int(range.top + 1 - range.bottom)
+        let size = data.count
         response.headers.set(to: .contentLength(size: size))
 
         let head = response.rawPartialHeader
@@ -213,7 +225,7 @@ open class Server: Router {
 
     private func send(socket: Socket, response: Response) {
         func sendChunked(head: Data, body: Data) {
-            response.headers["Transfer-Encoding"] = "chunked"
+            response.headers[.transferEncoding] = "chunked"
             var c = body.count
             var i = 0
             let _ = try? socket.write(from: head)

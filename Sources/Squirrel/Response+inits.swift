@@ -134,7 +134,7 @@ public extension Response {
 
     private func setDownloadHeaders(fileName: String) {
         headers.set(to: .contentType(.forceDownload))
-        headers["Content-Disposition"] = "attachment; filename=\"\(fileName)\""
-        headers["Content-Transfer-Encoding"] = "binary"
+        headers[.contentDisposition] = "attachment; filename=\"\(fileName)\""
+        headers[.contentTransferEncoding] = "binary"
     }
 }

@@ -70,7 +70,10 @@ fileprivate struct KeyValueKeyedDecodingContainer<K : CodingKey>
     }
 
     func decodeNil(forKey key: K) throws -> Bool {
-        fatalError()
+        if let _ = decoder.values[key.stringValue] {
+            return false
+        }
+        return true
     }
 
     func decode(_ type: Bool.Type, forKey key: K) throws -> Bool {
@@ -261,7 +264,10 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decodeNil() -> Bool {
-        fatalError("unsupported")
+        guard decoder.values.isEmpty else {
+            return false
+        }
+        return true
     }
 
     func decode(_ type: Bool.Type) throws -> Bool {
