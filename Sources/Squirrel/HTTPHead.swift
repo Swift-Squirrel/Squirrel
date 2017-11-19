@@ -101,7 +101,7 @@ extension HTTPHead {
     /// - Parameter keyValue: HTTPHeader key value
     public mutating func set(to keyValue: HTTPHeader) {
         let (key, value) = keyValue.keyValue
-        headers[key] = value
+        headers[key.lowercased()] = value
     }
 }
 
@@ -113,7 +113,7 @@ extension HTTPHead: ExpressibleByDictionaryLiteral {
     public init(dictionaryLiteral elements: (String, String)...) {
         self.headers = [:]
         for (key, value) in elements {
-            headers[key] = value
+            headers[key.lowercased()] = value
         }
     }
 }
