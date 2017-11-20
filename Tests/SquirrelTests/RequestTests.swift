@@ -89,7 +89,7 @@ class RequestTests: XCTestCase {
         XCTAssertEqual(request.path, "/tutorials/other/top-20-mysql-best-practices")
         XCTAssertEqual(request.urlParameters.count, 0)
         XCTAssertTrue(request.postParameters.isEmpty)
-        XCTAssertTrue(request.getParameters.isEmpty)
+        XCTAssertTrue(request.queryParameters.isEmpty)
         XCTAssertEqual(request.getCookie(for: "PHPSESSID"), "r2t5uvjq435r4q7ib3vtdjq120")
         XCTAssertEqual(request.cookies.count, 1)
         XCTAssertEqual(request.headers[.acceptCharset], "ISO-8859-1,utf-8;q=0.7,*;q=0.7")
@@ -107,19 +107,19 @@ class RequestTests: XCTestCase {
         XCTAssertEqual(request.path, "/foo.php")
         XCTAssertEqual(request.urlParameters.count, 0)
         XCTAssertTrue(request.postParameters.isEmpty)
-        XCTAssertEqual(request.getParameters.count, 3)
+        XCTAssertEqual(request.queryParameters.count, 3)
         let getParams: [String: String] = [
             "first_name": "John",
             "last_name": "Doe",
             "action": "Submit"
         ]
-        XCTAssertEqual((request.getParameters as? [String: String]) ?? [:], getParams)
-        XCTAssertNotNil(request.getGetParameter(for: "first_name"))
-        XCTAssertEqual(request.getGetParameter(for: "first_name"), getParams["first_name"]!)
-        XCTAssertNotNil(request.getGetParameter(for: "last_name"))
-        XCTAssertEqual(request.getGetParameter(for: "last_name"), getParams["last_name"]!)
-        XCTAssertNotNil(request.getGetParameter(for: "action"))
-        XCTAssertEqual(request.getGetParameter(for: "action"), getParams["action"]!)
+        XCTAssertEqual((request.queryParameters as? [String: String]) ?? [:], getParams)
+        XCTAssertNotNil(request.getQueryParameter(for: "first_name"))
+        XCTAssertEqual(request.getQueryParameter(for: "first_name"), getParams["first_name"]!)
+        XCTAssertNotNil(request.getQueryParameter(for: "last_name"))
+        XCTAssertEqual(request.getQueryParameter(for: "last_name"), getParams["last_name"]!)
+        XCTAssertNotNil(request.getQueryParameter(for: "action"))
+        XCTAssertEqual(request.getQueryParameter(for: "action"), getParams["action"]!)
     }
 
     func testPostParams() {
@@ -133,7 +133,7 @@ class RequestTests: XCTestCase {
         XCTAssertEqual(request.path, "/foo.php")
         XCTAssertEqual(request.urlParameters.count, 0)
         XCTAssertEqual(request.headers[.referer], "http://localhost/test.php")
-        XCTAssertTrue(request.getParameters.isEmpty)
+        XCTAssertTrue(request.queryParameters.isEmpty)
         XCTAssertEqual(request.postParameters.count, 3)
         let postParams: [String: String] = [
             "first_name": "John",
