@@ -131,7 +131,7 @@ public extension HTTPHeader {
         case plain
         case css
 
-        // Applocation
+        // Application
         case js = "javascript"
         case json = "json"
         case formUrlencoded = "x-www-form-urlencoded"

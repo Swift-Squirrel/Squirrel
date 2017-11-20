@@ -25,7 +25,7 @@ open class Request {
     private var _cookies: [String: String] = [:]
 
     /// Accept-Encoding
-    var acceptEncoding = Set<HTTPHeader.Encoding>()
+    public private(set) var acceptEncoding = Set<HTTPHeader.Encoding>()
 
     /// Request path
     public var path: String {
@@ -313,15 +313,15 @@ extension Request {
 
     /// Returns parameter from URL
     ///
-    /// GET parameters are after '?' in url for example in
+    /// Query parameters are after '?' in url for example in
     ///
     ///     "http://localhost/posts?name=Leo&age=21"
     ///
-    /// are GET parameters *name* with value 'Leo' and *age* with value '21'
+    /// are query parameters *name* with value 'Leo' and *age* with value '21'
     ///
     /// - Parameter key: Parameter name
     /// - Returns: Parameter value
-    public func getGetParameter(for key: String) -> String? {
+    public func getQueryParameter(for key: String) -> String? {
         return _path[key]
     }
 
@@ -352,7 +352,7 @@ extension Request {
     }
 
     /// Returns all get parameters
-    public var getParameters: [String: String?] {
+    public var queryParameters: [String: String?] {
         return _path.allQueryParams
     }
 }

@@ -286,7 +286,7 @@ extension ResponseManager {
                 }
             }
         }
-        for (k, v) in request.getParameters {
+        for (k, v) in request.queryParameters {
             if values[k] == nil {
                 values[k] = v
             }
