@@ -108,7 +108,7 @@ open class Request {
 
         if let lengthString = headers[.contentLength],
             let length = Int(lengthString) {
-                body = buffer.read(bytes: length)
+            body = buffer.read(bytes: length)
         } else {
             body = Data()
         }
@@ -262,11 +262,23 @@ open class Request {
         guard let body = String(data: data, encoding: .utf8) else {
             throw DataError(kind: .dataEncodingError)
         }
-        guard let url = URL(string: "/?" + body) else {
-            throw RequestError(kind: .postBodyParseError(errorString: body))
-        }
-        url.allQueryParams.forEach { (key, value) in
-            _postParameters[key] = value ?? ""
+        let query = body
+        for qs in query.components(separatedBy: "&") {
+            let values = qs.split(separator: "=", maxSplits: 1)
+
+            let key = qs.components(separatedBy: "=").first!
+            var value: String
+            if values.count == 2 {
+                value = qs.components(separatedBy: "=").last!
+                value = value.replacingOccurrences(of: "+", with: " ")
+            } else {
+                value = ""
+            }
+
+            guard let finalValue = value.removingPercentEncoding else {
+                throw RequestError(kind: .postBodyParseError(errorString: value))
+            }
+            _postParameters[key] = finalValue
         }
     }
 }
