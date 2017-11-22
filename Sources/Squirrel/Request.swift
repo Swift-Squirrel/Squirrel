@@ -259,20 +259,14 @@ open class Request {
 
     private func parseURLEncoded() throws {
         let data = body
-        guard var body = String(data: data, encoding: .utf8) else {
+        guard let body = String(data: data, encoding: .utf8) else {
             throw DataError(kind: .dataEncodingError)
         }
-        body.replaceAll(matching: "\\+", with: " ")
-        body.replaceAll(matching: "%2B", with: "+")
-        let groups = body.components(separatedBy: "&")
-        for group in groups {
-            let values = group.split(separator: "=", maxSplits: 1)
-            guard values.count == 2 else {
-                throw RequestError(kind: .postBodyParseError(errorString: group))
-            }
-            let key = String(values.first!)
-            let value = String(values.last!)
-            _postParameters[key] = value
+        guard let url = URL(string: "/?" + body) else {
+            throw RequestError(kind: .postBodyParseError(errorString: body))
+        }
+        url.allQueryParams.forEach { (key, value) in
+            _postParameters[key] = value ?? ""
         }
     }
 }
