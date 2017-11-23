@@ -39,7 +39,13 @@ class RouteTree {
                 fatalError(error.localizedDescription)
             }
         } else {
-            let routes = route.components(separatedBy: "/").filter { $0 != "" }
+            let routes: [String] = route.components(separatedBy: "/").filter { $0 != "" }.map { (route: String) -> String in
+                if route.first == ":" {
+                    return route
+                } else {
+                    return route.lowercased()
+                }
+             }
             if self.root == nil {
                 self.root = RouteNode(route: "/")
             }
