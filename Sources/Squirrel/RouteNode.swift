@@ -21,7 +21,7 @@ class RouteNode {
     private var dynamicNodes = [DynamicRouteNode]()
 
     init(route: String) {
-        self.route = route
+        self.route = route.lowercased()
     }
 
     func addNode(
@@ -119,7 +119,7 @@ class RouteNode {
         var rs = routes
         rs.remove(at: 0)
         for child in childrens {
-            if child.route == rs.first! {
+            if child.route == rs.first!.lowercased() {
                 guard let handler = try child.findHandler(for: method, in: rs)
                     ?? defaultHandlers[method] else {
 

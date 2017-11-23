@@ -135,7 +135,7 @@ class RouteThreeTests: XCTestCase {
         handlerExists(for: .get, in: "/admin/1fa/as1")
 
         handlerExists(for: .get, in: "/web")
-        handlerExists(for: .get, in: "/web/images")
+        handlerExists(for: .get, in: "/web/ImaGes")
         handlerExists(for: .get, in: "/css")
         handlerExists(for: .get, in: "/admin")
         handlerExists(for: .get, in: "/admin/statistics")
