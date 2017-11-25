@@ -176,7 +176,7 @@ open class Request {
                 description: "Missing \(HTTPHeaderKey.contentType)")
         }
         let lowercasedType = contentType.lowercased()
-        if lowercasedType == HTTPHeader.ContentType.formUrlencoded {
+        if lowercasedType.hasPrefix(HTTPHeader.ContentType.formUrlencoded.rawValue) {
             try parseURLEncoded()
         } else if lowercasedType.hasPrefix(HTTPHeader.ContentType.formData.rawValue) {
             try parseMultipart(contentType: contentType)

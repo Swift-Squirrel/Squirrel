@@ -207,6 +207,9 @@ public struct SessionMiddleware: Middleware {
     ///
     /// - Parameter dataInit: This will init session data when new session is established
     public init() {
+        #if os(Linux)
+            srandom(UInt32(time(nil)))
+        #endif
     }
 }
 
@@ -217,7 +220,7 @@ public struct SessionMiddleware: Middleware {
 ///
 /// - Parameter length: Generated string lenght
 /// - Returns: Random string
-func randomString(length: Int = 32) -> String {
+func randomString(length: Int = 32, pidPrefix: Bool = true) -> String {
     enum ValidCharacters {
         static let chars = Array("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -227,18 +230,33 @@ func randomString(length: Int = 32) -> String {
             static let count32 = UInt32(chars.count)
         #endif
     }
-
+    
     var result = [Character](repeating: "a", count: length)
+    let max: Int
+    let prefix: String
+    if pidPrefix {
+        prefix = ProcessInfo.processInfo.processIdentifier.description
+        let newMax = length - prefix.count
+        if newMax > 0 {
+            max = newMax
+        } else {
+            max = 0
+        }
+    } else {
+        prefix = ""
+        max = length
+    }
 
-    for i in 0..<length {
+    for i in 0..<max {
         #if os(Linux)
-            srandom(UInt32(time(nil)))
             let r = random() % ValidCharacters.count
         #else
             let r = Int(arc4random_uniform(ValidCharacters.count32))
         #endif
         result[i] = ValidCharacters.chars[r]
     }
-
+    if pidPrefix {
+        return prefix + String(result)
+    }
     return String(result)
 }
