@@ -87,7 +87,7 @@ open class Server: Router {
                 if bytes > 0 {
                     zeroTimes = 100
                     do {
-                        let request = try Request(data: dataRead)
+                        let request = try Request(ip: socket.remoteHostname, data: dataRead)
                         log.info(request.method.rawValue + " " + request.path)
 
                         if let connection = request.headers[.connection],

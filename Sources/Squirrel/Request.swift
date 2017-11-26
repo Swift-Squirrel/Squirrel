@@ -24,6 +24,8 @@ open class Request {
 
     private var _cookies: [String: String] = [:]
 
+    public let ip: String
+
     /// Accept-Encoding
     public private(set) var acceptEncoding = Set<HTTPHeader.Encoding>()
 
@@ -63,7 +65,8 @@ open class Request {
     ///
     /// - Parameter data: Data of request
     /// - Throws: `DataError` and other parse errors
-    init(data: Data) throws {
+    init(ip: String, data: Data) throws {
+        self.ip = ip
         var buffer = Buffer(buffer: data)
         let method = (try buffer.readString(until: .space)).uppercased()
         guard ["GET", "POST", "DELETE", "PUT", "PATCH"].contains(method) else {

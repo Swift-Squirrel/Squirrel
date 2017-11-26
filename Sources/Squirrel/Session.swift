@@ -20,6 +20,9 @@ public protocol SessionProtocol: Codable {
     /// Indicates if session is new (Do not modify)
     var isNew: Bool { set get }
 
+    /// Ip address
+    var ip: String { get }
+
     /// Indicates if session should be removed
     var shouldRemove: Bool { set get }
 
@@ -55,25 +58,21 @@ class Session: SessionProtocol {
 
     let userAgent: String
 
+    let ip: String
+
     var isNew: Bool = false
 
     var shouldRemove: Bool = false
 
-    init(id: String, expiry: Date, userAgent: String) {
+    init(id: String, expiry: Date, ip: String, userAgent: String) {
+        self.ip = ip
         self.sessionID = id
         self.expiry = expiry
         self.userAgent = userAgent
         let _ = store()
     }
 
-    private enum CodingKeys: String, CodingKey {
-        case sessionID
-        case expiry
-        case userAgent
-        case data
-    }
-
-    init?(id: String, userAgent: String) {
+    init?(id: String, ip: String, userAgent: String) {
         let file = SessionConfig.storage + "\(id).session"
         guard let data: Data = try? file.read() else {
             return nil
@@ -82,10 +81,15 @@ class Session: SessionProtocol {
         guard let json = try? decoder.decode(Session.self, from: data) else {
             return nil
         }
-        guard json.userAgent == userAgent && json.expiry > Date() else {
-            try? file.delete()
+        guard json.ip == ip && json.userAgent == userAgent else {
             return nil
         }
+        guard json.expiry > Date() else {
+            try? file.delete() // TODO rethink it
+            return nil
+        }
+
+        self.ip = json.ip
         self.data = json.data
         self.expiry = json.expiry
         self.sessionID = json.sessionID
@@ -104,7 +108,7 @@ class Session: SessionProtocol {
     /// Remove session
     ///
     /// - Returns: true if everything goes ok
-    public func delete() -> Bool {
+    func delete() -> Bool {
         shouldRemove = true
         let file: Path = SessionConfig.storage + "\(sessionID).session"
         return (try? file.delete()) != nil
@@ -121,16 +125,21 @@ class Session: SessionProtocol {
     }
 }
 
-protocol SessionBuilder {
+public protocol SessionBuilder {
     func new(for request: Request) -> SessionProtocol?
 
     func get(for request: Request) -> SessionProtocol?
 }
 
-struct SessionConfig {
-    static let sessionName = "SquirrelSession"
+/// Session configurations
+public struct SessionConfig {
+    private init() { }
 
-    static let defaultExpiry = 60.0 * 60.0 * 24.0 * 7.0
+    /// Session name
+    public static var sessionName = "SquirrelSession"
+
+    /// Session duration
+    public static var defaultExpiry = 60.0 * 60.0 * 24.0 * 7.0
 
     static let userAgent = "user-agent"
 
@@ -148,6 +157,7 @@ struct SessionManager: SessionBuilder {
         return Session(
             id: id,
             expiry: Date().addingTimeInterval(SessionConfig.defaultExpiry),
+            ip: request.ip,
             userAgent: userAgent)
     }
 
@@ -158,14 +168,14 @@ struct SessionManager: SessionBuilder {
         guard let id = request.getCookie(for: SessionConfig.sessionName) else {
             return nil
         }
-        return Session(id: id, userAgent: userAgent)
+        return Session(id: id, ip: request.ip, userAgent: userAgent)
     }
 }
 
 /// Session middleware
 public struct SessionMiddleware: Middleware {
 
-    private let sessionManager: SessionBuilder = SessionManager()
+    private let sessionManager: SessionBuilder
 
     /// Handle session for given request. If there is no session cookie,
     /// creates new session and put session cookie to response.
@@ -206,7 +216,12 @@ public struct SessionMiddleware: Middleware {
     /// Constructs Session middleware
     ///
     /// - Parameter dataInit: This will init session data when new session is established
-    public init() {
+    public init(sessionBuilder: SessionBuilder? = nil) {
+        if let sessionBuilder = sessionBuilder {
+            self.sessionManager = sessionBuilder
+        } else {
+            self.sessionManager = SessionManager()
+        }
         #if os(Linux)
             srandom(UInt32(time(nil)))
         #endif
