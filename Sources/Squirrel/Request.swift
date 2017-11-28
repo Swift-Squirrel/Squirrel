@@ -49,6 +49,7 @@ open class Request {
     private var _session: SessionProtocol? = nil
 
     private var _urlParameters: [String: String] = [:]
+    private var _queryParameters: [String: String] = [:]
     private var _postParameters: [String: String] = [:]
 
     /// Requested range
@@ -130,6 +131,7 @@ open class Request {
         }
         self.range = _range
         parseCookies()
+        _queryParameters = try parseURLQuery(url: originalPath)
         parseEncoding()
 
         if self.method == .post && !body.isEmpty {
@@ -138,6 +140,36 @@ open class Request {
     }
     // swiftlint:enable function_body_length
     // swiftlint:enable cyclomatic_complexity
+
+    private func parseURLQuery(url: String) throws -> [String: String] {
+        let splits = url.split(separator: "?", maxSplits: 1)
+        guard splits.count == 2 else {
+            return [:]
+        }
+        return try parseURLQuery(query: splits.last!.description)
+    }
+
+    private func parseURLQuery(query: String) throws -> [String: String] {
+        var res = [String: String]()
+        for qs in query.components(separatedBy: "&") {
+            let values = qs.split(separator: "=", maxSplits: 1)
+
+            let key = qs.components(separatedBy: "=").first!
+            var value: String
+            if values.count == 2 {
+                value = qs.components(separatedBy: "=").last!
+                value = value.replacingOccurrences(of: "+", with: " ")
+            } else {
+                value = ""
+            }
+
+            guard let finalValue = value.removingPercentEncoding else {
+                throw RequestError(kind: .postBodyParseError(errorString: value))
+            }
+            res[key] = finalValue
+        }
+        return res
+    }
 
     private func parseEncoding() {
         guard var acceptLine = headers[.acceptEncoding] else {
@@ -262,27 +294,10 @@ open class Request {
 
     private func parseURLEncoded() throws {
         let data = body
-        guard let body = String(data: data, encoding: .utf8) else {
+        guard let query = String(data: data, encoding: .utf8) else {
             throw DataError(kind: .dataEncodingError)
         }
-        let query = body
-        for qs in query.components(separatedBy: "&") {
-            let values = qs.split(separator: "=", maxSplits: 1)
-
-            let key = qs.components(separatedBy: "=").first!
-            var value: String
-            if values.count == 2 {
-                value = qs.components(separatedBy: "=").last!
-                value = value.replacingOccurrences(of: "+", with: " ")
-            } else {
-                value = ""
-            }
-
-            guard let finalValue = value.removingPercentEncoding else {
-                throw RequestError(kind: .postBodyParseError(errorString: value))
-            }
-            _postParameters[key] = finalValue
-        }
+        _postParameters = try parseURLQuery(query: query)
     }
 }
 
@@ -331,7 +346,7 @@ extension Request {
     /// - Parameter key: Parameter name
     /// - Returns: Parameter value
     public func getQueryParameter(for key: String) -> String? {
-        return _path[key]
+        return _queryParameters[key]
     }
 
     /// Returns parameter coded in body of request
@@ -362,7 +377,7 @@ extension Request {
 
     /// Returns all get parameters
     public var queryParameters: [String: String?] {
-        return _path.allQueryParams
+        return _queryParameters
     }
 }
 
