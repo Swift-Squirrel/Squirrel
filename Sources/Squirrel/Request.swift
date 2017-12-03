@@ -43,7 +43,7 @@ open class Request {
     /// HTTP Head
     public private(set) var headers: HTTPHead = [:]
 
-    private let body: Data
+    public let body: Data
 
     /// Session
     private var _session: SessionProtocol? = nil
