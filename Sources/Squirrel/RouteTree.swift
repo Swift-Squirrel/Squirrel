@@ -39,7 +39,9 @@ class RouteTree {
                 fatalError(error.localizedDescription)
             }
         } else {
-            let routes: [String] = route.components(separatedBy: "/").filter { $0 != "" }.map { (route: String) -> String in
+            let routes: [String] = route.components(separatedBy: "/")
+                .filter { $0 != "" }.map { (route: String) -> String in
+
                 if route.first == ":" {
                     return route
                 } else {

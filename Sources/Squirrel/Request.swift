@@ -10,6 +10,7 @@
 
 import Foundation
 import Regex
+import Socket
 #if os(Linux)
     import Dispatch
 #endif
@@ -24,7 +25,8 @@ open class Request {
 
     private var _cookies: [String: String] = [:]
 
-    public let ip: String
+    /// Hostname or IP
+    public let remoteHostname: String
 
     /// Accept-Encoding
     public private(set) var acceptEncoding = Set<HTTPHeader.Encoding>()
@@ -43,6 +45,7 @@ open class Request {
     /// HTTP Head
     public private(set) var headers: HTTPHead = [:]
 
+    /// Request body
     public let body: Data
 
     /// Session
@@ -66,9 +69,9 @@ open class Request {
     ///
     /// - Parameter data: Data of request
     /// - Throws: `DataError` and other parse errors
-    init(ip: String, data: Data) throws {
-        self.ip = ip
-        var buffer = Buffer(buffer: data)
+    init(socket: Socket) throws {
+        self.remoteHostname = socket.remoteHostname
+        let buffer = SocketBuffer(socket: socket)
         let method = (try buffer.readString(until: .space)).uppercased()
         guard ["GET", "POST", "DELETE", "PUT", "PATCH"].contains(method) else {
             throw RequestError(kind: .unknownMethod(method: method))
@@ -112,7 +115,7 @@ open class Request {
 
         if let lengthString = headers[.contentLength],
             let length = Int(lengthString) {
-            body = buffer.read(bytes: length)
+            body = try buffer.read(bytes: length)
         } else {
             body = Data()
         }
@@ -415,117 +418,5 @@ extension Request {
 
     func setSession(_ session: SessionProtocol) {
         _session = session
-    }
-}
-
-extension Request {
-    private struct Buffer {
-        private var buffer: [UInt8]
-        // swiftlint:disable:next nesting
-        enum Delimeter {
-            case crlf
-            case space
-        }
-
-        init(buffer: Data) {
-            self.buffer = buffer.reversed()
-        }
-
-        mutating func read(until delimeter: Delimeter, allowEmpty: Bool) throws -> Data {
-            var res = Data()
-            var found = false
-            switch delimeter {
-            case .space:
-                while let current = buffer.popLast() {
-                    if current != 0x20 {
-                        res.append(current)
-                    } else {
-                        found = true
-                        break
-                    }
-                }
-            case .crlf:
-                while let current = buffer.popLast() {
-                    if current == 0xD && buffer.last == 0xA {
-                        let _ = buffer.popLast()
-                        found = true
-                        break
-                    }
-                    res.append(current)
-                }
-            }
-            guard found else {
-                buffer.append(contentsOf: res.reversed())
-                throw RequestError(kind: .headParseError)
-            }
-            if res.isEmpty && !allowEmpty {
-                throw RequestError(kind: .headParseError)
-            }
-            return res
-        }
-        mutating func read(bytes: Int) -> Data {
-            //            let res = buffer.dropLast(bytes)
-            let endIndex = buffer.endIndex
-            var startIndex = endIndex - bytes
-            if startIndex < buffer.startIndex {
-                startIndex = buffer.startIndex
-            }
-            let range = startIndex..<endIndex
-            let res = buffer[range]
-            let n = endIndex - startIndex
-            buffer.removeLast(n)
-            return Data(bytes: res.reversed())
-        }
-
-        mutating func read(until sequence: Data, allowEmpty: Bool) throws -> Data {
-            var found = false
-            var bufferIndex = buffer.endIndex - 1
-            let bufferStart = buffer.startIndex
-            while bufferIndex >= bufferStart {
-                if buffer[bufferIndex] == sequence.first {
-                    var localBufferIndex = bufferIndex
-                    var sequenceIndex = sequence.startIndex
-                    let sequenceEnd = sequence.endIndex
-                    while sequenceIndex < sequenceEnd
-                        && localBufferIndex >= bufferStart
-                        && sequence[sequenceIndex] == buffer[localBufferIndex] {
-                            sequenceIndex += 1
-                            localBufferIndex -= 1
-                    }
-                    if sequenceIndex == sequenceEnd {
-                        found = true
-                        break
-                    }
-                }
-                bufferIndex -= 1
-            }
-            guard found else {
-                throw RequestError(kind: .headParseError)
-            }
-            let start = bufferIndex + 1
-            let end = buffer.endIndex
-            let res = buffer[start..<end]
-            if res.count == sequence.count && !allowEmpty {
-                throw RequestError(kind: .headParseError)
-            }
-
-            let n = sequence.count + buffer.endIndex - bufferIndex - 1
-            buffer.removeLast(n)
-            return Data(bytes: res.reversed())
-        }
-
-        mutating func readString(until delimeter: Delimeter, allowEmpty: Bool = false)
-            throws -> String {
-                let data = try read(until: delimeter, allowEmpty: allowEmpty)
-                guard let string = String(data: data, encoding: .utf8) else {
-                    throw DataError(kind: .dataEncodingError)
-                }
-                return string
-        }
-
-        func starts(with data: Data) -> Bool {
-            return buffer.starts(with: data)
-        }
-
     }
 }
