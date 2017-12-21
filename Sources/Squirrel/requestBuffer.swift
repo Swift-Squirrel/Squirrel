@@ -7,21 +7,30 @@
 
 import Socket
 import Foundation
+
+enum BufferDelimeter {
+    case crlf
+    case space
+}
+protocol Buffer {
+    func read(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> Data
+    func read(bytes: Int) throws -> Data
+    func readString(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> String
+}
+
 extension Request {
-    class Buffer {
+
+    class StaticBuffer: Buffer {
         private var buffer: [UInt8]
 
         // swiftlint:disable:next nesting
-        enum Delimeter {
-            case crlf
-            case space
-        }
+
 
         init(buffer: Data) {
             self.buffer = buffer.reversed()
         }
 
-        func read(until delimeter: Delimeter, allowEmpty: Bool) throws -> Data {
+        func read(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> Data {
             var res = Data()
             var found = false
             switch delimeter {
@@ -53,7 +62,7 @@ extension Request {
             }
             return res
         }
-        func read(bytes: Int) -> Data {
+        func read(bytes: Int) throws -> Data {
             //            let res = buffer.dropLast(bytes)
             let endIndex = buffer.endIndex
             var startIndex = endIndex - bytes
@@ -104,8 +113,8 @@ extension Request {
             return Data(bytes: res.reversed())
         }
 
-        func readString(until delimeter: Delimeter, allowEmpty: Bool = false)
-            throws -> String {
+        func readString(until delimeter: BufferDelimeter,
+                        allowEmpty: Bool = false) throws -> String {
                 let data = try read(until: delimeter, allowEmpty: allowEmpty)
                 guard let string = String(data: data, encoding: .utf8) else {
                     throw DataError(kind: .dataEncodingError)
@@ -114,16 +123,10 @@ extension Request {
         }
     }
 
-    class SocketBuffer {
+    class SocketBuffer: Buffer {
         private var buffer: [UInt8]
         private let socket: Socket
         private static let readWait: UInt = 1000
-
-        // swiftlint:disable:next nesting
-        enum Delimeter {
-            case crlf
-            case space
-        }
 
         init(socket: Socket) {
             self.socket = socket
@@ -131,7 +134,7 @@ extension Request {
             try? refreshBuffer()
         }
 
-        func read(until delimeter: Delimeter, allowEmpty: Bool) throws -> Data {
+        func read(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> Data {
             var res = Data()
             var found = false
             repeat {
@@ -196,7 +199,7 @@ extension Request {
             return Data(bytes: res.reversed())
         }
 
-        func readString(until delimeter: Delimeter,
+        func readString(until delimeter: BufferDelimeter,
                         allowEmpty: Bool = false) throws -> String {
 
             let data = try read(until: delimeter, allowEmpty: allowEmpty)
