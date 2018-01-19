@@ -15,7 +15,7 @@ import SquirrelConfig
 /// Server class
 open class Server: Router {
     private let port: UInt16
-    let bufferSize = 20
+//    let bufferSize = 20
     var listenSocket: Socket? = nil
     var connected = [Int32: Socket]()
     var acceptNewConnection = true
@@ -78,51 +78,49 @@ open class Server: Router {
     func newConnection(socket: Socket) {
         connected[socket.socketfd] = socket
 
-        var dataRead = Data(capacity: bufferSize)
-        var cont = true
-        var zeroTimes = 100
-        repeat {
+        //        var cont = true
+        //        var zeroTimes = 100
+        //        repeat {
+        do {
+            //                if bytes > 0 {
+            //                    zeroTimes = 100
             do {
-                let bytes = try socket.read(into: &dataRead)
-                if bytes > 0 {
-                    zeroTimes = 100
-                    do {
-                        let request = try Request(ip: socket.remoteHostname, data: dataRead)
-                        log.info(request.method.rawValue + " " + request.path)
+                let request = try Request(socket: socket)
+                log.info(request.method.rawValue + " " + request.path)
 
-                        if let connection = request.headers[.connection],
-                            connection != "keep-alive" {
-                            cont = false
-                        }
-                        let response = handle(request: request)
-                        if request.acceptEncoding.count > 0 {
-                            if request.acceptEncoding.contains(.gzip) {
-                                response.contentEncoding = .gzip
-                            }
-                        }
-                        if let range = request.range {
-                            sendPartial(socket: socket, range: range, response: response)
-                        } else {
-                            send(socket: socket, response: response)
-                        }
-                    } catch let error {
-                        let response = ErrorHandler.sharedInstance.response(for: error)
-                        send(socket: socket, response: response)
-                        cont = false
-                        throw error
-                    }
-                    dataRead.removeAll()
-                } else {
-                    zeroTimes -= 1
-                    if zeroTimes == 0 {
-                        cont = false
+//                if let connection = request.headers[.connection],
+//                    connection != "keep-alive" {
+//                    cont = false
+//                }
+                let response = handle(request: request)
+                if request.acceptEncoding.count > 0 {
+                    if request.acceptEncoding.contains(.gzip) {
+                        response.contentEncoding = .gzip
                     }
                 }
+                if let range = request.range {
+                    sendPartial(socket: socket, range: range, response: response)
+                } else {
+                    send(socket: socket, response: response)
+                }
             } catch let error {
-                log.error("error: \(error)")
-                cont = false
+                let response = ErrorHandler.sharedInstance.response(for: error)
+                send(socket: socket, response: response)
+//                cont = false
+                throw error
             }
-        } while cont
+//            dataRead.removeAll()
+            //                } else {
+            //                    zeroTimes -= 1
+            //                    if zeroTimes == 0 {
+            //                        cont = false
+            //                    }
+            //                }
+        } catch let error {
+            log.error("error: \(error)")
+            //                cont = false
+        }
+        //        } while cont
         connected.removeValue(forKey: socket.socketfd)
         socket.close()
     }

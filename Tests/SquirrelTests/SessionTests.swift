@@ -19,7 +19,7 @@ class SessionTests: XCTestCase {
             User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.5) Gecko/20091102 Firefox/3.5.5 (.NET CLR 3.5.30729)\r
             Accept-Encoding: gzip\r\n\r\n
             """.data(using: .utf8)!
-        return try! Request(ip: "127.0.0.1", data: content)
+        return try! Request(remoteHostname: "127.0.0.1", data: content)
     }
 
     func testCreateSession() {
@@ -59,20 +59,20 @@ class SessionTests: XCTestCase {
     }
 
     func testSessionInit() {
-        let session = Session(id: "asdfghjkl", expiry: Date().addingTimeInterval(-40), ip: "127.0.0.1", userAgent: "Mozzila")
+        let session = Session(id: "asdfghjkl", expiry: Date().addingTimeInterval(-40), remoteHostname: "127.0.0.1", userAgent: "Mozzila")
         XCTAssertEqual(session.sessionID, "asdfghjkl")
         XCTAssertEqual(session.userAgent, "Mozzila")
         XCTAssertFalse(session.expiry > Date())
 
-        let session1 = Session(id: "asdfghjkl", ip: "127.0.0.1", userAgent: "Mozzila")
+        let session1 = Session(id: "asdfghjkl", remoteHostname: "127.0.0.1", userAgent: "Mozzila")
         XCTAssertNil(session1)
 
-        let session2 = Session(id: "asdfasdf", expiry: Date().addingTimeInterval(60), ip: "127.0.0.1", userAgent: "Safari")
+        let session2 = Session(id: "asdfasdf", expiry: Date().addingTimeInterval(60), remoteHostname: "127.0.0.1", userAgent: "Safari")
         XCTAssertEqual(session2.sessionID, "asdfasdf")
         XCTAssertEqual(session2.userAgent, "Safari")
         XCTAssertTrue(session2.expiry > Date())
 
-        let session3 = Session(id: "asdfasdf", ip: "127.0.0.1", userAgent: "Safari")
+        let session3 = Session(id: "asdfasdf", remoteHostname: "127.0.0.1", userAgent: "Safari")
         XCTAssertNotNil(session3)
         guard let session3a = session3 else {
             XCTFail()
@@ -89,7 +89,7 @@ class SessionTests: XCTestCase {
 
         session["username"] = "Tommy"
 
-        guard let session1 = Session(id: session.sessionID, ip: "127.0.0.1", userAgent: "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.5) Gecko/20091102 Firefox/3.5.5 (.NET CLR 3.5.30729)") else {
+        guard let session1 = Session(id: session.sessionID, remoteHostname: "127.0.0.1", userAgent: "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.5) Gecko/20091102 Firefox/3.5.5 (.NET CLR 3.5.30729)") else {
             XCTFail()
             return
         }

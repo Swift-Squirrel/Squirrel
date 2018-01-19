@@ -10,6 +10,7 @@
 
 import Foundation
 import Regex
+import Socket
 #if os(Linux)
     import Dispatch
 #endif
@@ -24,7 +25,8 @@ open class Request {
 
     private var _cookies: [String: String] = [:]
 
-    public let ip: String
+    /// Hostname or IP
+    public let remoteHostname: String
 
     /// Accept-Encoding
     public private(set) var acceptEncoding = Set<HTTPHeader.Encoding>()
@@ -43,6 +45,7 @@ open class Request {
     /// HTTP Head
     public private(set) var headers: HTTPHead = [:]
 
+    /// Request body
     public let body: Data
 
     /// Session
@@ -59,23 +62,17 @@ open class Request {
     public private(set) var postMultipart: [String: Multipart] = [:]
 
 
-
     // swiftlint:disable function_body_length
     // swiftlint:disable cyclomatic_complexity
-    /// Init Request from data
-    ///
-    /// - Parameter data: Data of request
-    /// - Throws: `DataError` and other parse errors
-    init(ip: String, data: Data) throws {
-        self.ip = ip
-        var buffer = Buffer(buffer: data)
-        let method = (try buffer.readString(until: .space)).uppercased()
+    private init(remoteHostname: String, buffer: Buffer) throws {
+        self.remoteHostname = remoteHostname
+        let method = (try buffer.readString(until: .space, allowEmpty: false)).uppercased()
         guard ["GET", "POST", "DELETE", "PUT", "PATCH"].contains(method) else {
             throw RequestError(kind: .unknownMethod(method: method))
         }
         self.method = RequestLine.Method(rawValue: method)!
 
-        let pathString = try buffer.readString(until: .space)
+        let pathString = try buffer.readString(until: .space, allowEmpty: false)
         guard pathString.first == "/" else {
             throw RequestError(kind: .headParseError)
         }
@@ -85,7 +82,7 @@ open class Request {
         }
         _path = path
 
-        let protString = (try buffer.readString(until: .crlf)).uppercased()
+        let protString = (try buffer.readString(until: .crlf, allowEmpty: false)).uppercased()
         guard let prot = RequestLine.HTTPProtocol(rawHTTPValue: protString) else {
             throw RequestError(kind: .unknownProtocol(prot: protString))
         }
@@ -112,7 +109,7 @@ open class Request {
 
         if let lengthString = headers[.contentLength],
             let length = Int(lengthString) {
-            body = buffer.read(bytes: length)
+            body = try buffer.read(bytes: length)
         } else {
             body = Data()
         }
@@ -140,6 +137,19 @@ open class Request {
     }
     // swiftlint:enable function_body_length
     // swiftlint:enable cyclomatic_complexity
+
+    /// Constructs request
+    ///
+    /// - Parameter socket: Socket
+    /// - Throws: Request errors
+    public convenience init(socket: Socket) throws {
+        try self.init(remoteHostname: socket.remoteHostname, buffer: SocketBuffer(socket: socket))
+    }
+
+    // For testing purposes
+    convenience init(remoteHostname: String, data: Data) throws {
+        try self.init(remoteHostname: remoteHostname, buffer: StaticBuffer(buffer: data))
+    }
 
     private func parseURLQuery(url: String) throws -> [String: String] {
         let splits = url.split(separator: "?", maxSplits: 1)
@@ -229,17 +239,19 @@ open class Request {
         guard let boundaryData = boundary.data(using: .utf8) else {
             throw RequestError(kind: .headParseError)
         }
-        var buffer = Buffer(buffer: body)
+        var buffer = StaticBuffer(buffer: body)
         guard (try buffer.read(until: boundaryData, allowEmpty: true)).isEmpty else {
             throw RequestError(kind: .postBodyParseError(errorString: "Wrong format"))
         }
         let end = CRLF + boundaryData
         var working = true
         while working {
-            let pom = buffer.read(bytes: 2)
+            // swiftlint:disable:next force_try
+            let pom = try! buffer.read(bytes: 2)
             if pom == CRLF {
                 let (name, fileName) = try parseMultipartLine(buffer: &buffer)
-                let _ = buffer.read(bytes: 2)
+                // swiftlint:disable:next force_try
+                let _ = try! buffer.read(bytes: 2)
                 let body = try buffer.read(until: end, allowEmpty: false)
                 self.postMultipart[name] = Multipart(name: name, fileName: fileName, content: body)
             } else if pom == Data(bytes: [0x2D, 0x2D]) {
@@ -248,7 +260,7 @@ open class Request {
         }
     }
 
-    private func parseMultipartLine(buffer: inout Buffer)
+    private func parseMultipartLine(buffer: inout StaticBuffer)
         throws -> (name: String, fileName: String?) {
             let line = try buffer.readString(until: .crlf)
             let contentDisposition = line.split(separator: ":", maxSplits: 1)
@@ -415,117 +427,5 @@ extension Request {
 
     func setSession(_ session: SessionProtocol) {
         _session = session
-    }
-}
-
-extension Request {
-    private struct Buffer {
-        private var buffer: [UInt8]
-        // swiftlint:disable:next nesting
-        enum Delimeter {
-            case crlf
-            case space
-        }
-
-        init(buffer: Data) {
-            self.buffer = buffer.reversed()
-        }
-
-        mutating func read(until delimeter: Delimeter, allowEmpty: Bool) throws -> Data {
-            var res = Data()
-            var found = false
-            switch delimeter {
-            case .space:
-                while let current = buffer.popLast() {
-                    if current != 0x20 {
-                        res.append(current)
-                    } else {
-                        found = true
-                        break
-                    }
-                }
-            case .crlf:
-                while let current = buffer.popLast() {
-                    if current == 0xD && buffer.last == 0xA {
-                        let _ = buffer.popLast()
-                        found = true
-                        break
-                    }
-                    res.append(current)
-                }
-            }
-            guard found else {
-                buffer.append(contentsOf: res.reversed())
-                throw RequestError(kind: .headParseError)
-            }
-            if res.isEmpty && !allowEmpty {
-                throw RequestError(kind: .headParseError)
-            }
-            return res
-        }
-        mutating func read(bytes: Int) -> Data {
-            //            let res = buffer.dropLast(bytes)
-            let endIndex = buffer.endIndex
-            var startIndex = endIndex - bytes
-            if startIndex < buffer.startIndex {
-                startIndex = buffer.startIndex
-            }
-            let range = startIndex..<endIndex
-            let res = buffer[range]
-            let n = endIndex - startIndex
-            buffer.removeLast(n)
-            return Data(bytes: res.reversed())
-        }
-
-        mutating func read(until sequence: Data, allowEmpty: Bool) throws -> Data {
-            var found = false
-            var bufferIndex = buffer.endIndex - 1
-            let bufferStart = buffer.startIndex
-            while bufferIndex >= bufferStart {
-                if buffer[bufferIndex] == sequence.first {
-                    var localBufferIndex = bufferIndex
-                    var sequenceIndex = sequence.startIndex
-                    let sequenceEnd = sequence.endIndex
-                    while sequenceIndex < sequenceEnd
-                        && localBufferIndex >= bufferStart
-                        && sequence[sequenceIndex] == buffer[localBufferIndex] {
-                            sequenceIndex += 1
-                            localBufferIndex -= 1
-                    }
-                    if sequenceIndex == sequenceEnd {
-                        found = true
-                        break
-                    }
-                }
-                bufferIndex -= 1
-            }
-            guard found else {
-                throw RequestError(kind: .headParseError)
-            }
-            let start = bufferIndex + 1
-            let end = buffer.endIndex
-            let res = buffer[start..<end]
-            if res.count == sequence.count && !allowEmpty {
-                throw RequestError(kind: .headParseError)
-            }
-
-            let n = sequence.count + buffer.endIndex - bufferIndex - 1
-            buffer.removeLast(n)
-            return Data(bytes: res.reversed())
-        }
-
-        mutating func readString(until delimeter: Delimeter, allowEmpty: Bool = false)
-            throws -> String {
-                let data = try read(until: delimeter, allowEmpty: allowEmpty)
-                guard let string = String(data: data, encoding: .utf8) else {
-                    throw DataError(kind: .dataEncodingError)
-                }
-                return string
-        }
-
-        func starts(with data: Data) -> Bool {
-            return buffer.starts(with: data)
-        }
-
     }
 }

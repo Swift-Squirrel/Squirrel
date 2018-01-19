@@ -20,8 +20,8 @@ public protocol SessionProtocol: Codable {
     /// Indicates if session is new (Do not modify)
     var isNew: Bool { set get }
 
-    /// Ip address
-    var ip: String { get }
+    /// Ip address or hostname
+    var remoteHostname: String { get }
 
     /// Indicates if session should be removed
     var shouldRemove: Bool { set get }
@@ -58,21 +58,21 @@ class Session: SessionProtocol {
 
     let userAgent: String
 
-    let ip: String
+    let remoteHostname: String
 
     var isNew: Bool = false
 
     var shouldRemove: Bool = false
 
-    init(id: String, expiry: Date, ip: String, userAgent: String) {
-        self.ip = ip
+    init(id: String, expiry: Date, remoteHostname: String, userAgent: String) {
+        self.remoteHostname = remoteHostname
         self.sessionID = id
         self.expiry = expiry
         self.userAgent = userAgent
         let _ = store()
     }
 
-    init?(id: String, ip: String, userAgent: String) {
+    init?(id: String, remoteHostname: String, userAgent: String) {
         let file = SessionConfig.storage + "\(id).session"
         guard let data: Data = try? file.read() else {
             return nil
@@ -81,7 +81,7 @@ class Session: SessionProtocol {
         guard let json = try? decoder.decode(Session.self, from: data) else {
             return nil
         }
-        guard json.ip == ip && json.userAgent == userAgent else {
+        guard json.remoteHostname == remoteHostname && json.userAgent == userAgent else {
             return nil
         }
         guard json.expiry > Date() else {
@@ -89,7 +89,7 @@ class Session: SessionProtocol {
             return nil
         }
 
-        self.ip = json.ip
+        self.remoteHostname = json.remoteHostname
         self.data = json.data
         self.expiry = json.expiry
         self.sessionID = json.sessionID
@@ -125,9 +125,18 @@ class Session: SessionProtocol {
     }
 }
 
+/// Session builder
 public protocol SessionBuilder {
+    /// Creates new session
+    ///
+    /// - Parameter request: Request
+    /// - Returns: New session or nil if session could not be created
     func new(for request: Request) -> SessionProtocol?
 
+    /// Get new session
+    ///
+    /// - Parameter request: Request
+    /// - Returns: Existing session or nil if could not get session
     func get(for request: Request) -> SessionProtocol?
 }
 
@@ -157,7 +166,7 @@ struct SessionManager: SessionBuilder {
         return Session(
             id: id,
             expiry: Date().addingTimeInterval(SessionConfig.defaultExpiry),
-            ip: request.ip,
+            remoteHostname: request.remoteHostname,
             userAgent: userAgent)
     }
 
@@ -168,7 +177,7 @@ struct SessionManager: SessionBuilder {
         guard let id = request.getCookie(for: SessionConfig.sessionName) else {
             return nil
         }
-        return Session(id: id, ip: request.ip, userAgent: userAgent)
+        return Session(id: id, remoteHostname: request.remoteHostname, userAgent: userAgent)
     }
 }
 
@@ -245,7 +254,7 @@ func randomString(length: Int = 32, pidPrefix: Bool = true) -> String {
             static let count32 = UInt32(chars.count)
         #endif
     }
-    
+
     var result = [Character](repeating: "a", count: length)
     let max: Int
     let prefix: String

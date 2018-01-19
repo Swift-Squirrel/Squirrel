@@ -78,8 +78,8 @@ class RequestTests: XCTestCase {
     }
 
     func testValidInit() {
-        XCTAssertNoThrow(try Request(ip: "127.0.0.1", data: RequestTemplates.get))
-        guard let request = try? Request(ip: "127.0.0.1", data: RequestTemplates.get) else {
+        XCTAssertNoThrow(try Request(remoteHostname: "127.0.0.1", data: RequestTemplates.get))
+        guard let request = try? Request(remoteHostname: "127.0.0.1", data: RequestTemplates.get) else {
             XCTFail()
             return
         }
@@ -96,8 +96,8 @@ class RequestTests: XCTestCase {
     }
 
     func testGetParams() {
-        XCTAssertNoThrow(try Request(ip: "127.0.0.1", data: RequestTemplates.getParams))
-        guard let request = try? Request(ip: "127.0.0.1", data: RequestTemplates.getParams) else {
+        XCTAssertNoThrow(try Request(remoteHostname: "127.0.0.1", data: RequestTemplates.getParams))
+        guard let request = try? Request(remoteHostname: "127.0.0.1", data: RequestTemplates.getParams) else {
             XCTFail()
             return
         }
@@ -123,8 +123,8 @@ class RequestTests: XCTestCase {
     }
 
     func testPostParams() {
-        XCTAssertNoThrow(try Request(ip: "127.0.0.1", data: RequestTemplates.postParams))
-        guard let request = try? Request(ip: "127.0.0.1", data: RequestTemplates.postParams) else {
+        XCTAssertNoThrow(try Request(remoteHostname: "127.0.0.1", data: RequestTemplates.postParams))
+        guard let request = try? Request(remoteHostname: "127.0.0.1", data: RequestTemplates.postParams) else {
             XCTFail()
             return
         }
@@ -150,8 +150,8 @@ class RequestTests: XCTestCase {
     }
 
     func testURLParams() {
-        XCTAssertNoThrow(try Request(ip: "127.0.0.1", data: RequestTemplates.get))
-        guard let request = try? Request(ip: "127.0.0.1", data: RequestTemplates.get) else {
+        XCTAssertNoThrow(try Request(remoteHostname: "127.0.0.1", data: RequestTemplates.get))
+        guard let request = try? Request(remoteHostname: "127.0.0.1", data: RequestTemplates.get) else {
             XCTFail()
             return
         }
@@ -197,7 +197,7 @@ class RequestTests: XCTestCase {
 
     func testUnsupportedMediaType() {
         do {
-            _ = try Request(ip: "127.0.0.1", data: "POST /foo.php HTTP/1.1\r\n\r\n".data(using: .utf8)!)
+            _ = try Request(remoteHostname: "127.0.0.1", data: "POST /foo.php HTTP/1.1\r\n\r\n".data(using: .utf8)!)
         } catch let error as HTTPError {
             XCTAssertEqual(error.description, HTTPError(status: .unsupportedMediaType, description: "Missing Content-Type").description)
         } catch let error {
@@ -205,7 +205,7 @@ class RequestTests: XCTestCase {
         }
 
         do {
-            _ = try Request(ip: "127.0.0.1", data: "POST /foo.php HTTP/1.1\r\nContent-Type: application/json\r\n\r\n".data(using: .utf8)!)
+            _ = try Request(remoteHostname: "127.0.0.1", data: "POST /foo.php HTTP/1.1\r\nContent-Type: application/json\r\n\r\n".data(using: .utf8)!)
         } catch let error as HTTPError {
             XCTAssertEqual(error.description, HTTPError(status: .unsupportedMediaType, description: "Unsupported Content-Type").description)
         } catch let error {
@@ -215,7 +215,7 @@ class RequestTests: XCTestCase {
 
     private func checkInitError(data: Data, expect: RequestError) -> Bool {
         do {
-            let _ = try Request(ip: "127.0.0.1", data: data)
+            let _ = try Request(remoteHostname: "127.0.0.1", data: data)
             XCTFail()
         } catch let error as RequestError {
             XCTAssertEqual(error.description, expect.description)
