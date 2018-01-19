@@ -122,8 +122,7 @@ class RouteNode {
             if child.route == rs.first!.lowercased() {
                 guard let handler = try child.findHandler(for: method, in: rs)
                     ?? defaultHandlers[method] else {
-
-                    throw HTTPError(status: .notFound, description: "Not Found")
+                    return nil
                 }
                 return handler
             }

@@ -17,8 +17,6 @@ public typealias AnyResponseHandler = ((Request) throws -> Any)
 /// Response class
 open class Response {
 
-    private let routeTree = RouteTree()
-
     /// Response status
     public let status: HTTPStatus
 
