@@ -122,7 +122,8 @@ class RouteNode {
             if child.route == rs.first!.lowercased() {
                 guard let handler = try child.findHandler(for: method, in: rs)
                     ?? defaultHandlers[method] else {
-                    return nil
+
+                        return nil
                 }
                 return handler
             }

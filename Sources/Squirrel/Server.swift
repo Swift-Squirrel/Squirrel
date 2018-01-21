@@ -124,16 +124,17 @@ open class Server: Router {
         let path: Path
 
         if (Config.sharedInstance.webRoot + "Storage").isSymlink
-            && Path(request.path.lowercased()).normalize().starts(with: ["storage"]) {
+            && Path(request.path.lowercased()).httpNormalized.starts(with: ["storage"]) {
 
-            var a = Path(request.path).normalize().string.split(separator: "/")
+            var a = Path(request.path).string.split(separator: "/")
             a.removeFirst()
-            path = (Config.sharedInstance.publicStorage + a.joined(separator: "/")).normalize()
+            path = (Config.sharedInstance.publicStorage + a.joined(separator: "/")).httpNormalized
         } else {
             let requestPath = String(request.path.dropFirst())
-            path = (Config.sharedInstance.webRoot + requestPath).normalize()
+            path = (Config.sharedInstance.webRoot + requestPath).httpNormalized
 
             guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot.string) else {
+                // TODO refactor and remove findHandler(for:)
                 if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
                     log.debug("Using handler")
                     return handler
