@@ -78,26 +78,16 @@ open class Server: Router {
     func newConnection(socket: Socket) {
         connected[socket.socketfd] = socket
 
-        //        var cont = true
-        //        var zeroTimes = 100
-        //        repeat {
         do {
-            //                if bytes > 0 {
-            //                    zeroTimes = 100
             do {
                 let request = try Request(socket: socket)
                 log.info(request.method.rawValue + " " + request.path)
-
-//                if let connection = request.headers[.connection],
-//                    connection != "keep-alive" {
-//                    cont = false
-//                }
                 let response = handle(request: request)
-                if request.acceptEncoding.count > 0 {
-                    if request.acceptEncoding.contains(.gzip) {
-                        response.contentEncoding = .gzip
-                    }
-                }
+//                if request.acceptEncoding.count > 0 {
+//                    if request.acceptEncoding.contains(.gzip) {
+//                        response.contentEncoding = .gzip
+//                    }
+//                }
                 if let range = request.range {
                     sendPartial(socket: socket, range: range, response: response)
                 } else {
@@ -106,21 +96,11 @@ open class Server: Router {
             } catch let error {
                 let response = ErrorHandler.sharedInstance.response(for: error)
                 send(socket: socket, response: response)
-//                cont = false
                 throw error
             }
-//            dataRead.removeAll()
-            //                } else {
-            //                    zeroTimes -= 1
-            //                    if zeroTimes == 0 {
-            //                        cont = false
-            //                    }
-            //                }
         } catch let error {
-            log.error("error: \(error)")
-            //                cont = false
+            log.error("error with client: \(error.localizedDescription)")
         }
-        //        } while cont
         connected.removeValue(forKey: socket.socketfd)
         socket.close()
     }
@@ -251,12 +231,12 @@ open class Server: Router {
         }
 
         let body: Data
-        if response.contentEncoding == .gzip {
-            body = response.gzippedBody
-            response.headers.set(to: .contentEncoding(.gzip))
-        } else {
-            body = response.rawBody
-        }
+//        if response.contentEncoding == .gzip {
+//            body = response.gzippedBody
+//            response.headers.set(to: .contentEncoding(.gzip))
+//        } else {
+        body = response.rawBody
+//        }
         response.headers.set(to: .contentLength(size: body.count))
         let head = response.rawHeader
         let _ = try? socket.write(from: head + body)

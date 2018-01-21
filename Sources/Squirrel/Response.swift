@@ -8,7 +8,6 @@
 
 import Foundation
 import PathKit
-import GZip
 import SquirrelCore
 
 /// Responder
@@ -215,11 +214,6 @@ extension Response {
 
     var rawBody: Data {
         return body
-    }
-
-    var gzippedBody: Data {
-        // swiftlint:disable:next force_try
-        return try! rawBody.gzipped()
     }
 }
 
