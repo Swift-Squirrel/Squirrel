@@ -82,6 +82,7 @@ open class Server: Router {
             do {
                 let request = try Request(socket: socket)
                 log.info(request.method.rawValue + " " + request.path)
+                log.verbose("\(request.remoteHostname) - \(request.method) \(request.path) \(request.headers)")
                 let response = handle(request: request)
 //                if request.acceptEncoding.count > 0 {
 //                    if request.acceptEncoding.contains(.gzip) {
@@ -95,6 +96,7 @@ open class Server: Router {
                 }
             } catch let error {
                 let response = ErrorHandler.sharedInstance.response(for: error)
+                log.error("unknown - \(response.status): \(error)")
                 send(socket: socket, response: response)
                 throw error
             }
@@ -111,14 +113,14 @@ open class Server: Router {
             let handlerResult = try handler(request)
             return try Response.parseAnyResponse(any: handlerResult)
         } catch let error {
-            return ErrorHandler.sharedInstance.response(for: error)
+            let errorResponse = ErrorHandler.sharedInstance.response(for: error)
+            log.error("\(request.remoteHostname) - \(errorResponse.status): \(error)")
+            return errorResponse
         }
-
     }
 
     private func getHandler(for request: Request) throws -> AnyResponseHandler {
         if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
-            log.debug("Using handler")
             return handler
         }
         let path: Path
@@ -136,7 +138,6 @@ open class Server: Router {
             guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot.string) else {
                 // TODO refactor and remove findHandler(for:)
                 if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
-                    log.debug("Using handler")
                     return handler
                 } else {
                     throw HTTPError(status: .notFound, description: "'/' is not handled")

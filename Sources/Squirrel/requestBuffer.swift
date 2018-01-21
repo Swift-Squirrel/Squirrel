@@ -173,6 +173,7 @@ extension Request {
 
         private func waitRefreshBuffer() throws {
             guard try Socket.wait(for: [socket], timeout: SocketBuffer.readWait) != nil else {
+                log.verbose("Reading from socket timed out")
                 throw HTTPError(status: .requestTimeout)
             }
             try refreshBuffer()
