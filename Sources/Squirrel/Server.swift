@@ -69,6 +69,7 @@ open class Server: Router {
         let queue = DispatchQueue(label: "clientQueue", attributes: .concurrent)
         repeat {
             let connectedSocket = try socket.acceptClientConnection()
+//            try connectedSocket.setBlocking(mode: false)
             log.verbose("Connection from: \(connectedSocket.remoteHostname)")
             queue.async {self.newConnection(socket: connectedSocket)}
         } while acceptNewConnection

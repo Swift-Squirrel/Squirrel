@@ -131,7 +131,6 @@ extension Request {
         init(socket: Socket) {
             self.socket = socket
             buffer = []
-            try? refreshBuffer()
         }
 
         func read(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> Data {
@@ -172,7 +171,8 @@ extension Request {
         }
 
         private func waitRefreshBuffer() throws {
-            guard try Socket.wait(for: [socket], timeout: SocketBuffer.readWait) != nil else {
+            let sock = [socket]
+            guard try Socket.wait(for: sock, timeout: SocketBuffer.readWait) != nil else {
                 log.verbose("Reading from socket timed out")
                 throw HTTPError(status: .requestTimeout)
             }
