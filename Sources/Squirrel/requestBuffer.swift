@@ -7,6 +7,7 @@
 
 import Socket
 import Foundation
+import SquirrelCore
 
 public enum BufferDelimeter {
     case crlf
@@ -129,6 +130,12 @@ extension Request {
         private let socket: Socket
         public static var readWait: UInt = 3000
         public static var initWait: UInt = 20000
+        public static var bufferSize: UInt = 4096 {
+            didSet {
+                _bufferSize = Int(bufferSize)
+            }
+        }
+        private static var _bufferSize = 4096
 
         public init(socket: Socket) throws {
             self.socket = socket
@@ -178,7 +185,7 @@ extension Request {
             let sock = [socket]
             guard try Socket.wait(for: sock, timeout: miliseconds) != nil else {
                 log.verbose("Reading from socket timed out")
-                throw HTTPError(status: .requestTimeout)
+                throw SocketError(kind: .timeout)
             }
 
         }
@@ -190,10 +197,14 @@ extension Request {
 
         private func refreshBuffer() throws {
             var readData = Data()
-            let _ = try socket.read(into: &readData)
-            if readData.count > 0 {
-                buffer = readData.reversed() + buffer
+            readData.reserveCapacity(Int(SocketBuffer._bufferSize))
+            let count = try socket.read(into: &readData)
+
+            guard count > 0 else {
+                throw SocketError(kind: .clientClosedConnection)
             }
+
+            buffer = readData.reversed() + buffer
         }
 
         public func read(bytes: Int) throws -> Data {
@@ -217,6 +228,33 @@ extension Request {
                 throw DataError(kind: .dataEncodingError)
             }
             return string
+        }
+    }
+
+    struct SocketError: HTTPErrorConvertible, SquirrelError {
+        var asHTTPError: HTTPError {
+            switch kind {
+            case .timeout:
+                return HTTPError(status: .requestTimeout, description: description)
+            case .clientClosedConnection:
+                fatalError(description)
+            }
+        }
+
+        enum Kind {
+            case timeout
+            case clientClosedConnection
+        }
+        let kind: Kind
+        let description: String
+        init (kind: Kind) {
+            self.kind = kind
+            switch kind {
+            case .clientClosedConnection:
+                description = "Client closed connection"
+            case .timeout:
+                description = "Request timed out"
+            }
         }
     }
 }

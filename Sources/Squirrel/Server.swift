@@ -96,13 +96,18 @@ open class Server: Router {
                     send(socket: socket, response: response)
                 }
             } catch let error {
+                if let sockErr = error as? Request.SocketError {
+                    if sockErr.kind == .clientClosedConnection {
+                        throw sockErr
+                    }
+                }
                 let response = ErrorHandler.sharedInstance.response(for: error)
                 log.error("unknown - \(response.status): \(error)")
                 send(socket: socket, response: response)
                 throw error
             }
         } catch let error {
-            log.error("error with client: \(error.localizedDescription)")
+            log.error("error with client: \(error)")
         }
         connected.removeValue(forKey: socket.socketfd)
         socket.close()
