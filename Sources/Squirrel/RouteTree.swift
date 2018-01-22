@@ -102,6 +102,4 @@ class RouteTree {
 
         return try root?.findHandler(for: method, in: routes)
     }
-
-
 }

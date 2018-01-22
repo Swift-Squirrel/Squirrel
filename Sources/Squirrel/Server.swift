@@ -69,6 +69,7 @@ open class Server: Router {
         let queue = DispatchQueue(label: "clientQueue", attributes: .concurrent)
         repeat {
             let connectedSocket = try socket.acceptClientConnection()
+//            try connectedSocket.setBlocking(mode: false)
             log.verbose("Connection from: \(connectedSocket.remoteHostname)")
             queue.async {self.newConnection(socket: connectedSocket)}
         } while acceptNewConnection
@@ -77,27 +78,18 @@ open class Server: Router {
 
     func newConnection(socket: Socket) {
         connected[socket.socketfd] = socket
-
-        //        var cont = true
-        //        var zeroTimes = 100
-        //        repeat {
         do {
-            //                if bytes > 0 {
-            //                    zeroTimes = 100
             do {
                 let request = try Request(socket: socket)
                 log.info(request.method.rawValue + " " + request.path)
-
-//                if let connection = request.headers[.connection],
-//                    connection != "keep-alive" {
-//                    cont = false
-//                }
+                log.verbose("\(request.remoteHostname) - \(request.method) \(request.path) \(request.headers)")
                 let response = handle(request: request)
-                if request.acceptEncoding.count > 0 {
-                    if request.acceptEncoding.contains(.gzip) {
-                        response.contentEncoding = .gzip
-                    }
-                }
+//                if request.acceptEncoding.count > 0 {
+//                    if request.acceptEncoding.contains(.gzip) {
+//                        response.contentEncoding = .gzip
+//                    }
+//                }
+
                 if let range = request.range {
                     sendPartial(socket: socket, range: range, response: response)
                 } else {
@@ -105,22 +97,13 @@ open class Server: Router {
                 }
             } catch let error {
                 let response = ErrorHandler.sharedInstance.response(for: error)
+                log.error("unknown - \(response.status): \(error)")
                 send(socket: socket, response: response)
-//                cont = false
                 throw error
             }
-//            dataRead.removeAll()
-            //                } else {
-            //                    zeroTimes -= 1
-            //                    if zeroTimes == 0 {
-            //                        cont = false
-            //                    }
-            //                }
         } catch let error {
-            log.error("error: \(error)")
-            //                cont = false
+            log.error("error with client: \(error.localizedDescription)")
         }
-        //        } while cont
         connected.removeValue(forKey: socket.socketfd)
         socket.close()
     }
@@ -131,31 +114,31 @@ open class Server: Router {
             let handlerResult = try handler(request)
             return try Response.parseAnyResponse(any: handlerResult)
         } catch let error {
-            return ErrorHandler.sharedInstance.response(for: error)
+            let errorResponse = ErrorHandler.sharedInstance.response(for: error)
+            log.error("\(request.remoteHostname) - \(errorResponse.status): \(error)")
+            return errorResponse
         }
-
     }
 
     private func getHandler(for request: Request) throws -> AnyResponseHandler {
         if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
-            log.debug("Using handler")
             return handler
         }
         let path: Path
 
         if (Config.sharedInstance.webRoot + "Storage").isSymlink
-            && Path(request.path.lowercased()).normalize().starts(with: ["storage"]) {
+            && Path(request.path.lowercased()).httpNormalized.starts(with: ["storage"]) {
 
-            var a = Path(request.path).normalize().string.split(separator: "/")
+            var a = Path(request.path).string.split(separator: "/")
             a.removeFirst()
-            path = (Config.sharedInstance.publicStorage + a.joined(separator: "/")).normalize()
+            path = (Config.sharedInstance.publicStorage + a.joined(separator: "/")).httpNormalized
         } else {
             let requestPath = String(request.path.dropFirst())
-            path = (Config.sharedInstance.webRoot + requestPath).normalize()
+            path = (Config.sharedInstance.webRoot + requestPath).httpNormalized
 
             guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot.string) else {
+                // TODO refactor and remove findHandler(for:)
                 if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
-                    log.debug("Using handler")
                     return handler
                 } else {
                     throw HTTPError(status: .notFound, description: "'/' is not handled")
@@ -251,12 +234,12 @@ open class Server: Router {
         }
 
         let body: Data
-        if response.contentEncoding == .gzip {
-            body = response.gzippedBody
-            response.headers.set(to: .contentEncoding(.gzip))
-        } else {
-            body = response.rawBody
-        }
+//        if response.contentEncoding == .gzip {
+//            body = response.gzippedBody
+//            response.headers.set(to: .contentEncoding(.gzip))
+//        } else {
+        body = response.rawBody
+//        }
         response.headers.set(to: .contentLength(size: body.count))
         let head = response.rawHeader
         let _ = try? socket.write(from: head + body)

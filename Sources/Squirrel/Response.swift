@@ -8,7 +8,6 @@
 
 import Foundation
 import PathKit
-import GZip
 import SquirrelCore
 
 /// Responder
@@ -16,8 +15,6 @@ public typealias AnyResponseHandler = ((Request) throws -> Any)
 
 /// Response class
 open class Response {
-
-    private let routeTree = RouteTree()
 
     /// Response status
     public let status: HTTPStatus
@@ -217,11 +214,6 @@ extension Response {
 
     var rawBody: Data {
         return body
-    }
-
-    var gzippedBody: Data {
-        // swiftlint:disable:next force_try
-        return try! rawBody.gzipped()
     }
 }
 
