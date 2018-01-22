@@ -8,11 +8,12 @@
 import Socket
 import Foundation
 
-enum BufferDelimeter {
+public enum BufferDelimeter {
     case crlf
     case space
 }
-protocol Buffer {
+
+public protocol Buffer {
     func read(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> Data
     func read(bytes: Int) throws -> Data
     func readString(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> String
@@ -20,17 +21,17 @@ protocol Buffer {
 
 extension Request {
 
-    class StaticBuffer: Buffer {
+    public class StaticBuffer: Buffer {
         private var buffer: [UInt8]
 
         // swiftlint:disable:next nesting
 
 
-        init(buffer: Data) {
+        public init(buffer: Data) {
             self.buffer = buffer.reversed()
         }
 
-        func read(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> Data {
+        public func read(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> Data {
             var res = Data()
             var found = false
             switch delimeter {
@@ -62,7 +63,7 @@ extension Request {
             }
             return res
         }
-        func read(bytes: Int) throws -> Data {
+        public func read(bytes: Int) throws -> Data {
             //            let res = buffer.dropLast(bytes)
             let endIndex = buffer.endIndex
             var startIndex = endIndex - bytes
@@ -76,7 +77,7 @@ extension Request {
             return Data(bytes: res.reversed())
         }
 
-        func read(until sequence: Data, allowEmpty: Bool) throws -> Data {
+        public func read(until sequence: Data, allowEmpty: Bool) throws -> Data {
             var found = false
             var bufferIndex = buffer.endIndex - 1
             let bufferStart = buffer.startIndex
@@ -113,7 +114,7 @@ extension Request {
             return Data(bytes: res.reversed())
         }
 
-        func readString(until delimeter: BufferDelimeter,
+        public func readString(until delimeter: BufferDelimeter,
                         allowEmpty: Bool = false) throws -> String {
                 let data = try read(until: delimeter, allowEmpty: allowEmpty)
                 guard let string = String(data: data, encoding: .utf8) else {
@@ -123,17 +124,20 @@ extension Request {
         }
     }
 
-    class SocketBuffer: Buffer {
+    public class SocketBuffer: Buffer {
         private var buffer: [UInt8]
         private let socket: Socket
-        private static let readWait: UInt = 1000
+        public static var readWait: UInt = 3000
+        public static var initWait: UInt = 20000
 
-        init(socket: Socket) {
+        public init(socket: Socket) throws {
             self.socket = socket
             buffer = []
+            try wait(miliseconds: SocketBuffer.initWait)
+            try refreshBuffer()
         }
 
-        func read(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> Data {
+        public func read(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> Data {
             var res = Data()
             var found = false
             repeat {
@@ -170,12 +174,17 @@ extension Request {
             return res
         }
 
-        private func waitRefreshBuffer() throws {
+        private func wait(miliseconds: UInt) throws {
             let sock = [socket]
-            guard try Socket.wait(for: sock, timeout: SocketBuffer.readWait) != nil else {
+            guard try Socket.wait(for: sock, timeout: miliseconds) != nil else {
                 log.verbose("Reading from socket timed out")
                 throw HTTPError(status: .requestTimeout)
             }
+
+        }
+
+        private func waitRefreshBuffer() throws {
+            try wait(miliseconds: SocketBuffer.readWait)
             try refreshBuffer()
         }
 
@@ -187,7 +196,7 @@ extension Request {
             }
         }
 
-        func read(bytes: Int) throws -> Data {
+        public func read(bytes: Int) throws -> Data {
             while bytes > buffer.count {
                 try waitRefreshBuffer()
             }
@@ -200,7 +209,7 @@ extension Request {
             return Data(bytes: res.reversed())
         }
 
-        func readString(until delimeter: BufferDelimeter,
+        public func readString(until delimeter: BufferDelimeter,
                         allowEmpty: Bool = false) throws -> String {
 
             let data = try read(until: delimeter, allowEmpty: allowEmpty)
