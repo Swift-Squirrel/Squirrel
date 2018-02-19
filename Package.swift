@@ -14,7 +14,7 @@ let package = Package(
         .package(url: "https://github.com/SwiftyBeaver/SwiftyBeaver.git",  from: "1.4.1"),
         .package(url: "https://github.com/jpsim/Yams.git",  from: "0.3.6"),
         .package(url: "https://github.com/IBM-Swift/BlueSocket", from: "0.12.61"),
-//        .package(url: "https://github.com/antonmes/GZip.git", from: "5.0.0"),
+        .package(url: "https://github.com/vapor/crypto.git", from: "2.1.2"),
         .package(url: "https://github.com/tris-foundation/test.git", from: "0.4.3"),
         .package(url: "https://github.com/Swift-Squirrel/SquirrelJSON.git", from: "0.1.0"),
         .package(url: "https://github.com/Swift-Squirrel/Squirrel-Core.git", from: "0.1.1")
@@ -22,7 +22,7 @@ let package = Package(
     targets: [
         .target(
             name: "Squirrel",
-            dependencies: ["SquirrelConfig", "SquirrelJSON", "Socket", "SquirrelCore"]),
+            dependencies: ["SquirrelConfig", "SquirrelJSON", "Crypto","Socket", "SquirrelCore"]),
 
         .target(
             name: "SquirrelConfig",

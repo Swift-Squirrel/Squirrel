@@ -9,6 +9,7 @@ import Foundation
 import SquirrelJSON
 import PathKit
 import SquirrelConfig
+import Crypto
 
 /// Session protocol
 public protocol SessionProtocol: Codable {
@@ -161,7 +162,29 @@ struct SessionManager: SessionBuilder {
         guard let userAgent = request.headers[SessionConfig.userAgent] else {
             return nil
         }
-        let id = randomString()
+
+        guard let host = request.remoteHostname.data(using: .utf8) else {
+            return nil
+        }
+
+        guard let date = Date().description.data(using: .utf8) else {
+            return nil
+        }
+
+        guard let random = try? Random().bytes(count: 32) else {
+            return nil
+        }
+
+        let sessionIDData = host + date + random
+        guard let hash = try? Hash(.md5, sessionIDData) else {
+            return nil
+        }
+
+        guard let hashValue = try? hash.hash() else {
+            return nil
+        }
+
+        let id = hashValue.hexString
 
         return Session(
             id: id,
@@ -231,56 +254,5 @@ public struct SessionMiddleware: Middleware {
         } else {
             self.sessionManager = SessionManager()
         }
-        #if os(Linux)
-            srandom(UInt32(time(nil)))
-        #endif
     }
-}
-
-/// Random string generator thanks to Fattie
-///
-/// Taken from
-/// [stack overflow](https://stackoverflow.com/questions/26845307)
-///
-/// - Parameter length: Generated string lenght
-/// - Returns: Random string
-func randomString(length: Int = 32, pidPrefix: Bool = true) -> String {
-    enum ValidCharacters {
-        static let chars = Array("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-        #if os(Linux)
-            static let count = chars.count
-        #else
-            static let count32 = UInt32(chars.count)
-        #endif
-    }
-
-    var result = [Character](repeating: "a", count: length)
-    let max: Int
-    let prefix: String
-    if pidPrefix {
-        prefix = ProcessInfo.processInfo.processIdentifier.description
-        let newMax = length - prefix.count
-        if newMax > 0 {
-            max = newMax
-        } else {
-            max = 0
-        }
-    } else {
-        prefix = ""
-        max = length
-    }
-
-    for i in 0..<max {
-        #if os(Linux)
-            let r = random() % ValidCharacters.count
-        #else
-            let r = Int(arc4random_uniform(ValidCharacters.count32))
-        #endif
-        result[i] = ValidCharacters.chars[r]
-    }
-    if pidPrefix {
-        return prefix + String(result)
-    }
-    return String(result)
 }
