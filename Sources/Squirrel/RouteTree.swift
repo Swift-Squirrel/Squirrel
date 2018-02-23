@@ -11,6 +11,31 @@ import Foundation
 class RouteTree {
     private var root: RouteNode? = nil
 
+    var allRoutes: [RouteDescriptor] {
+        guard let root = root else {
+            return []
+        }
+        return root.routes(prefix: "").map { RouteDescriptor(route: $0.route, methods: $0.methods) }
+    }
+
+    func drop(method: RequestLine.Method, on route: String) {
+        log.debug("Removing route (\(route)) for method \(method.rawValue) ")
+        guard let node = root else {
+            log.debug("\tRoute \(route) does not exists")
+            return
+        }
+        var route = route
+        if route.first != "/" {
+            route = "/\(route)"
+        }
+        var components = route.components(separatedBy: "/")
+        guard !components.isEmpty else {
+            return
+        }
+        components[components.startIndex] = "/"
+        node.drop(method: method, onReversed: components.reversed())
+    }
+
     func add(
         route: String,
         forMethod method: RequestLine.Method,

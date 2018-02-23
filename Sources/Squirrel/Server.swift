@@ -250,3 +250,9 @@ open class Server: Router {
         let _ = try? socket.write(from: head + body)
     }
 }
+
+public extension Server {
+    public func drop(method: RequestLine.Method, on route: String) {
+        responseManager.drop(method: method, on: route)
+    }
+}

@@ -23,11 +23,19 @@ struct CommonRouter: Router {
     }
 }
 
+public struct RouteDescriptor {
+    let route: String
+    let methods: [RequestLine.Method]
+}
 
 // MARK: - routes
 extension Router {
     var responseManager: ResponseManager {
         return ResponseManager.sharedInstance
+    }
+
+    public var routes: [RouteDescriptor] {
+        return responseManager.allRoutes
     }
 
     /// Add route for get method

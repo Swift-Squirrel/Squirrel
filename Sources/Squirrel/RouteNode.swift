@@ -10,18 +10,104 @@ import Foundation
 
 class RouteNode {
 
-    let route: String
+    let name: String
+
+    var fullName: String {
+        return name
+    }
 
     private var values: [RequestLine.Method: AnyResponseHandler] = [:]
 
     private var defaultHandlers: [RequestLine.Method: AnyResponseHandler] = [:]
 
-    private var childrens = [RouteNode]()
+    private var children = [RouteNode]()
 
     private var dynamicNodes = [DynamicRouteNode]()
 
+    func routes(prefix: String) -> [(route: String, methods:[RequestLine.Method])] {
+        let route: String
+        let newPrefix: String
+        if name == "/" {
+            route = "/"
+            newPrefix = "/"
+        } else {
+            route = "\(prefix)\(fullName)"
+            newPrefix = "\(route)/"
+        }
+        var result = [(route: String, methods:[RequestLine.Method])]()
+        if !values.isEmpty {
+            result.append((route, values.map { $0.key }))
+        }
+        let childenRoutes = children.flatMap { $0.routes(prefix: newPrefix) }
+        if !childenRoutes.isEmpty {
+            result.append(contentsOf: childenRoutes)
+        }
+        let dynamicRoutes = dynamicNodes.flatMap { $0.routes(prefix: newPrefix) }
+        if !dynamicNodes.isEmpty {
+            result.append(contentsOf: dynamicRoutes)
+        }
+        if !defaultHandlers.isEmpty {
+            result.append(("\(newPrefix)*", defaultHandlers.map { $0.key }))
+        }
+        return result
+    }
+
     init(route: String) {
-        self.route = route.lowercased()
+        self.name = route.lowercased()
+    }
+
+    func drop(method: RequestLine.Method, onReversed components: [String]) {
+        var components = components
+        guard let nodeName = components.popLast() else {
+            return
+        }
+        guard fullName == nodeName else {
+            return
+        }
+
+        if let childName = components.last {
+            if childName == "*" {
+                defaultHandlers.removeValue(forKey: method)
+            } else if childName.first == ":" {
+                var index = dynamicNodes.startIndex
+                while index < dynamicNodes.endIndex {
+                    let child = dynamicNodes[index]
+                    if child.fullName == childName {
+                        child.drop(method: method, onReversed: components)
+                        if child.isEmpty {
+                            let _ = dynamicNodes.remove(at: index)
+                        }
+                        break
+                    }
+                    index += 1
+                }
+            } else {
+                var index = children.startIndex
+                while index < children.endIndex {
+                    let child = children[index]
+                    if child.name == childName {
+                        child.drop(method: method, onReversed: components)
+                        if child.isEmpty {
+                            let _ = children.remove(at: index)
+                        }
+                        break
+                    }
+                    index += 1
+                }
+            }
+        } else {
+            values.removeValue(forKey: method)
+        }
+    }
+
+    var isEmpty: Bool {
+        guard children.isEmpty && dynamicNodes.isEmpty else {
+            return false
+        }
+        guard values.isEmpty && defaultHandlers.isEmpty else {
+            return false
+        }
+        return true
     }
 
     func addNode(
@@ -42,7 +128,7 @@ class RouteNode {
 
         if firstElem.hasPrefix(":") {
             for node in dynamicNodes {
-                if ":" + node.route == firstElem {
+                if ":" + node.name == firstElem {
                     try nodeSetAdd(routes: routes, node: node, method: method, handler: handler)
                     return
                 }
@@ -53,15 +139,15 @@ class RouteNode {
             return
         }
 
-        for child in childrens {
-            if child.route == firstElem {
+        for child in children {
+            if child.name == firstElem {
                 try nodeSetAdd(routes: routes, node: child, method: method, handler: handler)
                 return
             }
         }
 
         let newNode = RouteNode(route: firstElem)
-        childrens.append(newNode)
+        children.append(newNode)
         try nodeSetAdd(routes: routes, node: newNode, method: method, handler: handler)
     }
 
@@ -118,8 +204,8 @@ class RouteNode {
         }
         var rs = routes
         rs.remove(at: 0)
-        for child in childrens {
-            if child.route == rs.first!.lowercased() {
+        for child in children {
+            if child.name == rs.first!.lowercased() {
                 guard let handler = try child.findHandler(for: method, in: rs)
                     ?? defaultHandlers[method] else {
 
