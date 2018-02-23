@@ -17,6 +17,10 @@ class ResponseManager {
     private init() {
     }
 
+    var allRoutes: [RouteDescriptor] {
+        return routeTree.allRoutes
+    }
+
     private func route(
         method: RequestLine.Method,
         url: String,
@@ -34,6 +38,11 @@ class ResponseManager {
 
 // MARK: - Get method
 extension ResponseManager {
+
+    func drop(method: RequestLine.Method, on route: String) {
+        routeTree.drop(method: method, on: route)
+    }
+
     func route(
         get url: String,
         middlewares: [Middleware],

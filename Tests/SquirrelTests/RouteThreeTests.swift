@@ -21,7 +21,8 @@ class RouteThreeTests: XCTestCase {
     }
 
     func testRootNode() {
-        assertTrue(rootNode.route == nodeName)
+        assertTrue(rootNode.name == nodeName)
+
         assertNoThrow(try rootNode.set(method: .get, handler: handler))
         assertNoThrow(try rootNode.set(method: .post, handler: handler))
         assertThrowsError(try rootNode.set(method: .get, handler: handler))
@@ -139,6 +140,13 @@ class RouteThreeTests: XCTestCase {
         handlerExists(for: .get, in: "/css")
         handlerExists(for: .get, in: "/admin")
         handlerExists(for: .get, in: "/admin/statistics")
+
+        handlerNotExists(for: .get, in: "not/existing")
+        let routeNotExisting = ["/", "not", "existing"]
+        assertNoThrow(try rootNode.addNode(routes: routeNotExisting, method: .get, handler: handler))
+        handlerExists(for: .get, in: "not/existing")
+        rootNode.drop(method: .get, onReversed: routeNotExisting.reversed())
+        handlerNotExists(for: .get, in: "not/existing")
     }
 
     private func addStaticNodes(for method: RequestLine.Method, in route: String, handler: AnyResponseHandler? = nil) {
@@ -183,6 +191,16 @@ class RouteThreeTests: XCTestCase {
         three.add(route: "/", forMethod: .get, handler: handler)
         assertNotNil(try three.findHandler(for: .get, in: "/web/asd/../../../index"))
         assertNotNil(try three.findHandler(for: .get, in: "/web/../web/./asd//.///.././../../index"))
+
+        XCTAssertEqual(three.allRoutes.count, 2)
+        three.add(route: "/:dyn/asd", forMethod: .post, handler: handler)
+        XCTAssertEqual(three.allRoutes.count, 3)
+        three.add(route: "/:dyn/asd", forMethod: .get, handler: handler)
+        XCTAssertEqual(three.allRoutes.count, 3)
+        three.drop(method: .post, on: "/:dyn/asd")
+        XCTAssertEqual(three.allRoutes.count, 3)
+        three.drop(method: .get, on: "/:dyn/asd")
+        XCTAssertEqual(three.allRoutes.count, 2)
     }
 
     func acceptableError(block: () throws -> ()) {

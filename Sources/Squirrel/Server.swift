@@ -78,7 +78,6 @@ open class Server: Router {
 
     func newConnection(socket: Socket) {
         connected[socket.socketfd] = socket
-
         do {
             do {
                 let request = try Request(socket: socket)
@@ -90,19 +89,25 @@ open class Server: Router {
 //                        response.contentEncoding = .gzip
 //                    }
 //                }
+
                 if let range = request.range {
                     sendPartial(socket: socket, range: range, response: response)
                 } else {
                     send(socket: socket, response: response)
                 }
             } catch let error {
+                if let sockErr = error as? Request.SocketError {
+                    if sockErr.kind == .clientClosedConnection {
+                        throw sockErr
+                    }
+                }
                 let response = ErrorHandler.sharedInstance.response(for: error)
                 log.error("unknown - \(response.status): \(error)")
                 send(socket: socket, response: response)
                 throw error
             }
         } catch let error {
-            log.error("error with client: \(error.localizedDescription)")
+            log.error("error with client: \(error)")
         }
         connected.removeValue(forKey: socket.socketfd)
         socket.close()
@@ -243,5 +248,11 @@ open class Server: Router {
         response.headers.set(to: .contentLength(size: body.count))
         let head = response.rawHeader
         let _ = try? socket.write(from: head + body)
+    }
+}
+
+public extension Server {
+    public func drop(method: RequestLine.Method, on route: String) {
+        responseManager.drop(method: method, on: route)
     }
 }

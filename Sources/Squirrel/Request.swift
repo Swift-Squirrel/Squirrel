@@ -143,7 +143,8 @@ open class Request {
     /// - Parameter socket: Socket
     /// - Throws: Request errors
     public convenience init(socket: Socket) throws {
-        try self.init(remoteHostname: socket.remoteHostname, buffer: SocketBuffer(socket: socket))
+        let socketBuffer = try SocketBuffer(socket: socket)
+        try self.init(remoteHostname: socket.remoteHostname, buffer: socketBuffer)
     }
 
     // For testing purposes
