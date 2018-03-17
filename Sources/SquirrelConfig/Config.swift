@@ -19,16 +19,18 @@ public class Config {
     private var _serverRoot: Path = Path().absolute()
     private let _webRoot: Path
     private let _cache: Path
-    private var _port: UInt16 = 8080
+    private var _port: UInt16 = 8000
     private let _isAllowedDirBrowsing: Bool
     private let _logDir: Path
     private let _logFile: Path
     private let _resourcesDir: Path
     private let _viewsDir: Path
-    private let _storage: Path
     private let _storageViews: Path
     private let _configFile: Path?
     private let _publicStorage: Path
+
+    /// Sotrage directory
+    public let storage: Path
 
     /// Symlink to public storage
     private let publicStorageSymlink: Path
@@ -44,7 +46,7 @@ public class Config {
 
     private let logFileName = "server.log"
 
-    /// Log file desctination
+    /// Log file destination
     public var logFile: Path {
         return _logFile
     }
@@ -121,7 +123,13 @@ public class Config {
     // swiftlint:disable cyclomatic_complexity
     // swiftlint:disable function_body_length
     private init() {
-        let configFile = Path().absolute() + ".squirrel.yaml"
+        let configFile: Path = {
+            let p1 = Path().absolute() + ".squirrel.yaml"
+            if p1.exists {
+                return p1
+            }
+            return Path().absolute() + ".squirrel.yml"
+        }()
         var domainConfig = "127.0.0.1"
         if configFile.exists {
             _configFile = configFile
@@ -156,15 +164,15 @@ public class Config {
         domain = domainConfig
         _webRoot = _serverRoot + "Public"
         publicStorageSymlink = _webRoot + "Storage"
-        _storage = _serverRoot + "Storage"
-        _cache = _storage + "Cache"
-        _publicStorage = _storage + "Public"
-        _logDir = _storage + "Logs"
-        session = _storage + "Sessions"
+        storage = _serverRoot + "Storage"
+        _cache = storage + "Cache"
+        _publicStorage = storage + "Public"
+        _logDir = storage + "Logs"
+        session = storage + "Sessions"
         _logFile = _logDir + logFileName
         _resourcesDir = _serverRoot + "Resources"
         _viewsDir = _resourcesDir + "NutViews"
-        _storageViews = _storage + "Fruits"
+        _storageViews = storage + "Fruits"
 
         _isAllowedDirBrowsing = false
 

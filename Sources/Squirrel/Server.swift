@@ -73,7 +73,6 @@ open class Server: Router {
             log.verbose("Connection from: \(connectedSocket.remoteHostname)")
             queue.async {self.newConnection(socket: connectedSocket)}
         } while acceptNewConnection
-
     }
 
     func newConnection(socket: Socket) {
