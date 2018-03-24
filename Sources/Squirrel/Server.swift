@@ -64,7 +64,8 @@ open class Server: Router {
         let socket = try Socket.create()
 
         listenSocket = socket
-        try socket.listen(on: Int(port))
+//        socket
+        try socket.listen(on: Int(port), maxBacklogSize: squirrelConfig.maximumPendingConnections, allowPortReuse: false)
         log.info("Server is running on port \(socket.listeningPort)")
         let queue = DispatchQueue(label: "clientQueue", attributes: .concurrent)
         repeat {

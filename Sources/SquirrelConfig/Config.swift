@@ -29,6 +29,9 @@ public class Config {
     private let _configFile: Path?
     private let _publicStorage: Path
 
+    /// Maximum pending connections
+    public let maximumPendingConnections: Int
+
     /// Sotrage directory
     public let storage: Path
 
@@ -131,6 +134,7 @@ public class Config {
             return Path().absolute() + ".squirrel.yml"
         }()
         var domainConfig = "127.0.0.1"
+        var maxPendingConnectionsConfig = 50
         if configFile.exists {
             _configFile = configFile
             do {
@@ -154,6 +158,9 @@ public class Config {
                     if let dom = Config.getStringVariable(from: serv["domain"]) {
                         domainConfig = dom
                     }
+                    if let maxPending = Config.getIntVariable(from: serv["max_pending"]) {
+                        maxPendingConnectionsConfig = maxPending
+                    }
                 }
             } catch {
                 print("config.yaml is not valid, using default values")
@@ -161,6 +168,7 @@ public class Config {
         } else {
             _configFile = nil
         }
+        maximumPendingConnections = maxPendingConnectionsConfig
         domain = domainConfig
         _webRoot = _serverRoot + "Public"
         publicStorageSymlink = _webRoot + "Storage"
