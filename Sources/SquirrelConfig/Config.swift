@@ -46,6 +46,8 @@ public class Config {
 
     /// Logger
     public let log = SwiftyBeaver.self
+    public let consoleLog: ConsoleDestination
+    public let fileLog: FileDestination
 
     private let logFileName = "server.log"
 
@@ -184,13 +186,16 @@ public class Config {
 
         _isAllowedDirBrowsing = false
 
+        consoleLog = ConsoleDestination()
+        fileLog = FileDestination()
+
         initLog()
         createDirectories()
 
         if !(publicStorageSymlink.exists && publicStorageSymlink.isSymlink) {
-            // TODO remove force try
-            // swiftlint:disable:next force_try
-            try! publicStorageSymlink.symlink(publicStorage)
+            guard (try? publicStorageSymlink.symlink(publicStorage)) != nil else {
+                fatalError("Could not create simlink to \(publicStorage)")
+            }
         }
     }
     // swiftlint:enable cyclomatic_complexity
@@ -227,18 +232,16 @@ public class Config {
     }
 
     private func initLog() {
-        let console = ConsoleDestination()
-        console.minLevel = .verbose
+        consoleLog.minLevel = .debug
 
         #if !Xcode
-            console.useTerminalColors = true
+            consoleLog.useTerminalColors = true
         #endif
 
-        let file = FileDestination()
-        file.logFileURL = URL(fileURLWithPath: logFile.description)
+        fileLog.logFileURL = URL(fileURLWithPath: logFile.description)
 
-        log.addDestination(console)
-        log.addDestination(file)
+        log.addDestination(consoleLog)
+        log.addDestination(fileLog)
     }
 
     private func createDir(path dir: Path) {
