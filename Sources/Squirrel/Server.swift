@@ -14,11 +14,14 @@ import SquirrelConfig
 
 /// Server class
 open class Server: Router {
+
     private let port: UInt16
-//    let bufferSize = 20
-    var listenSocket: Socket? = nil
-    var connected = [Int32: Socket]()
-    var acceptNewConnection = true
+    private var listenSocket: Socket? = nil
+    public private(set) var runStatus: RunStatus = .stopped
+    private var connected = [Int32: Socket]()
+    private let semaphore = DispatchSemaphore(value: 1)
+    private let dispatchGroup = DispatchGroup()
+
     let serverRoot: Path
     /// url
     public let url: String
@@ -57,27 +60,96 @@ open class Server: Router {
         listenSocket?.close()
     }
 
+    public func stop(finishConnections: Bool = true) {
+        guard isRunning else {
+            return
+        }
+        log.info("Server is stopping")
+        semaphore.wait()
+        runStatus = .stopping(now: !finishConnections)
+        listenSocket?.close()
+        listenSocket = nil
+        semaphore.signal()
+    }
+
+    public func pause(finishConnections: Bool = true, closure: @escaping ()->()) {
+        guard isRunning else {
+            return
+        }
+        log.info("Server is pausing")
+        semaphore.wait()
+        runStatus = .pausing(now: !finishConnections, closure: closure)
+        listenSocket?.close()
+        listenSocket = nil
+        semaphore.signal()
+    }
+
     /// Run server and start to listen on given `port` from `init(port:root:)`
     ///
     /// - Throws: Socket errors
     public func run() throws {
-        let socket = try Socket.create()
-
-        listenSocket = socket
-//        socket
-        try socket.listen(on: Int(port), maxBacklogSize: squirrelConfig.maximumPendingConnections, allowPortReuse: false)
-        log.info("Server is running on port \(socket.listeningPort)")
         let queue = DispatchQueue(label: "clientQueue", attributes: .concurrent)
         repeat {
-            let connectedSocket = try socket.acceptClientConnection()
-//            try connectedSocket.setBlocking(mode: false)
-            log.verbose("Connection from: \(connectedSocket.remoteHostname)")
-            queue.async {self.newConnection(socket: connectedSocket)}
-        } while acceptNewConnection
+            let socket = try Socket.create()
+            runStatus = .willRun
+            listenSocket = socket
+            defer {
+                listenSocket?.close()
+                listenSocket = nil
+            }
+            try socket.listen(on: Int(port), maxBacklogSize: squirrelConfig.maximumPendingConnections, allowPortReuse: false)
+            log.info("Server is running on port \(socket.listeningPort)")
+            runStatus = .running
+            do {
+                repeat {
+                    let connectedSocket = try socket.acceptClientConnection()
+
+                    dispatchGroup.enter()
+                    log.verbose("Connection from: \(connectedSocket.remoteHostname)")
+                    queue.async {
+                        self.connected[socket.socketfd] = connectedSocket
+                        self.newConnection(socket: connectedSocket)
+                        self.connected.removeValue(forKey: connectedSocket.socketfd)
+                        connectedSocket.close()
+                        self.dispatchGroup.leave()
+                    }
+                } while isRunning
+            } catch let error as Socket.Error {
+                guard error.errorCode == Socket.SOCKET_ERR_ACCEPT_FAILED && !isRunning else {
+                    throw error
+                }
+            }
+            semaphore.wait()
+            switch runStatus {
+            case .stopping(let now):
+                if !now {
+                    log.debug("Server is waiting for opened connections")
+                    dispatchGroup.wait()
+                }
+                runStatus = .stopped
+                log.info("Server is stopped")
+            case .pausing(let now, let closure):
+                if !now {
+                    log.debug("Server is waiting for opened connections")
+                    dispatchGroup.wait()
+                }
+                runStatus = .paused
+                log.info("Server is paused")
+                closure()
+                log.debug("Server will run")
+                runStatus = .willRun
+            case .stopped, .paused, .willRun:
+                assertionFailure("Unexpected server state")
+                break
+            case .running:
+                assertionFailure("Unexpected server state")
+                break
+            }
+            semaphore.signal()
+        } while willRun
     }
 
     func newConnection(socket: Socket) {
-        connected[socket.socketfd] = socket
         do {
             do {
                 let request = try Request(socket: socket)
@@ -109,8 +181,6 @@ open class Server: Router {
         } catch let error {
             log.error("error with client: \(error)")
         }
-        connected.removeValue(forKey: socket.socketfd)
-        socket.close()
     }
 
     private func handle(request: Request) -> Response {
@@ -179,6 +249,51 @@ open class Server: Router {
             return try Response(pathToFile: path)
         })
     }
+}
+
+// MARK: - RunStatus
+public extension Server {
+    public enum RunStatus {
+        case willRun
+        case running
+        case paused
+        case pausing(now: Bool, closure: ()->())
+        case stopped
+        case stopping(now: Bool)
+    }
+
+    var isPaused: Bool {
+        guard case .stopped = runStatus else {
+            return false
+        }
+        return true
+    }
+
+    var willRun: Bool {
+        guard case .willRun = runStatus else {
+            return false
+        }
+        return true
+    }
+
+    var isStopped: Bool {
+        guard case .stopped = runStatus else {
+            return false
+        }
+        return true
+    }
+
+    var isRunning: Bool {
+        guard case .running = runStatus else {
+            return false
+        }
+        return true
+    }
+}
+
+// MARK: - Sending
+private extension Server {
+
 
     private func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt), response: Response) {
         let bodyBytes = response.rawBody
@@ -239,12 +354,12 @@ open class Server: Router {
         }
 
         let body: Data
-//        if response.contentEncoding == .gzip {
-//            body = response.gzippedBody
-//            response.headers.set(to: .contentEncoding(.gzip))
-//        } else {
+        //        if response.contentEncoding == .gzip {
+        //            body = response.gzippedBody
+        //            response.headers.set(to: .contentEncoding(.gzip))
+        //        } else {
         body = response.rawBody
-//        }
+        //        }
         response.headers.set(to: .contentLength(size: body.count))
         let head = response.rawHeader
         let _ = try? socket.write(from: head + body)
