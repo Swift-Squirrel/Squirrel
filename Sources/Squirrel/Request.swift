@@ -28,6 +28,8 @@ open class Request {
     /// Hostname or IP
     public let remoteHostname: String
 
+    public var sessionBuilder: SessionBuilder = SessionManager()
+
     /// Accept-Encoding
     public private(set) var acceptEncoding = Set<HTTPHeader.Encoding>()
 
@@ -402,7 +404,7 @@ extension Request {
     /// - Throws: `SessionError(kind: .cantEstablish)`
     @discardableResult
     public func newSession() throws -> SessionProtocol {
-        guard let new = SessionManager().new(for: self) else { // Remove SessionManager() (this is not configurable)
+        guard let new = sessionBuilder.new(for: self) else { // Remove SessionManager() (this is not configurable)
             throw SessionError(kind: .cantEstablish)
         }
         new.isNew = true
