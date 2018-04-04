@@ -12,6 +12,3 @@ import SquirrelConfig
 
 /// Log
 public let log = squirrelConfig.log
-
-//log.rem
-

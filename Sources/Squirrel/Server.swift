@@ -368,6 +368,6 @@ private extension Server {
 
 public extension Server {
     public func drop(method: RequestLine.Method, on route: String) {
-        responseManager.drop(method: method, on: route)
+        ResponseManager.sharedInstance.drop(method: method, on: route)
     }
 }

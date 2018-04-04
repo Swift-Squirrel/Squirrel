@@ -28,6 +28,13 @@ public struct RouteDescriptor {
     let methods: [RequestLine.Method]
 }
 
+extension Router {
+    public var routes: [RouteDescriptor] {
+        return ResponseManager.sharedInstance.allRoutes
+    }
+}
+// TODO remove
+/*
 // MARK: - routes
 extension Router {
     var responseManager: ResponseManager {
@@ -44,10 +51,11 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
+    ///   - request: Request
     public func get(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (Request) throws -> Any) {
+        handler: @escaping (_ request: Request) throws -> Any) {
 
         responseManager.route(
             get: mergeURL(with: url),
@@ -78,11 +86,13 @@ extension Router {
     ///   - url: Url of route
     ///   - middlewares: Array of Middlewares
     ///   - handler: Response handler
+    ///   - request: Request class
+    ///   - params: struct/class created from request
     public func get<T>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (Request, T) throws -> Any) where T: Decodable {
-
+        handler: @escaping (_ request: Request, _ params: T) throws -> Any) where T: Decodable {
+        
         responseManager.route(
             get: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
@@ -104,6 +114,22 @@ extension Router {
             get: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares,
             handler: handler)
+    }
+
+    public func get<T: Decodable, U: Decodable>(
+        _ url: String,
+        middlewares: [Middleware] = [],
+        handler: @escaping (T, U) throws -> Any) {
+        // TODO
+        fatalError("Not implemented")
+    }
+    
+    public func get<T: Decodable, U: SessionProtocol>(
+        _ url: String,
+        middlewares: [Middleware] = [],
+        handler: @escaping (T, U) throws -> Any) {
+        // TODO
+        fatalError("Not implemented")
     }
 
     /// Add route for post method
@@ -377,3 +403,4 @@ extension Router {
             handler: handler)
     }
 }
+*/

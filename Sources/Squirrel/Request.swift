@@ -402,7 +402,7 @@ extension Request {
     /// - Throws: `SessionError(kind: .cantEstablish)`
     @discardableResult
     public func newSession() throws -> SessionProtocol {
-        guard var new = SessionManager().new(for: self) else {
+        guard let new = SessionManager().new(for: self) else { // Remove SessionManager() (this is not configurable)
             throw SessionError(kind: .cantEstablish)
         }
         new.isNew = true

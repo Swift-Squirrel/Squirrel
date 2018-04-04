@@ -21,7 +21,7 @@ class ResponseManager {
         return routeTree.allRoutes
     }
 
-    private func route(
+    func route(
         method: RequestLine.Method,
         url: String,
         middlewares: [Middleware],
@@ -36,12 +36,53 @@ class ResponseManager {
     }
 }
 
-// MARK: - Get method
+public protocol SessionDecodable: Decodable {
+    
+}
+
+// MARK: - Route methods
 extension ResponseManager {
 
     func drop(method: RequestLine.Method, on route: String) {
         routeTree.drop(method: method, on: route)
     }
+
+//    func route(method: RequestLine.Method,
+//               url: String,
+//               middlewares: [Middleware],
+//               handler: @escaping () throws -> Any) {
+//        route(method: method, url: url, middlewares: middlewares) { _ in
+//            return try handler()
+//        }
+//    }
+
+//    func route(method: RequestLine.Method,
+//               url: String,
+//               middlewares: [Middleware],
+//               handler: @escaping () throws -> Any) {
+//        route(method: method, url: url, middlewares: middlewares) { _ in
+//            return try handler()
+//        }
+//    }
+
+//    func route<T: Decodable>(method: RequestLine.Method,
+//        get url: String,
+//        middlewares: [Middleware],
+//        handler: @escaping (T) throws -> Any) {
+//
+////        let closure: AnyResponseHandler =
+//        route(method: method, url: url, middlewares: middlewares) { (req: Request) in
+//            let converted = try ResponseManager.convertParameters(request: req, type: T.self)
+//            return try handler(converted)
+//        }
+//    }
+
+}
+
+// TODO remove
+/*
+// MARK: - Get method
+extension ResponseManager {
 
     func route(
         get url: String,
@@ -75,18 +116,18 @@ extension ResponseManager {
             route(get: url, middlewares: middlewares, handler: closure)
     }
 
-    func route<T>(
-        get url: String,
-        middlewares: [Middleware],
-        handler: @escaping (T) throws -> Any) where T: Decodable {
+ func route<T>(
+ get url: String,
+ middlewares: [Middleware],
+ handler: @escaping (T) throws -> Any) where T: Decodable {
 
-        let closure: AnyResponseHandler = {
-            [unowned self] (req: Request) in
-            let converted = try self.convertParameters(request: req, type: T.self)
-            return try handler(converted)
-        }
-        route(get: url, middlewares: middlewares, handler: closure)
-    }
+ let closure: AnyResponseHandler = {
+ [unowned self] (req: Request) in
+ let converted = try self.convertParameters(request: req, type: T.self)
+ return try handler(converted)
+ }
+ route(get: url, middlewares: middlewares, handler: closure)
+ }
 }
 // MARK: - Post method
 extension ResponseManager {
@@ -279,12 +320,11 @@ extension ResponseManager {
         route(patch: url, middlewares: middlewares, handler: closure)
     }
 }
+ */
 
 // MARK: - Convertions
 extension ResponseManager {
-    private func convertParameters<T>(
-        request: Request,
-        type: T.Type) throws -> T where T: Decodable {
+    static func convertParameters<T: Decodable>(request: Request) throws -> T {
 
         var values = request.urlParameters
 
@@ -302,11 +342,22 @@ extension ResponseManager {
         }
 
         let decoder = KeyValueDecoder()
-        guard let decoded = try? decoder.decode(type, from: values) else {
+        guard let decoded = try? decoder.decode(T.self, from: values) else {
             throw HTTPError(
                 status: .badRequest,
                 description: "Wrong parameters type or missing parameters")
         }
         return decoded
+    }
+
+    static func convertSessionParameters<T: SessionDecodable>(request: Request) throws -> T {
+        let session = try request.session()
+        do {
+            let data = try JSONEncoder().encode(session.data)
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw HTTPError(status: .badRequest,
+                            description: "Wrong parameters type or missing parameters")
+        }
     }
 }

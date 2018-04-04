@@ -12,7 +12,7 @@ import SquirrelConfig
 import Crypto
 
 /// Session protocol
-public protocol SessionProtocol: Codable {
+public protocol SessionProtocol: class, Codable {
     /// Session ID
     var sessionID: String { get }
     /// Expiry of session
