@@ -162,17 +162,27 @@ open class Request {
         return try parseURLQuery(query: splits.last!.description)
     }
 
-    // TODO -> [(String: String)]
     private func parseURLQuery(query: String) throws -> [String: String] {
         var res = [String: String]()
+        var arr_indexing = [String: Int]()
         for qs in query.components(separatedBy: "&") {
             let values = qs.split(separator: "=", maxSplits: 1)
 
-            let key = qs.components(separatedBy: "=").first!
+            var key = qs.components(separatedBy: "=").first!
             var value: String
             if values.count == 2 {
                 value = qs.components(separatedBy: "=").last!
                 value = value.replacingOccurrences(of: "+", with: " ")
+                if key.hasSuffix("[]") {
+                    let index_key = key
+                    if arr_indexing[index_key] == nil {
+                        arr_indexing[index_key] = 0
+                    }
+                    let index = arr_indexing[index_key]!
+                    let _ = key.removeLast()
+                    key += "\(index)]"
+                    arr_indexing[index_key] = index + 1
+                }
             } else {
                 value = ""
             }

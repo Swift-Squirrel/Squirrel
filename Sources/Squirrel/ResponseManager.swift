@@ -342,12 +342,14 @@ extension ResponseManager {
         }
 
         let decoder = KeyValueDecoder()
-        guard let decoded = try? decoder.decode(T.self, from: values) else {
+        do {
+            let decoded = try decoder.decode(T.self, from: values)
+            return decoded
+        } catch let error {
             throw HTTPError(
                 status: .badRequest,
-                description: "Wrong parameters type or missing parameters")
+                description: "Wrong parameters type or missing parameters - \(error)")
         }
-        return decoded
     }
 
     static func convertSessionParameters<T: SessionDecodable>(request: Request) throws -> T {

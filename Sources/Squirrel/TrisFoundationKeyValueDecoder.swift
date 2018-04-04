@@ -10,6 +10,7 @@
  */
 
 public struct KeyValueDecoder {
+    static let universalKey = "<any>"
     public init() {}
 
     public func decode<T: Decodable>(
@@ -42,11 +43,206 @@ fileprivate struct _KeyValueDecoder: Decoder {
     }
 
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
-        fatalError("unsupported container")
+        let container = try KeyValueUnkeyedDecodingContainer(values: values, superDecoder: self)
+        return container
     }
 
     func singleValueContainer() throws -> SingleValueDecodingContainer {
         return KeyValueSingleValueDecodingContainer(self)
+    }
+}
+
+fileprivate struct KeyValueUnkeyedDecodingContainer: UnkeyedDecodingContainer {
+    var codingPath: [CodingKey] {
+        return []
+    }
+
+    var count: Int? {
+        return values.count
+    }
+
+    var isAtEnd: Bool {
+        return currentIndex == values.endIndex
+    }
+
+    var currentIndex: Int
+
+    var superDec: _KeyValueDecoder
+
+    let values: [String]
+
+    init(values: [String: String], superDecoder: _KeyValueDecoder) throws {
+        self.superDec = superDecoder
+        self.values = try values.map { (arg) -> (Int, String) in
+
+            let (key, value) = arg
+            guard key.first == "[" && key.last == "]" else {
+                let context = DecodingError.Context(codingPath: [], debugDescription: "execting key format '[<number>]' but \(key) got")
+                throw DecodingError.dataCorrupted(context)
+            }
+            var newKey = key
+            let _ = newKey.removeLast()
+            let _ = newKey.removeFirst()
+            guard let index = Int(newKey) else {
+                let context = DecodingError.Context(codingPath: [], debugDescription: "execting key format '[<number>]' but \(key) got")
+                throw DecodingError.dataCorrupted(context)
+            }
+            return (index, value)
+            }.sorted { $0.0 < $1.0 }.map { $0.1 }
+        currentIndex = self.values.startIndex
+    }
+
+    mutating func decodeNil() throws -> Bool {
+        guard ["nil", "None", "null"].contains(values[currentIndex]) else {
+            return false
+        }
+        currentIndex += 1
+        return true
+    }
+
+    mutating func decode(_ type: Bool.Type) throws -> Bool {
+        let value = next()
+        guard let obj = Bool(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode(_ type: String.Type) throws -> String {
+        return next()
+    }
+
+    mutating func decode(_ type: Double.Type) throws -> Double {
+        let value = next()
+        guard let obj = Double(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode(_ type: Float.Type) throws -> Float {
+        let value = next()
+        guard let obj = Float(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode(_ type: Int.Type) throws -> Int {
+        let value = next()
+        guard let obj = Int(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode(_ type: Int8.Type) throws -> Int8 {
+        let value = next()
+        guard let obj = Int8(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode(_ type: Int16.Type) throws -> Int16 {
+        let value = next()
+        guard let obj = Int16(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode(_ type: Int32.Type) throws -> Int32 {
+        let value = next()
+        guard let obj = Int32(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode(_ type: Int64.Type) throws -> Int64 {
+        let value = next()
+        guard let obj = Int64(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode(_ type: UInt.Type) throws -> UInt {
+        let value = next()
+        guard let obj = UInt(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode(_ type: UInt8.Type) throws -> UInt8 {
+
+        let value = next()
+        guard let obj = UInt8(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode(_ type: UInt16.Type) throws -> UInt16 {
+
+        let value = next()
+        guard let obj = UInt16(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode(_ type: UInt32.Type) throws -> UInt32 {
+        let value = next()
+        guard let obj = UInt32(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode(_ type: UInt64.Type) throws -> UInt64 {
+        let value = next()
+        guard let obj = UInt64(value) else {
+            throw DecodingError.typeMismatch(
+                type, .incompatible(with: value))
+        }
+        return obj
+    }
+
+    mutating func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
+        return try T.init(from: _KeyValueDecoder([KeyValueDecoder.universalKey: next()]))
+    }
+
+    mutating func next() -> String {
+        let value = values[currentIndex]
+        currentIndex += 1
+        return value
+    }
+
+    mutating func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
+        fatalError("Not implemented")
+    }
+
+    mutating func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer {
+        fatalError("Not implemented")
+    }
+
+    mutating func superDecoder() throws -> Decoder {
+        fatalError("Not implemented")
     }
 }
 
@@ -229,7 +425,19 @@ fileprivate struct KeyValueKeyedDecodingContainer<K : CodingKey>
     func decode<T>(
         _ type: T.Type, forKey key: K
         ) throws -> T where T : Decodable {
-        fatalError("unsupported")
+        let _values = decoder.values.filter { $0.key.hasPrefix(key.stringValue) }.map { (k, v) -> (String, String) in
+            let nk = k.dropFirst(key.stringValue.count).description
+            if nk.count == 0 {
+                return (key.stringValue, v)
+            }
+            return (nk, v)
+        }
+        var values = [String: String]()
+        for (k, v) in _values {
+            values[k] = v
+        }
+        let dec = _KeyValueDecoder(values)
+        return try T.init(from: dec)
     }
 
     func nestedContainer<NestedKey>(
@@ -271,7 +479,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: Bool.Type) throws -> Bool {
-        guard let value = decoder.values["bool"] else {
+        guard let value = valueFor("bool") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = Bool(value) else {
@@ -281,7 +489,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: Int.Type) throws -> Int {
-        guard let value = decoder.values["int"] else {
+        guard let value = valueFor("int") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = Int(value) else {
@@ -291,7 +499,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: Int8.Type) throws -> Int8 {
-        guard let value = decoder.values["int"] else {
+        guard let value = valueFor("int") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = Int8(value) else {
@@ -301,7 +509,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: Int16.Type) throws -> Int16 {
-        guard let value = decoder.values["int"] else {
+        guard let value = valueFor("int") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = Int16(value) else {
@@ -311,7 +519,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: Int32.Type) throws -> Int32 {
-        guard let value = decoder.values["int"] else {
+        guard let value = valueFor("int") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = Int32(value) else {
@@ -321,7 +529,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: Int64.Type) throws -> Int64 {
-        guard let value = decoder.values["int"] else {
+        guard let value = valueFor("int") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = Int64(value) else {
@@ -331,7 +539,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: UInt.Type) throws -> UInt {
-        guard let value = decoder.values["uint"] else {
+        guard let value = valueFor("uint") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = UInt(value) else {
@@ -341,7 +549,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: UInt8.Type) throws -> UInt8 {
-        guard let value = decoder.values["uint"] else {
+        guard let value = valueFor("uint") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = UInt8(value) else {
@@ -351,7 +559,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: UInt16.Type) throws -> UInt16 {
-        guard let value = decoder.values["uint"] else {
+        guard let value = valueFor("uint") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = UInt16(value) else {
@@ -361,7 +569,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: UInt32.Type) throws -> UInt32 {
-        guard let value = decoder.values["uint"] else {
+        guard let value = valueFor("uint") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = UInt32(value) else {
@@ -371,7 +579,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: UInt64.Type) throws -> UInt64 {
-        guard let value = decoder.values["uint"] else {
+        guard let value = valueFor("uint") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = UInt64(value) else {
@@ -381,7 +589,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: Float.Type) throws -> Float {
-        guard let value = decoder.values["float"] else {
+        guard let value = valueFor("float") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = Float(value) else {
@@ -391,7 +599,7 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: Double.Type) throws -> Double {
-        guard let value = decoder.values["double"] else {
+        guard let value = valueFor("double") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         guard let result = Double(value) else {
@@ -401,14 +609,18 @@ fileprivate struct KeyValueSingleValueDecodingContainer: SingleValueDecodingCont
     }
 
     func decode(_ type: String.Type) throws -> String {
-        guard let value = decoder.values["string"] else {
+        guard let value = valueFor("string") else {
             throw DecodingError.valueNotFound(type, nil)
         }
         return value
     }
 
+    private func valueFor(_ key: String) -> String? {
+        return decoder.values[key] ?? decoder.values[KeyValueDecoder.universalKey]
+    }
+
     func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-        fatalError("unsupported")
+        return try T.init(from: decoder)
     }
 }
 
