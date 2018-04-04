@@ -162,6 +162,7 @@ open class Request {
         return try parseURLQuery(query: splits.last!.description)
     }
 
+    // TODO -> [(String: String)]
     private func parseURLQuery(query: String) throws -> [String: String] {
         var res = [String: String]()
         for qs in query.components(separatedBy: "&") {

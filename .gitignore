@@ -74,4 +74,6 @@ Squirrel.xcodeproj
 
 # Supporting files
 /off/
+/Storage
+/Public
 
