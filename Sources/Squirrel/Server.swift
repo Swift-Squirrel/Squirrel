@@ -162,7 +162,7 @@ open class Server: Router {
 //                    }
 //                }
 
-                if let range = request.range {
+                if let range = request.range, case .ok = response.status {
                     response.sendPartial(socket: socket, range: range)
                 } else {
                     response.send(socket: socket)

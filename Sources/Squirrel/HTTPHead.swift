@@ -5,11 +5,14 @@
 //  Created by Filip Klembara on 11/2/17.
 //
 
+import Foundation
+
 /// HTTP head
 public struct HTTPHead {
     /// Inner dictionary type
     public typealias DictionaryType = [String: String]
     private var headers: DictionaryType
+    var cookies: [String: String] = [:]
 
     /// Constructs from key value dictionary
     ///
@@ -39,6 +42,20 @@ public struct HTTPHead {
         for head in headers {
             set(to: head)
         }
+    }
+    
+    func makeHeader(httpVersion: RequestLine.HTTPProtocol, status: HTTPStatus) -> Data {
+        var header = httpVersion.rawValue + " " + status.description + "\r\n"
+        
+        for (key, value) in self {
+            header += key + ": " + value + "\r\n"
+        }
+        
+        for (key, value) in cookies {
+            header += "\(HTTPHeaderKey.setCookie): \(key)=\(value)\r\n"
+        }
+        header += "\r\n"
+        return header.data(using: .utf8)!
     }
 }
 

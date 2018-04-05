@@ -19,12 +19,21 @@ public protocol ResponseProtocol: class {
     func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt))
     var headers: HTTPHead { get set }
     var status: HTTPStatus { get }
-    var cookies: [String: String] { get set }
     
 //    var httpProtocolVersion: RequestLine.HTTPProtocol { get }
     
 //    var contentEncoding: HTTPHeader.Encoding? { get set }
     
+}
+
+public extension ResponseProtocol {
+    func setCookie(_ name: String, to value: String) {
+        headers.cookies[name] = value
+    }
+    
+    func cookie(for name: String) -> String? {
+        return headers.cookies[name]
+    }
 }
 
 // TODO rename to Response
@@ -34,12 +43,9 @@ open class Response: ResponseProtocol {
     /// Response status
     public let status: HTTPStatus
 
-    private let httpProtocolVersion = RequestLine.HTTPProtocol.http11
+    private let httpVersion = RequestLine.HTTPProtocol.http11
 
     var contentEncoding: HTTPHeader.Encoding? = nil
-
-    /// Cookies
-    public var cookies: [String: String] = [:]
 
     /// HTTP head
     public var headers = HTTPHead()
@@ -196,26 +202,14 @@ open class Response: ResponseProtocol {
 
 // MARK: - Raw head and body
 extension Response {
+    @available(*, unavailable, message: "use headers.makeHeader(_:_:)")
     var rawPartialHeader: Data {
-        var header = httpProtocolVersion.rawValue + " " + HTTPStatus.partialContent.description + "\r\n"
+        var header = httpVersion.rawValue + " " + HTTPStatus.partialContent.description + "\r\n"
 
         for (key, value) in headers {
             header += key + ": " + value + "\r\n"
         }
 
-        header += "\r\n"
-        return header.data(using: .utf8)!
-    }
-
-    var rawHeader: Data {
-        var header = httpProtocolVersion.rawValue + " " + status.description + "\r\n"
-
-        for (key, value) in headers {
-            header += key + ": " + value + "\r\n"
-        }
-        for (key, value) in cookies {
-            header += "\(HTTPHeaderKey.setCookie): \(key)=\(value)\r\n"
-        }
         header += "\r\n"
         return header.data(using: .utf8)!
     }
@@ -271,44 +265,15 @@ public extension Response {
         let size = data.count
         headers.set(to: .contentLength(size: size))
         
-        let head = rawPartialHeader
+        let head = headers.makeHeader(httpVersion: httpVersion, status: .partialContent)
         _ = try? socket.write(from: head)
         _ = try? socket.write(from: data)
     }
     
     func send(socket: Socket) {
         headers.set(to: .contentLength(size: bodyLength))
-        let head = rawHeader
+        let head = headers.makeHeader(httpVersion: httpVersion, status: status)
         _ = try? socket.write(from: head)
         _ = try? socket.write(from: body)
     }
 }
-
-//private func sendChunked(socket: Socket, head: Data, body: Data) {
-//    headers[.transferEncoding] = "chunked"
-//    var c = body.count
-//    var i = 0
-//    let _ = try? socket.write(from: head)
-//    let chunkSize = 2048
-//    
-//    while c >= chunkSize {
-//        let d = body[(i*chunkSize)..<(chunkSize*(i+1))]
-//        var d1: Data = (String(format: "%X", d.count) + "\r\n").data(using: .utf8)!
-//        d1.append(contentsOf: d)
-//        d1.append("\r\n".data(using: .utf8)!)
-//        
-//        let _ = try? socket.write(from: d1)
-//        c -= chunkSize
-//        i += 1
-//    }
-//    if c > 0 {
-//        let d = body[(body.count - c)..<(body.count)]
-//        var d1: Data = (String(format: "%X", c) + "\r\n").data(using: .utf8)!
-//        d1.append(contentsOf: d)
-//        d1.append("\r\n".data(using: .utf8)!)
-//        
-//        _ = try? socket.write(from: d1)
-//    }
-//    _ = try? socket.write(from: "0\r\n\r\n".data(using: .utf8)!)
-//}
-
