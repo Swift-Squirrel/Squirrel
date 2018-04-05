@@ -40,14 +40,16 @@ open class StreamResponse: ResponseProtocol {
     }
     
     public func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt)) {
+        let stream = PartialSocketStream(socket: socket, bottom: range.bottom, top: range.top)
+        try? streamer(stream)
         
     }
 }
 
 extension StreamResponse {
-    private struct SocketStream: WriteSocket {
+    private class SocketStream: WriteSocket {
         private static let CRLF = "\r\n".data(using: .utf8)!
-        let socket: Socket
+        private let socket: Socket
         init(socket: Socket) {
             self.socket = socket
         }
@@ -67,8 +69,39 @@ extension StreamResponse {
         }
     }
     
-    private struct PartialSocketStream: WriteSocket {
-            // TODO
+    private class PartialSocketStream: WriteSocket {
+        private let socket: Socket
+        private let index: Int
+        private let count: Int
+        private var currentIndex: Int
+        private var buffer: Data
+        private var sent: Bool
+        
+        init(socket: Socket, bottom: UInt, top: UInt) {
+            self.socket = socket
+            self.index = Int(bottom)
+            self.count = Int(top - bottom)
+            currentIndex = 0
+            buffer = Data()
+            sent = false
+        }
+        
+        func send(_ data: Data) throws {
+            guard !sent else {
+                return
+            }
+            defer {
+                currentIndex += data.count
+            }
+            guard currentIndex + data.count >= index else {
+                return
+            }
+            guard currentIndex < index + count else {
+                return
+            }
+            
+            
+        }
     }
 }
 

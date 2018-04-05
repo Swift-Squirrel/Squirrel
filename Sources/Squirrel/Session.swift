@@ -232,14 +232,14 @@ public struct SessionMiddleware: Middleware {
         let response = try parseAnyResponse(any: res)
         let domain = squirrelConfig.domain
         if session.isNew {
-            response.cookies[SessionConfig.sessionName] = """
+            response.setCookie(SessionConfig.sessionName, to: """
                 \(session.sessionID); domain=\(domain);path=/; HTTPOnly
-                """
+                """)
         } else if session.shouldRemove {
             let _ = session.delete()
-            response.cookies[SessionConfig.sessionName] = """
+            response.setCookie(SessionConfig.sessionName, to:"""
                 removed; domain=\(domain);path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; HTTPOnly
-                """
+                """)
         }
         return response
 
