@@ -21,13 +21,18 @@ open class StreamResponse: ResponseProtocol {
     private let streamer: Streamer
     
     private let httpVersion = RequestLine.HTTPProtocol.http11
-    
-    public init(status: HTTPStatus, headers: [String: String] = [:], streamClosure: @escaping Streamer) {
-        self.status = status
-        streamer = streamClosure
-        headers.forEach { (key, value) in
-            self.headers[key] = value
+
+    public init(status: HTTPStatus = .ok, contentType: HTTPHeader.ContentType? = nil, header: HTTPHead, streamClosure: @escaping Streamer) {
+        self.headers = header
+        if let contType = contentType {
+            self.headers.set(to: .contentType(contType))
         }
+        self.streamer = streamClosure
+        self.status = status
+    }
+
+    public convenience init(status: HTTPStatus = .ok, contentType: HTTPHeader.ContentType? = nil, headers: [String: String] = [:], streamClosure: @escaping Streamer) {
+        self.init(status: status, contentType: contentType, headers: headers, streamClosure: streamClosure)
     }
     
     public func send(socket: Socket) {
@@ -152,33 +157,3 @@ extension StreamResponse {
         }
     }
 }
-
-/*
-private func sendChunked(socket: Socket, head: Data, body: Data) {
-    headers[.transferEncoding] = "chunked"
-    var c = body.count
-    var i = 0
-    let _ = try? socket.write(from: head)
-    let chunkSize = 2048
-
-    while c >= chunkSize {
-        let d = body[(i*chunkSize)..<(chunkSize*(i+1))]
-        var d1: Data = (String(format: "%X", d.count) + "\r\n").data(using: .utf8)!
-        d1.append(contentsOf: d)
-        d1.append("\r\n".data(using: .utf8)!)
-
-        let _ = try? socket.write(from: d1)
-        c -= chunkSize
-        i += 1
-    }
-    if c > 0 {
-        let d = body[(body.count - c)..<(body.count)]
-        var d1: Data = (String(format: "%X", c) + "\r\n").data(using: .utf8)!
-        d1.append(contentsOf: d)
-        d1.append("\r\n".data(using: .utf8)!)
-
-        _ = try? socket.write(from: d1)
-    }
-    _ = try? socket.write(from: "0\r\n\r\n".data(using: .utf8)!)
-}
-*/
