@@ -8,7 +8,7 @@
 import SquirrelCore
 
 struct HTMLConvertibleErrors: ErrorHandlerProtocol {
-    func getResponse(for error: Error) -> Response? {
+    func getResponse(for error: Error) -> ResponseProtocol? {
         guard let error = error as? SquirrelHTMLConvertibleError else {
             return nil
         }
@@ -22,7 +22,7 @@ struct HTMLConvertibleErrors: ErrorHandlerProtocol {
 }
 
 struct BasicErrors: ErrorHandlerProtocol {
-    func getResponse(for error: Error) -> Response? {
+    func getResponse(for error: Error) -> ResponseProtocol? {
         guard let error = error as? HTTPError else {
             return nil
         }

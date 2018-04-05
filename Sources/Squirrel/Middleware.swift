@@ -43,7 +43,7 @@ public struct ProtectedPageMiddleware: Middleware {
     /// - Throws: Rethrows and parsing errors
     public func respond(to request: Request, next: (Request) throws -> Any) throws -> Any {
         let anyResponse = try next(request)
-        let response = try Response.parseAnyResponse(any: anyResponse)
+        let response = try parseAnyResponse(any: anyResponse)
         response.headers[.cacheControl] = "nocache, no-store, max-age=0, must-revalidate"
         response.headers[.pragma] = "no-cache"
         response.headers[.expires] = "Fri, 01 Jan 1990 00:00:00 GMT"

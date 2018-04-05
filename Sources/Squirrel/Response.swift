@@ -9,17 +9,32 @@
 import Foundation
 import PathKit
 import SquirrelCore
+import Socket
 
 /// Responder
 public typealias AnyResponseHandler = ((Request) throws -> Any)
 
+public protocol ResponseProtocol: class {
+    func send(socket: Socket)
+    func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt))
+    var headers: HTTPHead { get set }
+    var status: HTTPStatus { get }
+    var cookies: [String: String] { get set }
+    
+//    var httpProtocolVersion: RequestLine.HTTPProtocol { get }
+    
+//    var contentEncoding: HTTPHeader.Encoding? { get set }
+    
+}
+
+// TODO rename to Response
 /// Response class
-open class Response {
+open class Response: ResponseProtocol {
 
     /// Response status
     public let status: HTTPStatus
 
-    private let httpProtocolVersion = "HTTP/1.1"
+    private let httpProtocolVersion = RequestLine.HTTPProtocol.http11
 
     var contentEncoding: HTTPHeader.Encoding? = nil
 
@@ -177,19 +192,12 @@ open class Response {
     }
     // swiftlint:enable cyclomatic_complexity
     // swiftlint:enable function_body_length
-
-    func responeHandler() -> (Request) -> Response {
-        return {
-            _ in
-            return self
-        }
-    }
 }
 
 // MARK: - Raw head and body
 extension Response {
     var rawPartialHeader: Data {
-        var header = httpProtocolVersion + " " + HTTPStatus.partialContent.description + "\r\n"
+        var header = httpProtocolVersion.rawValue + " " + HTTPStatus.partialContent.description + "\r\n"
 
         for (key, value) in headers {
             header += key + ": " + value + "\r\n"
@@ -200,7 +208,7 @@ extension Response {
     }
 
     var rawHeader: Data {
-        var header = httpProtocolVersion + " " + status.description + "\r\n"
+        var header = httpProtocolVersion.rawValue + " " + status.description + "\r\n"
 
         for (key, value) in headers {
             header += key + ": " + value + "\r\n"
@@ -212,28 +220,95 @@ extension Response {
         return header.data(using: .utf8)!
     }
 
+    // TODO remove
+    @available(*, unavailable, message: "use body")
     var rawBody: Data {
         return body
     }
 }
 
-// MARK: - Parsing response
-public extension Response {
-    /// Parse any to response
-    ///
-    /// - Parameter any: Something waht do you want to return as response
-    /// - Returns: Response representation of given `any`
-    /// - Throws: Response initialize errors
-    public static func parseAnyResponse(any: Any) throws -> Response {
-        switch any {
-        case let response as Response:
-            return response
-        case let string as String:
-            return try Response(html: string)
-        case let presentable as SquirrelPresentable:
-            return try Response(presentable: presentable)
-        default:
-            return try Response(object: any)
-        }
+/// Parse any to response
+///
+/// - Parameter any: Something waht do you want to return as response
+/// - Returns: Response representation of given `any`
+/// - Throws: Response initialize errors
+public func parseAnyResponse(any: Any) throws -> ResponseProtocol {
+    switch any {
+    case let response as ResponseProtocol:
+        return response
+    case let string as String:
+        return try Response(html: string)
+    case let presentable as SquirrelPresentable:
+        return try Response(presentable: presentable)
+    default:
+        return try Response(object: any)
     }
 }
+
+// MARK: - Sending data
+public extension Response {
+    func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt)) {
+        let top: UInt
+        if range.top < bodyLength {
+            top = range.top
+        } else {
+            top = UInt(bodyLength - 1)
+        }
+        let bottom: UInt
+        if range.bottom <= top {
+            bottom = range.bottom
+        } else {
+            bottom = top
+        }
+        let data = body[bottom..<top + 1]
+        headers[.connection] = "keep-alive"
+        headers[.acceptRanges] = nil
+        headers.set(to: .contentRange(
+            start: bottom,
+            end: top,
+            from: UInt(bodyLength)))
+        
+        let size = data.count
+        headers.set(to: .contentLength(size: size))
+        
+        let head = rawPartialHeader
+        _ = try? socket.write(from: head)
+        _ = try? socket.write(from: data)
+    }
+    
+    func send(socket: Socket) {
+        headers.set(to: .contentLength(size: bodyLength))
+        let head = rawHeader
+        _ = try? socket.write(from: head)
+        _ = try? socket.write(from: body)
+    }
+}
+
+//private func sendChunked(socket: Socket, head: Data, body: Data) {
+//    headers[.transferEncoding] = "chunked"
+//    var c = body.count
+//    var i = 0
+//    let _ = try? socket.write(from: head)
+//    let chunkSize = 2048
+//    
+//    while c >= chunkSize {
+//        let d = body[(i*chunkSize)..<(chunkSize*(i+1))]
+//        var d1: Data = (String(format: "%X", d.count) + "\r\n").data(using: .utf8)!
+//        d1.append(contentsOf: d)
+//        d1.append("\r\n".data(using: .utf8)!)
+//        
+//        let _ = try? socket.write(from: d1)
+//        c -= chunkSize
+//        i += 1
+//    }
+//    if c > 0 {
+//        let d = body[(body.count - c)..<(body.count)]
+//        var d1: Data = (String(format: "%X", c) + "\r\n").data(using: .utf8)!
+//        d1.append(contentsOf: d)
+//        d1.append("\r\n".data(using: .utf8)!)
+//        
+//        _ = try? socket.write(from: d1)
+//    }
+//    _ = try? socket.write(from: "0\r\n\r\n".data(using: .utf8)!)
+//}
+

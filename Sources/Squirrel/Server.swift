@@ -163,9 +163,9 @@ open class Server: Router {
 //                }
 
                 if let range = request.range {
-                    sendPartial(socket: socket, range: range, response: response)
+                    response.sendPartial(socket: socket, range: range)
                 } else {
-                    send(socket: socket, response: response)
+                    response.send(socket: socket)
                 }
             } catch let error {
                 if let sockErr = error as? Request.SocketError {
@@ -175,7 +175,7 @@ open class Server: Router {
                 }
                 let response = ErrorHandler.sharedInstance.response(for: error)
                 log.error("unknown - \(response.status): \(error)")
-                send(socket: socket, response: response)
+                response.send(socket: socket)
                 throw error
             }
         } catch let error {
@@ -183,11 +183,11 @@ open class Server: Router {
         }
     }
 
-    private func handle(request: Request) -> Response {
+    private func handle(request: Request) -> ResponseProtocol {
         do {
             let handler = try getHandler(for: request)
             let handlerResult = try handler(request)
-            return try Response.parseAnyResponse(any: handlerResult)
+            return try parseAnyResponse(any: handlerResult)
         } catch let error {
             let errorResponse = ErrorHandler.sharedInstance.response(for: error)
             log.error("\(request.remoteHostname) - \(errorResponse.status): \(error)")
@@ -294,7 +294,7 @@ public extension Server {
 // MARK: - Sending
 private extension Server {
 
-
+    /*
     private func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt), response: Response) {
         let bodyBytes = response.rawBody
         let top: UInt
@@ -323,7 +323,8 @@ private extension Server {
         let head = response.rawPartialHeader
         let _ = try? socket.write(from: head + data)
     }
-
+     */
+    /*
     private func send(socket: Socket, response: Response) {
         func sendChunked(head: Data, body: Data) {
             response.headers[.transferEncoding] = "chunked"
@@ -364,6 +365,7 @@ private extension Server {
         let head = response.rawHeader
         let _ = try? socket.write(from: head + body)
     }
+ */
 }
 
 public extension Server {

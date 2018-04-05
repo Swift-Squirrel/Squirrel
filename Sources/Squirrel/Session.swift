@@ -229,7 +229,7 @@ public struct SessionMiddleware: Middleware {
         guard session.isNew || session.shouldRemove else {
             return res
         }
-        let response = try Response.parseAnyResponse(any: res)
+        let response = try parseAnyResponse(any: res)
         let domain = squirrelConfig.domain
         if session.isNew {
             response.cookies[SessionConfig.sessionName] = """
