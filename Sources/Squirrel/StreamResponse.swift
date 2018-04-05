@@ -8,9 +8,9 @@
 import Foundation
 import Socket
 
-typealias Streamer = (WriteSocket) throws -> Void
+public typealias Streamer = (WriteSocket) throws -> Void
 
-protocol WriteSocket {
+public protocol WriteSocket {
     func send(_ data: Data) throws
 }
 open class StreamResponse: ResponseProtocol {
@@ -22,7 +22,7 @@ open class StreamResponse: ResponseProtocol {
     
     private let httpVersion = RequestLine.HTTPProtocol.http11
     
-    init(status: HTTPStatus, headers: [String: String] = [:], streamClosure: @escaping Streamer) {
+    public init(status: HTTPStatus, headers: [String: String] = [:], streamClosure: @escaping Streamer) {
         self.status = status
         streamer = streamClosure
         headers.forEach { (key, value) in
@@ -31,6 +31,7 @@ open class StreamResponse: ResponseProtocol {
     }
     
     public func send(socket: Socket) {
+        log.verbose("stream")
         let stream = SocketStream(socket: socket)
         headers[.transferEncoding] = "chunked"
         let headerData = headers.makeHeader(httpVersion: httpVersion, status: status)
@@ -40,9 +41,20 @@ open class StreamResponse: ResponseProtocol {
     }
     
     public func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt)) {
+        log.verbose("stream partial \(range.bottom)...\(range.top)")
+
         let stream = PartialSocketStream(socket: socket, bottom: range.bottom, top: range.top)
         try? streamer(stream)
-        
+        headers[.connection] = "keep-alive"
+        headers[.acceptRanges] = nil
+        headers.set(to: .contentRange(
+            start: stream.bottom,
+            end: stream.top,
+            from: stream.totalDataCount))
+        headers.set(to: .contentLength(size: stream.size))
+
+        let header = headers.makeHeader(httpVersion: httpVersion, status: .partialContent)
+        try? stream.close(withHeader: header)
     }
 }
 
@@ -71,16 +83,36 @@ extension StreamResponse {
     
     private class PartialSocketStream: WriteSocket {
         private let socket: Socket
-        private let index: Int
-        private let count: Int
+        private let startIndex: UInt
+        private var index: Int
+        private var count: Int
+        var top: UInt {
+            return UInt(index + count - 1)
+        }
+        var bottom: UInt {
+            return startIndex
+        }
         private var currentIndex: Int
         private var buffer: Data
         private var sent: Bool
+        var totalDataCount: UInt {
+            return UInt(currentIndex)
+        }
+        var size: Int {
+            return buffer.count
+        }
         
         init(socket: Socket, bottom: UInt, top: UInt) {
+            if bottom > top {
+                startIndex = top
+                self.index = Int(startIndex)
+                self.count = 0
+            } else {
+                startIndex = bottom
+                self.index = Int(startIndex)
+                self.count = Int(top - bottom + 1)
+            }
             self.socket = socket
-            self.index = Int(bottom)
-            self.count = Int(top - bottom)
             currentIndex = 0
             buffer = Data()
             sent = false
@@ -88,19 +120,35 @@ extension StreamResponse {
         
         func send(_ data: Data) throws {
             guard !sent else {
-                return
-            }
-            defer {
                 currentIndex += data.count
-            }
-            guard currentIndex + data.count >= index else {
                 return
             }
-            guard currentIndex < index + count else {
+            guard currentIndex <= index && currentIndex + data.count > index else {
+                currentIndex += data.count
                 return
             }
-            
-            
+            let validDataCount = currentIndex + data.count - index
+            let bottomDataIndex = index - currentIndex + data.startIndex
+            let topDataIndex: Int
+            if bottomDataIndex + count > data.count {
+                topDataIndex = bottomDataIndex + validDataCount
+            } else {
+                topDataIndex = bottomDataIndex + count
+            }
+            let validData = data[bottomDataIndex..<topDataIndex]
+            count -= validData.count
+            buffer.append(validData)
+            index = topDataIndex
+            currentIndex = topDataIndex
+            if count == 0 {
+                sent = true
+                currentIndex = bottomDataIndex + data.count
+            }
+        }
+
+        func close(withHeader header: Data) throws {
+            try socket.write(from: header)
+            try socket.write(from: buffer)
         }
     }
 }

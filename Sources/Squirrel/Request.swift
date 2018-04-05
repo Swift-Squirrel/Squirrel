@@ -85,7 +85,7 @@ open class Request {
         _path = path
 
         let protString = (try buffer.readString(until: .crlf, allowEmpty: false)).uppercased()
-        guard let prot = RequestLine.HTTPProtocol(rawHTTPValue: protString) else {
+        guard let prot = RequestLine.HTTPProtocol(rawValue: protString) else {
             throw RequestError(kind: .unknownProtocol(prot: protString))
         }
         httpProtocol = prot

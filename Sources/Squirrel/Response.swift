@@ -242,6 +242,7 @@ public func parseAnyResponse(any: Any) throws -> ResponseProtocol {
 // MARK: - Sending data
 public extension Response {
     func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt)) {
+        log.verbose("Sending partial \(range.bottom) \(range.top)")
         let top: UInt
         if range.top < bodyLength {
             top = range.top
@@ -271,6 +272,7 @@ public extension Response {
     }
     
     func send(socket: Socket) {
+        log.verbose("Sending response")
         headers.set(to: .contentLength(size: bodyLength))
         let head = headers.makeHeader(httpVersion: httpVersion, status: status)
         _ = try? socket.write(from: head)
