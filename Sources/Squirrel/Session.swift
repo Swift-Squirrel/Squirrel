@@ -236,7 +236,7 @@ public struct SessionMiddleware: Middleware {
                 """)
         } else if session.shouldRemove {
             _ = session.delete()
-            response.setCookie(SessionConfig.sessionName, to:"""
+            response.setCookie(SessionConfig.sessionName, to: """
                 removed; domain=\(domain);path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; HTTPOnly
                 """)
         }

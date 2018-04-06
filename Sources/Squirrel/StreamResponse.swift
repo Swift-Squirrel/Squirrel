@@ -8,21 +8,38 @@
 import Foundation
 import Socket
 
+/// Streamer
 public typealias Streamer = (WriteSocket) throws -> Void
 
+/// Protocol for writing to socket in stream
 public protocol WriteSocket {
     func send(_ data: Data) throws
 }
+
+/// Response with stream
 open class StreamResponse: ResponseProtocol {
+    /// HTTP headers
     public var headers = HTTPHead()
-    
+
+    /// HTTP status
     public let status: HTTPStatus
-    
+
     private let streamer: Streamer
-    
+
     private let httpVersion = RequestLine.HTTPProtocol.http11
 
-    public init(status: HTTPStatus = .ok, contentType: HTTPHeader.ContentType? = nil, header: HTTPHead, streamClosure: @escaping Streamer) {
+    /// Inits stream response
+    ///
+    /// - Parameters:
+    ///   - status: HTTP status
+    ///   - contentType: Content type (default nil) (if not nil, overrides content type in header)
+    ///   - header: HTTP header
+    ///   - streamClosure: Closure where you can stream data to client
+    public init(status: HTTPStatus = .ok,
+                contentType: HTTPHeader.ContentType? = nil,
+                header: HTTPHead,
+                streamClosure: @escaping Streamer) {
+
         self.headers = header
         if let contType = contentType {
             self.headers.set(to: .contentType(contType))
@@ -31,10 +48,28 @@ open class StreamResponse: ResponseProtocol {
         self.status = status
     }
 
-    public convenience init(status: HTTPStatus = .ok, contentType: HTTPHeader.ContentType? = nil, headers: [String: String] = [:], streamClosure: @escaping Streamer) {
-        self.init(status: status, contentType: contentType, headers: headers, streamClosure: streamClosure)
+    /// Inits stream response
+    ///
+    /// - Parameters:
+    ///   - status: HTTP status
+    ///   - contentType: Content type (default nil) (if not nil, overrides content type in header)
+    ///   - header: HTTP header
+    ///   - streamClosure: Closure where you can stream data to client
+    public convenience init(status: HTTPStatus = .ok,
+                            contentType: HTTPHeader.ContentType? = nil,
+                            headers: [String: String] = [:],
+                            streamClosure: @escaping Streamer) {
+
+        self.init(status: status, contentType: contentType,
+                  headers: headers, streamClosure: streamClosure)
     }
-    
+
+    /// Send data to client in stream
+    ///
+    /// - Note:
+    ///   Overrides HTTP transferEncoding to `chunked`
+    ///
+    /// - Parameter socket: Socket
     public func send(socket: Socket) {
         log.verbose("stream")
         let stream = SocketStream(socket: socket)
@@ -44,7 +79,12 @@ open class StreamResponse: ResponseProtocol {
         try? streamer(stream)
         try? stream.close()
     }
-    
+
+    /// Sends partial response to client
+    ///
+    /// - Parameters:
+    ///   - socket: Socket
+    ///   - range: Range
     public func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt)) {
         log.verbose("stream partial \(range.bottom)...\(range.top)")
 
@@ -70,22 +110,23 @@ extension StreamResponse {
         init(socket: Socket) {
             self.socket = socket
         }
-        
+
         func open(header: Data) throws {
             try socket.write(from: header)
         }
-        
+
         func close() throws {
-            _ = try? socket.write(from: "0".data(using: .utf8)! + SocketStream.CRLF + SocketStream.CRLF)
+            _ = try? socket.write(from: "0".data(using: .utf8)!
+                + SocketStream.CRLF + SocketStream.CRLF)
         }
-        
+
         func send(_ data: Data) throws {
-            let sendingData = String(format: "%X", data.count).data(using: .utf8)! + SocketStream.CRLF
-                + data + SocketStream.CRLF
+            let sendingData = String(format: "%X", data.count).data(using: .utf8)!
+                + SocketStream.CRLF + data + SocketStream.CRLF
             _ = try socket.write(from: sendingData)
         }
     }
-    
+
     private class PartialSocketStream: WriteSocket {
         private let socket: Socket
         private let startIndex: UInt
@@ -106,7 +147,7 @@ extension StreamResponse {
         var size: Int {
             return buffer.count
         }
-        
+
         init(socket: Socket, bottom: UInt, top: UInt) {
             if bottom > top {
                 startIndex = top
@@ -122,7 +163,7 @@ extension StreamResponse {
             buffer = Data()
             sent = false
         }
-        
+
         func send(_ data: Data) throws {
             guard !sent else {
                 currentIndex += data.count

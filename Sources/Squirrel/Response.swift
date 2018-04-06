@@ -14,29 +14,34 @@ import Socket
 /// Responder
 public typealias AnyResponseHandler = ((Request) throws -> Any)
 
+/// Response describing protocol
 public protocol ResponseProtocol: class {
     func send(socket: Socket)
     func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt))
     var headers: HTTPHead { get set }
     var status: HTTPStatus { get }
-    
-//    var httpProtocolVersion: RequestLine.HTTPProtocol { get }
-    
-//    var contentEncoding: HTTPHeader.Encoding? { get set }
-    
 }
 
+// MARK: - Cookies
 public extension ResponseProtocol {
-    func setCookie(_ name: String, to value: String) {
+    /// Set cookie
+    ///
+    /// - Parameters:
+    ///   - name: Cookie name
+    ///   - value: Cookie value
+    public func setCookie(_ name: String, to value: String) {
         headers.cookies[name] = value
     }
-    
+
+    /// Returns Cookie
+    ///
+    /// - Parameter name: Cookie name
+    /// - Returns: Cookie value if exists, otherwise nil
     func cookie(for name: String) -> String? {
         return headers.cookies[name]
     }
 }
 
-// TODO rename to Response
 /// Response class
 open class Response: ResponseProtocol {
 
@@ -198,27 +203,6 @@ open class Response: ResponseProtocol {
     // swiftlint:enable function_body_length
 }
 
-// MARK: - Raw head and body
-extension Response {
-    @available(*, unavailable, message: "use headers.makeHeader(_:_:)")
-    var rawPartialHeader: Data {
-        var header = httpVersion.rawValue + " " + HTTPStatus.partialContent.description + "\r\n"
-
-        for (key, value) in headers {
-            header += key + ": " + value + "\r\n"
-        }
-
-        header += "\r\n"
-        return header.data(using: .utf8)!
-    }
-
-    // TODO remove
-    @available(*, unavailable, message: "use body")
-    var rawBody: Data {
-        return body
-    }
-}
-
 /// Parse any to response
 ///
 /// - Parameter any: Something waht do you want to return as response
@@ -260,15 +244,15 @@ public extension Response {
             start: bottom,
             end: top,
             from: UInt(bodyLength)))
-        
+
         let size = data.count
         headers.set(to: .contentLength(size: size))
-        
+
         let head = headers.makeHeader(httpVersion: httpVersion, status: .partialContent)
         _ = try? socket.write(from: head)
         _ = try? socket.write(from: data)
     }
-    
+
     func send(socket: Socket) {
         log.verbose("Sending response")
         headers.set(to: .contentLength(size: bodyLength))

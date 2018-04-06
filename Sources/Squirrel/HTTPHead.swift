@@ -43,14 +43,14 @@ public struct HTTPHead {
             set(to: head)
         }
     }
-    
+
     func makeHeader(httpVersion: RequestLine.HTTPProtocol, status: HTTPStatus) -> Data {
         var header = httpVersion.rawValue + " " + status.description + "\r\n"
-        
+
         for (key, value) in self {
             header += key + ": " + value + "\r\n"
         }
-        
+
         for (key, value) in cookies {
             header += "\(HTTPHeaderKey.setCookie): \(key)=\(value)\r\n"
         }
