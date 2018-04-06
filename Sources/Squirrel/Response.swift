@@ -45,7 +45,7 @@ open class Response: ResponseProtocol {
 
     private let httpVersion = RequestLine.HTTPProtocol.http11
 
-    var contentEncoding: HTTPHeader.Encoding? = nil
+    var contentEncoding: HTTPHeader.Encoding?
 
     /// HTTP head
     public var headers = HTTPHead()
@@ -186,8 +186,6 @@ open class Response: ResponseProtocol {
             case "wmv":
                 headers.set(to: .contentType(.wmv))
                 headers[.acceptRanges] = "bytes"
-
-
             default:
                 headers.set(to: .contentType(.plain))
             }

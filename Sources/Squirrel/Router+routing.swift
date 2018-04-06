@@ -4,6 +4,11 @@
 //  Created by Filip Klembara on 4/4/18.
 //
 
+// swiftlint:disable trailing_whitespace
+// swiftlint:disable line_length
+// swiftlint:disable identifier_name
+// swiftlint:disable file_length
+
 // MARK: - routes
 extension Router {
     /// Add route for get method

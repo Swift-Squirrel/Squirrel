@@ -19,10 +19,9 @@ extension URL {
         guard let items = url.queryItems else {return [:]}
         let val = items.flatMap({ [$0.name: $0.value]})
         var res: [String: String?] = [:]
-        for (k, v) in val {
-            res[k] = v
+        for (key, value) in val {
+            res[key] = value
         }
         return res
     }
-
 }

@@ -25,8 +25,7 @@ func chain(middlewares: [Middleware], handler: @escaping AnyResponseHandler) -> 
     let handlers = middlewares.reversed()
 
     return handlers.reduce(handler, { (nextResponse, nextMiddleware) -> AnyResponseHandler in
-        return {
-            request in
+        return { request in
             return try nextMiddleware.respond(to: request, next: nextResponse)
         }
     })
@@ -51,7 +50,5 @@ public struct ProtectedPageMiddleware: Middleware {
     }
 
     /// Constructs middleware
-    public init() {
-
-    }
+    public init() { }
 }

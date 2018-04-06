@@ -52,7 +52,6 @@ public enum RequestLine {
             return rawValue
         }
     }
-
 }
 
 /// HTTP header
@@ -147,7 +146,6 @@ public extension HTTPHeader {
         case wmv = "x-ms-wmv"
         case avi = "x-msvideo"
 
-
         /// MIME representation
         public var description: String {
             let mime: String
@@ -203,9 +201,6 @@ extension HTTPHeader: CustomStringConvertible {
         return (key.description, value)
     }
 }
-
-
-
 
 /// Check lowercased equality
 ///

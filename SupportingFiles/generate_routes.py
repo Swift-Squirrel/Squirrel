@@ -152,7 +152,12 @@ with open(RESULT_FILE_PATH, "w") as file:
                "//  Squirrel'n"
                "//\n"
                "//  Created by Filip Klembara on {}.\n"
-               "//\n\n".format(RESULT_FILE, t))
+               "//\n\n"
+               "// swiftlint:disable trailing_whitespace\n"
+               "// swiftlint:disable line_length\n"
+               "// swiftlint:disable identifier_name\n"
+               "// swiftlint:disable file_length\n"
+               "\n".format(RESULT_FILE, t))
     file.write("// MARK: - routes\nextension Router {")
     used_signatures = set()
     tmp = [(method, tc) for method in METHODS for tc in type_combinations]

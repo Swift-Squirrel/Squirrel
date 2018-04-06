@@ -9,29 +9,45 @@ import Socket
 import Foundation
 import SquirrelCore
 
+/// Buffer delimeters
+///
+/// - crlf: CRLF
+/// - space: Space character
 public enum BufferDelimeter {
     case crlf
     case space
 }
 
+/// Buffer protocol
 public protocol Buffer {
     func read(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> Data
     func read(bytes: Int) throws -> Data
     func readString(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> String
 }
 
+// MARK: - Request + buffer
 extension Request {
 
+    /// Static buffer (reads from data)
     public class StaticBuffer: Buffer {
         private var buffer: [UInt8]
 
-        // swiftlint:disable:next nesting
-
-
+        /// Buffer with fully buffered data
+        ///
+        /// - Parameter buffer: Buffer data
         public init(buffer: Data) {
             self.buffer = buffer.reversed()
         }
 
+        /// Reads data until deliemeter,
+        /// if delimeter is at the start of buffer and allowEmpty is false throws
+        ///
+        /// - Parameters:
+        ///   - delimeter: Delimeter
+        ///   - allowEmpty: Allow empty result
+        /// - Returns: Data between start and delimeter
+        /// - Throws: `RequestError` if delimeter not found or result
+        ///     is empty and allowEmpty is false
         public func read(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> Data {
             var res = Data()
             var found = false
@@ -48,7 +64,7 @@ extension Request {
             case .crlf:
                 while let current = buffer.popLast() {
                     if current == 0xD && buffer.last == 0xA {
-                        let _ = buffer.popLast()
+                        _ = buffer.popLast()
                         found = true
                         break
                     }
@@ -64,8 +80,13 @@ extension Request {
             }
             return res
         }
+
+        /// Read maximum n bytes from buffer
+        ///
+        /// - Parameter bytes: number of bytes to read
+        /// - Returns: Data with 0-bytes elements
+        /// - Throws: Nothing
         public func read(bytes: Int) throws -> Data {
-            //            let res = buffer.dropLast(bytes)
             let endIndex = buffer.endIndex
             var startIndex = endIndex - bytes
             if startIndex < buffer.startIndex {
@@ -78,6 +99,15 @@ extension Request {
             return Data(bytes: res.reversed())
         }
 
+        /// Read from buffer until sequence,
+        /// if delimeter is at the start of buffer and allowEmpty is false throws
+        ///
+        /// - Parameters:
+        ///   - sequence: delimeter sequence
+        ///   - allowEmpty: allow empty
+        /// - Returns: Data between start and delimeter
+        /// - Throws: `RequestError` if delimeter not found or result
+        ///     is empty and allowEmpty is false
         public func read(until sequence: Data, allowEmpty: Bool) throws -> Data {
             var found = false
             var bufferIndex = buffer.endIndex - 1
@@ -115,8 +145,15 @@ extension Request {
             return Data(bytes: res.reversed())
         }
 
+        /// Read data until delimeter and cast them to utf8 string
+        ///
+        /// - Parameters:
+        ///   - delimeter: delimeter
+        ///   - allowEmpty: Allow epmty result
+        /// - Returns: String
+        /// - Throws: `RequestError`
         public func readString(until delimeter: BufferDelimeter,
-                        allowEmpty: Bool = false) throws -> String {
+                               allowEmpty: Bool = false) throws -> String {
                 let data = try read(until: delimeter, allowEmpty: allowEmpty)
                 guard let string = String(data: data, encoding: .utf8) else {
                     throw DataError(kind: .dataEncodingError)
@@ -125,11 +162,15 @@ extension Request {
         }
     }
 
+    /// Buffer with data loaded from `Socket`
     public class SocketBuffer: Buffer {
         private var buffer: [UInt8]
         private let socket: Socket
+        /// Maximum time between readings
         public static var readWait: UInt = 3000
+        /// Maximum time waiting for first data
         public static var initWait: UInt = 20000
+        /// Buffer size
         public static var bufferSize: UInt = 4096 {
             didSet {
                 _bufferSize = Int(bufferSize)
@@ -137,6 +178,10 @@ extension Request {
         }
         private static var _bufferSize = 4096
 
+        /// Inits buffer
+        ///
+        /// - Parameter socket: Socket used to read data
+        /// - Throws: `Socket.Error`
         public init(socket: Socket) throws {
             self.socket = socket
             buffer = []
@@ -144,6 +189,15 @@ extension Request {
             try refreshBuffer()
         }
 
+        /// Reads data until deliemeter,
+        /// if delimeter is at the start of buffer and allowEmpty is false throws
+        ///
+        /// - Parameters:
+        ///   - delimeter: Delimeter
+        ///   - allowEmpty: Allow empty result
+        /// - Returns: Data between start and delimeter
+        /// - Throws: `RequestError` if delimeter not found or result
+        ///     is empty and allowEmpty is false
         public func read(until delimeter: BufferDelimeter, allowEmpty: Bool) throws -> Data {
             var res = Data()
             var found = false
@@ -161,7 +215,7 @@ extension Request {
                 case .crlf:
                     while let current = buffer.popLast() {
                         if current == 0xD && buffer.last == 0xA {
-                            let _ = buffer.popLast()
+                            _ = buffer.popLast()
                             found = true
                             break
                         }
@@ -187,7 +241,6 @@ extension Request {
                 log.verbose("Reading from socket timed out")
                 throw SocketError(kind: .timeout)
             }
-
         }
 
         private func waitRefreshBuffer() throws {
@@ -207,6 +260,11 @@ extension Request {
             buffer = readData.reversed() + buffer
         }
 
+        /// Read maximum n bytes from buffer
+        ///
+        /// - Parameter bytes: number of bytes to read
+        /// - Returns: Data with 0-bytes elements
+        /// - Throws: `Socket.Error`
         public func read(bytes: Int) throws -> Data {
             while bytes > buffer.count {
                 try waitRefreshBuffer()
@@ -220,8 +278,15 @@ extension Request {
             return Data(bytes: res.reversed())
         }
 
+        /// Read data until delimeter and cast them to utf8 string
+        ///
+        /// - Parameters:
+        ///   - delimeter: delimeter
+        ///   - allowEmpty: Allow epmty result
+        /// - Returns: String
+        /// - Throws: `RequestError`
         public func readString(until delimeter: BufferDelimeter,
-                        allowEmpty: Bool = false) throws -> String {
+                               allowEmpty: Bool = false) throws -> String {
 
             let data = try read(until: delimeter, allowEmpty: allowEmpty)
             guard let string = String(data: data, encoding: .utf8) else {
@@ -231,8 +296,10 @@ extension Request {
         }
     }
 
-    struct SocketError: HTTPErrorConvertible, SquirrelError {
-        var asHTTPError: HTTPError {
+    /// SocketError
+    public struct SocketError: HTTPErrorConvertible, SquirrelError {
+        /// Returns HTTPError representation
+        public var asHTTPError: HTTPError {
             switch kind {
             case .timeout:
                 return HTTPError(status: .requestTimeout, description: description)
@@ -241,12 +308,19 @@ extension Request {
             }
         }
 
-        enum Kind {
+        /// Error kind
+        ///
+        /// - timeout: Waiting timed out
+        /// - clientClosedConnection: Client closed connection
+        public enum Kind {
             case timeout
             case clientClosedConnection
         }
-        let kind: Kind
-        let description: String
+        /// Error kind
+        public let kind: Kind
+        /// Error description
+        public let description: String
+
         init (kind: Kind) {
             self.kind = kind
             switch kind {

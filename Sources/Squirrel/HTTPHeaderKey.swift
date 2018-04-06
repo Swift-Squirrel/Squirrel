@@ -243,7 +243,6 @@ extension HTTPHeaderKey: CustomStringConvertible {
     }
 }
 
-
 /// Check lowercased equality
 ///
 /// - Parameters

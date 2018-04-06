@@ -28,6 +28,7 @@ open class Request {
     /// Hostname or IP
     public let remoteHostname: String
 
+    /// Session builder used to create new sessions
     public var sessionBuilder: SessionBuilder = SessionManager()
 
     /// Accept-Encoding
@@ -51,7 +52,7 @@ open class Request {
     public let body: Data
 
     /// Session
-    private var _session: SessionProtocol? = nil
+    private var _session: SessionProtocol?
 
     private var _urlParameters: [String: String] = [:]
     private var _queryParameters: [String: String] = [:]
@@ -62,7 +63,6 @@ open class Request {
 
     /// Post parameters when body is multipart
     public private(set) var postMultipart: [String: Multipart] = [:]
-
 
     // swiftlint:disable function_body_length
     // swiftlint:disable cyclomatic_complexity
@@ -103,7 +103,7 @@ open class Request {
                     description: "Wrong head format: \(key):\(value)")
             }
             if value.first == " " {
-                let _ = value.popFirst()
+                _ = value.popFirst()
             }
             headers[key.lowercased()] = String(value)
             line = try buffer.readString(until: .crlf, allowEmpty: true)
@@ -115,7 +115,7 @@ open class Request {
         } else {
             body = Data()
         }
-        var _range: (bottom: UInt, top: UInt)? = nil
+        var rang: (bottom: UInt, top: UInt)? = nil
         if let range = headers[.range] {
             if range.hasPrefix("bytes=") {
                 let index = range.index(range.startIndex, offsetBy: 6)
@@ -123,12 +123,12 @@ open class Request {
                 let numbers = inter.split(separator: "-", maxSplits: 1)
                 if numbers.count == 2 {
                     if let bottom = UInt(numbers.first!), let top = UInt(numbers.last!) {
-                        _range = (bottom: bottom, top: top)
+                        rang = (bottom: bottom, top: top)
                     }
                 }
             }
         }
-        self.range = _range
+        self.range = rang
         parseCookies()
         _queryParameters = try parseURLQuery(url: originalPath)
         parseEncoding()
@@ -164,7 +164,7 @@ open class Request {
 
     private func parseURLQuery(query: String) throws -> [String: String] {
         var res = [String: String]()
-        var arr_indexing = [String: Int]()
+        var arrIndexing = [String: Int]()
         for qs in query.components(separatedBy: "&") {
             let values = qs.split(separator: "=", maxSplits: 1)
 
@@ -174,14 +174,14 @@ open class Request {
                 value = qs.components(separatedBy: "=").last!
                 value = value.replacingOccurrences(of: "+", with: " ")
                 if key.hasSuffix("[]") {
-                    let index_key = key
-                    if arr_indexing[index_key] == nil {
-                        arr_indexing[index_key] = 0
+                    let indexKey = key
+                    if arrIndexing[indexKey] == nil {
+                        arrIndexing[indexKey] = 0
                     }
-                    let index = arr_indexing[index_key]!
-                    let _ = key.removeLast()
+                    let index = arrIndexing[indexKey]!
+                    _ = key.removeLast()
                     key += "\(index)]"
-                    arr_indexing[index_key] = index + 1
+                    arrIndexing[indexKey] = index + 1
                 }
             } else {
                 value = ""
@@ -265,7 +265,7 @@ open class Request {
             if pom == CRLF {
                 let (name, fileName) = try parseMultipartLine(buffer: &buffer)
                 // swiftlint:disable:next force_try
-                let _ = try! buffer.read(bytes: 2)
+                _ = try! buffer.read(bytes: 2)
                 let body = try buffer.read(until: end, allowEmpty: false)
                 self.postMultipart[name] = Multipart(name: name, fileName: fileName, content: body)
             } else if pom == Data(bytes: [0x2D, 0x2D]) {
@@ -284,8 +284,7 @@ open class Request {
             }
             var name: String? = nil
             var fileName: String? = nil
-            String(contentDisposition.last!).components(separatedBy: ";").forEach {
-                valueString in
+            String(contentDisposition.last!).components(separatedBy: ";").forEach { valueString in
                 let value: String
                 if valueString.first == " " {
                     value = String(valueString.dropFirst())
@@ -415,7 +414,7 @@ extension Request {
     /// - Throws: `SessionError(kind: .cantEstablish)`
     @discardableResult
     public func newSession() throws -> SessionProtocol {
-        guard let new = sessionBuilder.new(for: self) else { // Remove SessionManager() (this is not configurable)
+        guard let new = sessionBuilder.new(for: self) else {
             throw SessionError(kind: .cantEstablish)
         }
         new.isNew = true

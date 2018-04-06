@@ -17,7 +17,7 @@ extension Path {
                 guard i > 0 else {
                     return "/"
                 }
-                let _ = results.removeLast()
+                _ = results.removeLast()
                 i -= 1
             } else if component != "." {
                 results.append(component)

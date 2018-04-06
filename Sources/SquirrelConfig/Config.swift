@@ -46,7 +46,9 @@ public class Config {
 
     /// Logger
     public let log = SwiftyBeaver.self
+    /// Console log
     public let consoleLog: ConsoleDestination
+    /// File log
     public let fileLog: FileDestination
 
     private let logFileName = "server.log"

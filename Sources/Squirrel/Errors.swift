@@ -41,8 +41,8 @@ public struct DataError: SquirrelError, HTTPErrorConvertible {
     /// Error description
     public var description: String {
         var msg = ""
-        if let _description = self._description {
-            msg = _description
+        if let tmpDescription = self._description {
+            msg = tmpDescription
         } else {
             switch kind {
             case .dataEncodingError:
@@ -141,8 +141,8 @@ public struct RequestError: SquirrelError, HTTPErrorConvertible {
     /// Error description
     public var description: String {
         var msg = ""
-        if let _description = _description {
-            msg = _description
+        if let tmpDescription = _description {
+            msg = tmpDescription
         } else {
             switch kind {
             case .headParseError:

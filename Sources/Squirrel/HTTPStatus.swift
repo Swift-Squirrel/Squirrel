@@ -89,7 +89,7 @@ public enum HTTPStatus: CustomStringConvertible {
             return "Method Not Allowed"
         case .notAcceptable:
             return "Not Acceptable"
-        case .requestTimeout: // TODO connection: close
+        case .requestTimeout:
             return "Request Timeout"
         case .conflict:
             return "Conflict"
@@ -115,7 +115,6 @@ public enum HTTPStatus: CustomStringConvertible {
         case .httpVersionUnsupported:
             return "Http Version Not Supported"
         }
-
     }
 
     /// HTTP status code
