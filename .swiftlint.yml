@@ -36,6 +36,7 @@ identifier_name:
     warning: 1
   excluded:
     - id
+    - _isNew
 nesting:
   type_level:
     warning: 3

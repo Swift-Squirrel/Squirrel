@@ -417,7 +417,7 @@ extension Request {
         guard let new = sessionBuilder.new(for: self) else {
             throw SessionError(kind: .cantEstablish)
         }
-        new.isNew = true
+        new._isNew = true
         _session = new
         return new
     }

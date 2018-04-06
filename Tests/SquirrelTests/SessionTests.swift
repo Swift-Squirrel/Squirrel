@@ -33,7 +33,7 @@ class SessionTests: XCTestCase {
             return
         }
 
-        XCTAssertTrue(session.isNew)
+        XCTAssertTrue(session._isNew)
         XCTAssertFalse(session.shouldRemove)
         XCTAssert(session.expiry > Date(), "Expiry date must be future date")
     }

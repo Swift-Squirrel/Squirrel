@@ -19,7 +19,7 @@ public protocol Session: class, Codable {
     var expiry: Date { get }
 
     /// Indicates if session is new (Do not modify)
-    var isNew: Bool { get set }
+    var _isNew: Bool { get set }
 
     /// Ip address or hostname
     var remoteHostname: String { get }
@@ -60,7 +60,7 @@ class DefaultSession: Session {
 
     let remoteHostname: String
 
-    var isNew: Bool = false
+    var _isNew: Bool = false
 
     var shouldRemove: Bool = false
 
@@ -167,10 +167,8 @@ public struct SessionConfig {
     /// Session name
     public static var sessionName = "SquirrelSession"
 
-    /// Session duration
-    public static var defaultExpiry = 60.0 * 60.0 * 24.0 * 7.0
-
-    static let userAgent = "user-agent"
+    /// Session duration (default: one week)
+    public static var defaultExpiry = 604_800.0
 
     static let storage = squirrelConfig.session
 }
@@ -178,7 +176,7 @@ public struct SessionConfig {
 struct SessionManager: SessionBuilder {
 
     func new(for request: Request) -> Session? {
-        guard let userAgent = request.headers[SessionConfig.userAgent] else {
+        guard let userAgent = request.headers[.userAgent] else {
             return nil
         }
 
@@ -213,7 +211,7 @@ struct SessionManager: SessionBuilder {
     }
 
     func get(for request: Request) -> Session? {
-        guard let userAgent = request.headers[SessionConfig.userAgent] else {
+        guard let userAgent = request.headers[.userAgent] else {
             return nil
         }
         guard let id = request.getCookie(for: SessionConfig.sessionName) else {
@@ -288,12 +286,12 @@ public class SessionMiddleware: Middleware {
             return res
         }
         let session = try request.session()
-        guard session.isNew || session.shouldRemove else {
+        guard session._isNew || session.shouldRemove else {
             return res
         }
         let response = try parseAnyResponse(any: res)
         let domain = squirrelConfig.domain
-        if session.isNew {
+        if session._isNew {
             response.setCookie(SessionConfig.sessionName, to: """
                 \(session.sessionID); domain=\(domain);path=/; HTTPOnly
                 """)
