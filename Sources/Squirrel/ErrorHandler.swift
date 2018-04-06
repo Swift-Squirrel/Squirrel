@@ -10,7 +10,7 @@ import SquirrelCore
 
 /// Error handler protocol
 public protocol ErrorHandlerProtocol {
-    func getResponse(for error: Error) -> Response?
+    func getResponse(for error: Error) -> ResponseProtocol?
 }
 
 /// Error handler singleton class
@@ -31,7 +31,7 @@ public class ErrorHandler {
         handlers.insert(handler, at: 0)
     }
 
-    private func findErrorHandler(for error: Error) -> Response? {
+    private func findErrorHandler(for error: Error) -> ResponseProtocol? {
         for handler in handlers {
             if let response = handler.getResponse(for: error) {
                 return response
@@ -40,7 +40,7 @@ public class ErrorHandler {
         return nil
     }
 
-    private func getErrorResponse(for error: Error) -> Response? {
+    private func getErrorResponse(for error: Error) -> ResponseProtocol? {
         if let handler = findErrorHandler(for: error) {
             return handler
         }
@@ -54,7 +54,7 @@ public class ErrorHandler {
         return nil
     }
 
-    func response(for error: Error) -> Response {
+    func response(for error: Error) -> ResponseProtocol {
         guard let response = getErrorResponse(for: error) else {
             let description = String(describing: error)
             let body = """
@@ -67,5 +67,4 @@ public class ErrorHandler {
         }
         return response
     }
-
 }

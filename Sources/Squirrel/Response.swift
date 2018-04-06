@@ -9,22 +9,48 @@
 import Foundation
 import PathKit
 import SquirrelCore
+import Socket
 
 /// Responder
 public typealias AnyResponseHandler = ((Request) throws -> Any)
 
+/// Response describing protocol
+public protocol ResponseProtocol: class {
+    func send(socket: Socket)
+    func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt))
+    var headers: HTTPHead { get set }
+    var status: HTTPStatus { get }
+}
+
+// MARK: - Cookies
+public extension ResponseProtocol {
+    /// Set cookie
+    ///
+    /// - Parameters:
+    ///   - name: Cookie name
+    ///   - value: Cookie value
+    public func setCookie(_ name: String, to value: String) {
+        headers.cookies[name] = value
+    }
+
+    /// Returns Cookie
+    ///
+    /// - Parameter name: Cookie name
+    /// - Returns: Cookie value if exists, otherwise nil
+    func cookie(for name: String) -> String? {
+        return headers.cookies[name]
+    }
+}
+
 /// Response class
-open class Response {
+open class Response: ResponseProtocol {
 
     /// Response status
     public let status: HTTPStatus
 
-    private let httpProtocolVersion = "HTTP/1.1"
+    private let httpVersion = RequestLine.HTTPProtocol.http11
 
-    var contentEncoding: HTTPHeader.Encoding? = nil
-
-    /// Cookies
-    public var cookies: [String: String] = [:]
+    var contentEncoding: HTTPHeader.Encoding?
 
     /// HTTP head
     public var headers = HTTPHead()
@@ -165,8 +191,6 @@ open class Response {
             case "wmv":
                 headers.set(to: .contentType(.wmv))
                 headers[.acceptRanges] = "bytes"
-
-
             default:
                 headers.set(to: .contentType(.plain))
             }
@@ -177,63 +201,63 @@ open class Response {
     }
     // swiftlint:enable cyclomatic_complexity
     // swiftlint:enable function_body_length
+}
 
-    func responeHandler() -> (Request) -> Response {
-        return {
-            _ in
-            return self
-        }
+/// Parse any to response
+///
+/// - Parameter any: Something waht do you want to return as response
+/// - Returns: Response representation of given `any`
+/// - Throws: Response initialize errors
+public func parseAnyResponse(any: Any) throws -> ResponseProtocol {
+    switch any {
+    case let response as ResponseProtocol:
+        return response
+    case let string as String:
+        return try Response(html: string)
+    case let presentable as SquirrelPresentable:
+        return try Response(presentable: presentable)
+    default:
+        return try Response(object: any)
     }
 }
 
-// MARK: - Raw head and body
-extension Response {
-    var rawPartialHeader: Data {
-        var header = httpProtocolVersion + " " + HTTPStatus.partialContent.description + "\r\n"
-
-        for (key, value) in headers {
-            header += key + ": " + value + "\r\n"
-        }
-
-        header += "\r\n"
-        return header.data(using: .utf8)!
-    }
-
-    var rawHeader: Data {
-        var header = httpProtocolVersion + " " + status.description + "\r\n"
-
-        for (key, value) in headers {
-            header += key + ": " + value + "\r\n"
-        }
-        for (key, value) in cookies {
-            header += "\(HTTPHeaderKey.setCookie): \(key)=\(value)\r\n"
-        }
-        header += "\r\n"
-        return header.data(using: .utf8)!
-    }
-
-    var rawBody: Data {
-        return body
-    }
-}
-
-// MARK: - Parsing response
+// MARK: - Sending data
 public extension Response {
-    /// Parse any to response
-    ///
-    /// - Parameter any: Something waht do you want to return as response
-    /// - Returns: Response representation of given `any`
-    /// - Throws: Response initialize errors
-    public static func parseAnyResponse(any: Any) throws -> Response {
-        switch any {
-        case let response as Response:
-            return response
-        case let string as String:
-            return try Response(html: string)
-        case let presentable as SquirrelPresentable:
-            return try Response(presentable: presentable)
-        default:
-            return try Response(object: any)
+    func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt)) {
+        log.verbose("Sending partial \(range.bottom) \(range.top)")
+        let top: UInt
+        if range.top < bodyLength {
+            top = range.top
+        } else {
+            top = UInt(bodyLength - 1)
         }
+        let bottom: UInt
+        if range.bottom <= top {
+            bottom = range.bottom
+        } else {
+            bottom = top
+        }
+        let data = body[bottom..<top + 1]
+        headers[.connection] = "keep-alive"
+        headers[.acceptRanges] = nil
+        headers.set(to: .contentRange(
+            start: bottom,
+            end: top,
+            from: UInt(bodyLength)))
+
+        let size = data.count
+        headers.set(to: .contentLength(size: size))
+
+        let head = headers.makeHeader(httpVersion: httpVersion, status: .partialContent)
+        _ = try? socket.write(from: head)
+        _ = try? socket.write(from: data)
+    }
+
+    func send(socket: Socket) {
+        log.verbose("Sending response")
+        headers.set(to: .contentLength(size: bodyLength))
+        let head = headers.makeHeader(httpVersion: httpVersion, status: status)
+        _ = try? socket.write(from: head)
+        _ = try? socket.write(from: body)
     }
 }

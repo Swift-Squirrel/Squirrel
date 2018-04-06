@@ -12,28 +12,27 @@ import SquirrelConfig
 import Crypto
 
 /// Session protocol
-public protocol SessionProtocol: Codable {
+public protocol SessionProtocol: class, Codable {
     /// Session ID
     var sessionID: String { get }
     /// Expiry of session
     var expiry: Date { get }
 
     /// Indicates if session is new (Do not modify)
-    var isNew: Bool { set get }
+    var isNew: Bool { get set }
 
     /// Ip address or hostname
     var remoteHostname: String { get }
 
     /// Indicates if session should be removed
-    var shouldRemove: Bool { set get }
+    var shouldRemove: Bool { get set }
 
     /// Removes session
     ///
     /// - Returns: True on success
     func delete() -> Bool
 
-    var data: [String: JSON] { set get }
-
+    var data: [String: JSON] { get set }
 
     /// Get or set session parameter
     ///
@@ -70,7 +69,7 @@ class Session: SessionProtocol {
         self.sessionID = id
         self.expiry = expiry
         self.userAgent = userAgent
-        let _ = store()
+        _ = store()
     }
 
     init?(id: String, remoteHostname: String, userAgent: String) {
@@ -121,7 +120,7 @@ class Session: SessionProtocol {
         }
         set(value) {
             data[key] = value
-            let _ = store()
+            _ = store()
         }
     }
 }
@@ -229,20 +228,19 @@ public struct SessionMiddleware: Middleware {
         guard session.isNew || session.shouldRemove else {
             return res
         }
-        let response = try Response.parseAnyResponse(any: res)
+        let response = try parseAnyResponse(any: res)
         let domain = squirrelConfig.domain
         if session.isNew {
-            response.cookies[SessionConfig.sessionName] = """
+            response.setCookie(SessionConfig.sessionName, to: """
                 \(session.sessionID); domain=\(domain);path=/; HTTPOnly
-                """
+                """)
         } else if session.shouldRemove {
-            let _ = session.delete()
-            response.cookies[SessionConfig.sessionName] = """
+            _ = session.delete()
+            response.setCookie(SessionConfig.sessionName, to: """
                 removed; domain=\(domain);path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; HTTPOnly
-                """
+                """)
         }
         return response
-
     }
 
     /// Constructs Session middleware

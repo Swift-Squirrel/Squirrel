@@ -9,7 +9,7 @@
 import Foundation
 
 class RouteTree {
-    private var root: RouteNode? = nil
+    private var root: RouteNode?
 
     var allRoutes: [RouteDescriptor] {
         guard let root = root else {
@@ -102,24 +102,24 @@ class RouteTree {
 
         var routes = route.components(separatedBy: "/").filter { $0 != "" }
 
-        var i = 0
-        for r in routes {
-            if r == "." {
-                routes.remove(at: i)
-            } else if r == ".." {
-                if i == 0 {
-                    i = -1
+        var index = 0
+        for route in routes {
+            if route == "." {
+                routes.remove(at: index)
+            } else if route == ".." {
+                if index == 0 {
+                    index = -1
                     break
                 }
-                routes.remove(at: i)
-                routes.remove(at: i - 1)
-                i -= 1
+                routes.remove(at: index)
+                routes.remove(at: index - 1)
+                index -= 1
             } else {
-                i += 1
+                index += 1
             }
         }
 
-        if i < 0 {
+        if index < 0 {
             routes.removeAll()
         }
 

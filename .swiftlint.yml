@@ -31,9 +31,14 @@ custom_rules:
     message: "Source code should not contains placeholders"
     severity: warning
 
-variable_name:
+identifier_name:
+  min_length:
+    warning: 1
   excluded:
     - id
+nesting:
+  type_level:
+    warning: 3
 
 line_length:
   - 100 # warning

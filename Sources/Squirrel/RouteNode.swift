@@ -24,7 +24,7 @@ class RouteNode {
 
     private var dynamicNodes = [DynamicRouteNode]()
 
-    func routes(prefix: String) -> [(route: String, methods:[RequestLine.Method])] {
+    func routes(prefix: String) -> [(route: String, methods: [RequestLine.Method])] {
         let route: String
         let newPrefix: String
         if name == "/" {
@@ -56,6 +56,7 @@ class RouteNode {
         self.name = route.lowercased()
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func drop(method: RequestLine.Method, onReversed components: [String]) {
         var components = components
         guard let nodeName = components.popLast() else {
@@ -75,7 +76,7 @@ class RouteNode {
                     if child.fullName == childName {
                         child.drop(method: method, onReversed: components)
                         if child.isEmpty {
-                            let _ = dynamicNodes.remove(at: index)
+                            _ = dynamicNodes.remove(at: index)
                         }
                         break
                     }
@@ -88,7 +89,7 @@ class RouteNode {
                     if child.name == childName {
                         child.drop(method: method, onReversed: components)
                         if child.isEmpty {
-                            let _ = children.remove(at: index)
+                            _ = children.remove(at: index)
                         }
                         break
                     }
@@ -127,11 +128,9 @@ class RouteNode {
         }
 
         if firstElem.hasPrefix(":") {
-            for node in dynamicNodes {
-                if ":" + node.name == firstElem {
-                    try nodeSetAdd(routes: routes, node: node, method: method, handler: handler)
-                    return
-                }
+            for node in dynamicNodes where ":" + node.name == firstElem {
+                try nodeSetAdd(routes: routes, node: node, method: method, handler: handler)
+                return
             }
             let newDynamicNode = DynamicRouteNode(route: firstElem)
             dynamicNodes.append(newDynamicNode)
@@ -139,11 +138,9 @@ class RouteNode {
             return
         }
 
-        for child in children {
-            if child.name == firstElem {
-                try nodeSetAdd(routes: routes, node: child, method: method, handler: handler)
-                return
-            }
+        for child in children where child.name == firstElem {
+            try nodeSetAdd(routes: routes, node: child, method: method, handler: handler)
+            return
         }
 
         let newNode = RouteNode(route: firstElem)
@@ -194,8 +191,13 @@ class RouteNode {
                 if values.count == 0 && defaultHandlers.count == 0 {
                     return nil
                 }
-                var methods: [RequestLine.Method] = values.keys.flatMap({ $0 })
-                methods.append(contentsOf: defaultHandlers.keys.flatMap({ $0 }))
+                #if swift(>=4.1)
+                    var methods: [RequestLine.Method] = values.keys.compactMap({ $0 })
+                    methods.append(contentsOf: defaultHandlers.keys.compactMap({ $0 }))
+                #else
+                    var methods: [RequestLine.Method] = values.keys.flatMap({ $0 })
+                    methods.append(contentsOf: defaultHandlers.keys.flatMap({ $0 }))
+                #endif
                 throw HTTPError(
                     status: .notAllowed(allowed: methods),
                     description: "Method is not allowed")

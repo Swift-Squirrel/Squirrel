@@ -25,8 +25,7 @@ func chain(middlewares: [Middleware], handler: @escaping AnyResponseHandler) -> 
     let handlers = middlewares.reversed()
 
     return handlers.reduce(handler, { (nextResponse, nextMiddleware) -> AnyResponseHandler in
-        return {
-            request in
+        return { request in
             return try nextMiddleware.respond(to: request, next: nextResponse)
         }
     })
@@ -43,7 +42,7 @@ public struct ProtectedPageMiddleware: Middleware {
     /// - Throws: Rethrows and parsing errors
     public func respond(to request: Request, next: (Request) throws -> Any) throws -> Any {
         let anyResponse = try next(request)
-        let response = try Response.parseAnyResponse(any: anyResponse)
+        let response = try parseAnyResponse(any: anyResponse)
         response.headers[.cacheControl] = "nocache, no-store, max-age=0, must-revalidate"
         response.headers[.pragma] = "no-cache"
         response.headers[.expires] = "Fri, 01 Jan 1990 00:00:00 GMT"
@@ -51,7 +50,5 @@ public struct ProtectedPageMiddleware: Middleware {
     }
 
     /// Constructs middleware
-    public init() {
-
-    }
+    public init() { }
 }

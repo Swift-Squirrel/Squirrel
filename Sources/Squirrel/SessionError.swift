@@ -45,5 +45,4 @@ struct SessionError: SquirrelError {
         self.kind = kind
         self._description = description
     }
-
 }

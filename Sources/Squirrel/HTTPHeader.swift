@@ -36,7 +36,7 @@ public enum RequestLine {
     ///
     /// - http11: 1.1
     public enum HTTPProtocol: String, CustomStringConvertible {
-        case http11 = "1.1"
+        case http11 = "HTTP/1.1"
 
         init?(rawHTTPValue value: String) {
             guard value == "HTTP/1.1" else {
@@ -46,14 +46,12 @@ public enum RequestLine {
             self = .http11
         }
 
-
-        /// Returns HTTP/\(rawValue)
+        /// Returns `rawValue`
         /// - Note: Value is uppercased
         public var description: String {
-            return "HTTP/\(rawValue)"
+            return rawValue
         }
     }
-
 }
 
 /// HTTP header
@@ -148,7 +146,6 @@ public extension HTTPHeader {
         case wmv = "x-ms-wmv"
         case avi = "x-msvideo"
 
-
         /// MIME representation
         public var description: String {
             let mime: String
@@ -204,9 +201,6 @@ extension HTTPHeader: CustomStringConvertible {
         return (key.description, value)
     }
 }
-
-
-
 
 /// Check lowercased equality
 ///
