@@ -84,14 +84,14 @@ extension Router {
     public func get(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(session)
         }
     }
@@ -175,14 +175,14 @@ extension Router {
     public func get(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(request, session)
         }
     }
@@ -198,7 +198,7 @@ extension Router {
     public func get<T: Decodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ params: T, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
@@ -206,7 +206,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(params, session)
         }
     }
@@ -269,14 +269,14 @@ extension Router {
     public func get<S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(session, sessionParams)
         }
@@ -343,14 +343,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(session, _builder)
         }
@@ -393,7 +393,7 @@ extension Router {
     public func get<T: Decodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
@@ -401,7 +401,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(request, params, session)
         }
     }
@@ -443,14 +443,14 @@ extension Router {
     public func get<S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(request, session, sessionParams)
         }
@@ -468,7 +468,7 @@ extension Router {
     public func get<T: Decodable, S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
@@ -476,7 +476,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(params, session, sessionParams)
         }
@@ -521,14 +521,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(request, session, _builder)
         }
@@ -547,7 +547,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
@@ -555,7 +555,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(params, session, _builder)
         }
@@ -627,14 +627,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(session, sessionParams, _builder)
@@ -654,7 +654,7 @@ extension Router {
     public func get<T: Decodable, S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
@@ -662,7 +662,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(request, params, session, sessionParams)
         }
@@ -682,7 +682,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
@@ -690,7 +690,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(request, params, session, _builder)
         }
@@ -738,14 +738,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(request, session, sessionParams, _builder)
@@ -766,7 +766,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
@@ -774,7 +774,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(params, session, sessionParams, _builder)
@@ -796,7 +796,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .get,
@@ -804,7 +804,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(request, params, session, sessionParams, _builder)
@@ -884,14 +884,14 @@ extension Router {
     public func post(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(session)
         }
     }
@@ -975,14 +975,14 @@ extension Router {
     public func post(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(request, session)
         }
     }
@@ -998,7 +998,7 @@ extension Router {
     public func post<T: Decodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ params: T, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
@@ -1006,7 +1006,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(params, session)
         }
     }
@@ -1069,14 +1069,14 @@ extension Router {
     public func post<S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(session, sessionParams)
         }
@@ -1143,14 +1143,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(session, _builder)
         }
@@ -1193,7 +1193,7 @@ extension Router {
     public func post<T: Decodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
@@ -1201,7 +1201,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(request, params, session)
         }
     }
@@ -1243,14 +1243,14 @@ extension Router {
     public func post<S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(request, session, sessionParams)
         }
@@ -1268,7 +1268,7 @@ extension Router {
     public func post<T: Decodable, S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
@@ -1276,7 +1276,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(params, session, sessionParams)
         }
@@ -1321,14 +1321,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(request, session, _builder)
         }
@@ -1347,7 +1347,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
@@ -1355,7 +1355,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(params, session, _builder)
         }
@@ -1427,14 +1427,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(session, sessionParams, _builder)
@@ -1454,7 +1454,7 @@ extension Router {
     public func post<T: Decodable, S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
@@ -1462,7 +1462,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(request, params, session, sessionParams)
         }
@@ -1482,7 +1482,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
@@ -1490,7 +1490,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(request, params, session, _builder)
         }
@@ -1538,14 +1538,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(request, session, sessionParams, _builder)
@@ -1566,7 +1566,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
@@ -1574,7 +1574,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(params, session, sessionParams, _builder)
@@ -1596,7 +1596,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .post,
@@ -1604,7 +1604,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(request, params, session, sessionParams, _builder)
@@ -1684,14 +1684,14 @@ extension Router {
     public func put(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(session)
         }
     }
@@ -1775,14 +1775,14 @@ extension Router {
     public func put(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(request, session)
         }
     }
@@ -1798,7 +1798,7 @@ extension Router {
     public func put<T: Decodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ params: T, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
@@ -1806,7 +1806,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(params, session)
         }
     }
@@ -1869,14 +1869,14 @@ extension Router {
     public func put<S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(session, sessionParams)
         }
@@ -1943,14 +1943,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(session, _builder)
         }
@@ -1993,7 +1993,7 @@ extension Router {
     public func put<T: Decodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
@@ -2001,7 +2001,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(request, params, session)
         }
     }
@@ -2043,14 +2043,14 @@ extension Router {
     public func put<S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(request, session, sessionParams)
         }
@@ -2068,7 +2068,7 @@ extension Router {
     public func put<T: Decodable, S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
@@ -2076,7 +2076,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(params, session, sessionParams)
         }
@@ -2121,14 +2121,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(request, session, _builder)
         }
@@ -2147,7 +2147,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
@@ -2155,7 +2155,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(params, session, _builder)
         }
@@ -2227,14 +2227,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(session, sessionParams, _builder)
@@ -2254,7 +2254,7 @@ extension Router {
     public func put<T: Decodable, S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
@@ -2262,7 +2262,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(request, params, session, sessionParams)
         }
@@ -2282,7 +2282,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
@@ -2290,7 +2290,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(request, params, session, _builder)
         }
@@ -2338,14 +2338,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(request, session, sessionParams, _builder)
@@ -2366,7 +2366,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
@@ -2374,7 +2374,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(params, session, sessionParams, _builder)
@@ -2396,7 +2396,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .put,
@@ -2404,7 +2404,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(request, params, session, sessionParams, _builder)
@@ -2484,14 +2484,14 @@ extension Router {
     public func delete(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(session)
         }
     }
@@ -2575,14 +2575,14 @@ extension Router {
     public func delete(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(request, session)
         }
     }
@@ -2598,7 +2598,7 @@ extension Router {
     public func delete<T: Decodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ params: T, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
@@ -2606,7 +2606,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(params, session)
         }
     }
@@ -2669,14 +2669,14 @@ extension Router {
     public func delete<S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(session, sessionParams)
         }
@@ -2743,14 +2743,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(session, _builder)
         }
@@ -2793,7 +2793,7 @@ extension Router {
     public func delete<T: Decodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
@@ -2801,7 +2801,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(request, params, session)
         }
     }
@@ -2843,14 +2843,14 @@ extension Router {
     public func delete<S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(request, session, sessionParams)
         }
@@ -2868,7 +2868,7 @@ extension Router {
     public func delete<T: Decodable, S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
@@ -2876,7 +2876,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(params, session, sessionParams)
         }
@@ -2921,14 +2921,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(request, session, _builder)
         }
@@ -2947,7 +2947,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
@@ -2955,7 +2955,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(params, session, _builder)
         }
@@ -3027,14 +3027,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(session, sessionParams, _builder)
@@ -3054,7 +3054,7 @@ extension Router {
     public func delete<T: Decodable, S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
@@ -3062,7 +3062,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(request, params, session, sessionParams)
         }
@@ -3082,7 +3082,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
@@ -3090,7 +3090,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(request, params, session, _builder)
         }
@@ -3138,14 +3138,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(request, session, sessionParams, _builder)
@@ -3166,7 +3166,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
@@ -3174,7 +3174,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(params, session, sessionParams, _builder)
@@ -3196,7 +3196,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .delete,
@@ -3204,7 +3204,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(request, params, session, sessionParams, _builder)
@@ -3284,14 +3284,14 @@ extension Router {
     public func patch(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(session)
         }
     }
@@ -3375,14 +3375,14 @@ extension Router {
     public func patch(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(request, session)
         }
     }
@@ -3398,7 +3398,7 @@ extension Router {
     public func patch<T: Decodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ params: T, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
@@ -3406,7 +3406,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(params, session)
         }
     }
@@ -3469,14 +3469,14 @@ extension Router {
     public func patch<S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(session, sessionParams)
         }
@@ -3543,14 +3543,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(session, _builder)
         }
@@ -3593,7 +3593,7 @@ extension Router {
     public func patch<T: Decodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
@@ -3601,7 +3601,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 return try handler(request, params, session)
         }
     }
@@ -3643,14 +3643,14 @@ extension Router {
     public func patch<S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(request, session, sessionParams)
         }
@@ -3668,7 +3668,7 @@ extension Router {
     public func patch<T: Decodable, S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
@@ -3676,7 +3676,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(params, session, sessionParams)
         }
@@ -3721,14 +3721,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(request, session, _builder)
         }
@@ -3747,7 +3747,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
@@ -3755,7 +3755,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(params, session, _builder)
         }
@@ -3827,14 +3827,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(session, sessionParams, _builder)
@@ -3854,7 +3854,7 @@ extension Router {
     public func patch<T: Decodable, S: SessionDecodable>(
         _ url: String,
         middlewares: [Middleware] = [],
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ sessionParams: S) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ sessionParams: S) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
@@ -3862,7 +3862,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 return try handler(request, params, session, sessionParams)
         }
@@ -3882,7 +3882,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
@@ -3890,7 +3890,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let _builder: C = try builder(request)
                 return try handler(request, params, session, _builder)
         }
@@ -3938,14 +3938,14 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
             url: mergeURL(with: url),
             middlewares: middlewareGroup + middlewares) { request in
                 
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(request, session, sessionParams, _builder)
@@ -3966,7 +3966,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ params: T, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ params: T, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
@@ -3974,7 +3974,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(params, session, sessionParams, _builder)
@@ -3996,7 +3996,7 @@ extension Router {
         _ url: String,
         middlewares: [Middleware] = [],
         builder: @escaping (_ request: Request) throws -> C,
-        handler: @escaping (_ request: Request, _ params: T, _ session: SessionProtocol, _ sessionParams: S, _ customParam: C) throws -> Any) {
+        handler: @escaping (_ request: Request, _ params: T, _ session: Session, _ sessionParams: S, _ customParam: C) throws -> Any) {
 
         ResponseManager.sharedInstance.route(
             method: .patch,
@@ -4004,7 +4004,7 @@ extension Router {
             middlewares: middlewareGroup + middlewares) { request in
                 
                 let params: T = try ResponseManager.convertParameters(request: request)
-                let session: SessionProtocol = try request.session()
+                let session: Session = try request.session()
                 let sessionParams: S = try ResponseManager.convertSessionParameters(request: request)
                 let _builder: C = try builder(request)
                 return try handler(request, params, session, sessionParams, _builder)

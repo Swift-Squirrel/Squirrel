@@ -59,20 +59,20 @@ class SessionTests: XCTestCase {
     }
 
     func testSessionInit() {
-        let session = Session(id: "asdfghjkl", expiry: Date().addingTimeInterval(-40), remoteHostname: "127.0.0.1", userAgent: "Mozzila")
+        let session = DefaultSession(id: "asdfghjkl", expiry: Date().addingTimeInterval(-40), remoteHostname: "127.0.0.1", userAgent: "Mozzila")
         XCTAssertEqual(session.sessionID, "asdfghjkl")
         XCTAssertEqual(session.userAgent, "Mozzila")
         XCTAssertFalse(session.expiry > Date())
 
-        let session1 = Session(id: "asdfghjkl", remoteHostname: "127.0.0.1", userAgent: "Mozzila")
+        let session1 = DefaultSession(id: "asdfghjkl", remoteHostname: "127.0.0.1", userAgent: "Mozzila")
         XCTAssertNil(session1)
 
-        let session2 = Session(id: "asdfasdf", expiry: Date().addingTimeInterval(60), remoteHostname: "127.0.0.1", userAgent: "Safari")
+        let session2 = DefaultSession(id: "asdfasdf", expiry: Date().addingTimeInterval(60), remoteHostname: "127.0.0.1", userAgent: "Safari")
         XCTAssertEqual(session2.sessionID, "asdfasdf")
         XCTAssertEqual(session2.userAgent, "Safari")
         XCTAssertTrue(session2.expiry > Date())
 
-        let session3 = Session(id: "asdfasdf", remoteHostname: "127.0.0.1", userAgent: "Safari")
+        let session3 = DefaultSession(id: "asdfasdf", remoteHostname: "127.0.0.1", userAgent: "Safari")
         XCTAssertNotNil(session3)
         guard let session3a = session3 else {
             XCTFail()
@@ -85,11 +85,11 @@ class SessionTests: XCTestCase {
 
     func testSessionData() {
         let request = getRequest
-        let session = try! request.newSession() as! Session
+        let session = try! request.newSession() as! DefaultSession
 
         session["username"] = "Tommy"
 
-        guard let session1 = Session(id: session.sessionID, remoteHostname: "127.0.0.1", userAgent: "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.5) Gecko/20091102 Firefox/3.5.5 (.NET CLR 3.5.30729)") else {
+        guard let session1 = DefaultSession(id: session.sessionID, remoteHostname: "127.0.0.1", userAgent: "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.5) Gecko/20091102 Firefox/3.5.5 (.NET CLR 3.5.30729)") else {
             XCTFail()
             return
         }
@@ -109,8 +109,8 @@ class SessionTests: XCTestCase {
 
 }
 
-extension Session: Equatable {
-    public static func ==(lhs: Session, rhs: Session) -> Bool {
+extension DefaultSession: Equatable {
+    public static func ==(lhs: DefaultSession, rhs: DefaultSession) -> Bool {
         return lhs.data == rhs.data
     }
 }

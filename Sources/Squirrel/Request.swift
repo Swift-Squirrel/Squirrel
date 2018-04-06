@@ -52,7 +52,7 @@ open class Request {
     public let body: Data
 
     /// Session
-    private var _session: SessionProtocol?
+    private var _session: Session?
 
     private var _urlParameters: [String: String] = [:]
     private var _queryParameters: [String: String] = [:]
@@ -413,7 +413,7 @@ extension Request {
     /// - Returns: New session
     /// - Throws: `SessionError(kind: .cantEstablish)`
     @discardableResult
-    public func newSession() throws -> SessionProtocol {
+    public func newSession() throws -> Session {
         guard let new = sessionBuilder.new(for: self) else {
             throw SessionError(kind: .cantEstablish)
         }
@@ -426,7 +426,7 @@ extension Request {
     ///
     /// - Returns: Current session
     /// - Throws: `SessionError(kind: .missingSession)` if there is no session
-    public func session() throws -> SessionProtocol {
+    public func session() throws -> Session {
         guard let sess = _session else {
             throw SessionError(kind: .missingSession)
         }
@@ -438,7 +438,7 @@ extension Request {
         return _session != nil
     }
 
-    func setSession(_ session: SessionProtocol) {
+    func setSession(_ session: Session) {
         _session = session
     }
 }

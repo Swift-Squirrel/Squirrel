@@ -22,6 +22,7 @@ open class Server: Router {
     private var connected = [Int32: Socket]()
     private let semaphore = DispatchSemaphore(value: 1)
     private let dispatchGroup = DispatchGroup()
+    private let schedulerQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
 
     let serverRoot: Path
     /// url
