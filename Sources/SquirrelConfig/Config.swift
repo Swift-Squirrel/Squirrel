@@ -19,17 +19,21 @@ public class Config {
     private var _serverRoot: Path = Path().absolute()
     private let _webRoot: Path
     private let _cache: Path
-    private var _port: UInt16 = 8080
+    private var _port: UInt16 = 8000
     private let _isAllowedDirBrowsing: Bool
     private let _logDir: Path
     private let _logFile: Path
     private let _resourcesDir: Path
     private let _viewsDir: Path
-    private let _storage: Path
     private let _storageViews: Path
     private let _configFile: Path?
-    private let _assets: Path
     private let _publicStorage: Path
+
+    /// Maximum pending connections
+    public let maximumPendingConnections: Int
+
+    /// Sotrage directory
+    public let storage: Path
 
     /// Symlink to public storage
     private let publicStorageSymlink: Path
@@ -42,10 +46,14 @@ public class Config {
 
     /// Logger
     public let log = SwiftyBeaver.self
+    /// Console log
+    public let consoleLog: ConsoleDestination
+    /// File log
+    public let fileLog: FileDestination
 
     private let logFileName = "server.log"
 
-    /// Log file desctination
+    /// Log file destination
     public var logFile: Path {
         return _logFile
     }
@@ -76,11 +84,6 @@ public class Config {
         return _storageViews
     }
 
-    /// Assets destination
-    public var assets: Path {
-        return _assets
-    }
-
     /// Views *.nut* destination
     public var views: Path {
         return _viewsDir
@@ -94,21 +97,58 @@ public class Config {
     /// Shared instance
     public static let sharedInstance = Config()
 
+    private static func getEnviromentVariable(name: String) -> String? {
+        let start = name.index(after: name.startIndex)
+        let key = String(name[start..<name.endIndex])
+        return ProcessInfo.processInfo.environment[key]
+    }
+
+    private static func getStringVariable(from node: Node?) -> String? {
+        guard let string = node?.string else {
+            return nil
+        }
+        if string.first == "$" {
+            return getEnviromentVariable(name: string)
+        }
+        return string
+    }
+
+    private static func getIntVariable(from node: Node?) -> Int? {
+        guard let node = node else {
+            return nil
+        }
+
+        if let string = node.string, string.first == "$" {
+            guard let value = getEnviromentVariable(name: string) else {
+                return nil
+            }
+            return Int(value)
+        }
+        return node.int
+    }
+
     // swiftlint:disable cyclomatic_complexity
     // swiftlint:disable function_body_length
     private init() {
-        let configFile = Path().absolute() + ".squirrel.yaml"
+        let configFile: Path = {
+            let p1 = Path().absolute() + ".squirrel.yaml"
+            if p1.exists {
+                return p1
+            }
+            return Path().absolute() + ".squirrel.yml"
+        }()
         var domainConfig = "127.0.0.1"
+        var maxPendingConnectionsConfig = 50
         if configFile.exists {
             _configFile = configFile
             do {
                 let content: String = try configFile.read()
-                guard let yaml = try Yams.load(yaml: content) as? [String: Any] else {
+                guard let yaml = try compose(yaml: content) else {
                     throw ConfigError(kind: .yamlSyntax)
                 }
 
-                if let serv = yaml["server"] as? [String: Any] {
-                    if let serverRoot = serv["serverRoot"] as? String {
+                if let serv = yaml["server"] {
+                    if let serverRoot = Config.getStringVariable(from: serv["serverRoot"]) {
                         let sr = Path(serverRoot).absolute()
                         if sr.exists {
                             _serverRoot = sr
@@ -116,11 +156,14 @@ public class Config {
                             print(sr.string + " does not exists using default server root")
                         }
                     }
-                    if let port = serv["port"] as? Int {
+                    if let port = Config.getIntVariable(from: serv["port"]) {
                         _port = UInt16(port)
                     }
-                    if let dom = serv["domain"] as? String {
+                    if let dom = Config.getStringVariable(from: serv["domain"]) {
                         domainConfig = dom
+                    }
+                    if let maxPending = Config.getIntVariable(from: serv["max_pending"]) {
+                        maxPendingConnectionsConfig = maxPending
                     }
                 }
             } catch {
@@ -129,34 +172,41 @@ public class Config {
         } else {
             _configFile = nil
         }
+        maximumPendingConnections = maxPendingConnectionsConfig
         domain = domainConfig
         _webRoot = _serverRoot + "Public"
         publicStorageSymlink = _webRoot + "Storage"
-        _storage = _serverRoot + "Storage"
-        _cache = _serverRoot + _storage + "Cache"
-        _publicStorage = _storage + "Public"
-        _logDir = _storage + "Logs"
-        session = _storage + "Sessions"
+        storage = _serverRoot + "Storage"
+        _cache = storage + "Cache"
+        _publicStorage = storage + "Public"
+        _logDir = storage + "Logs"
+        session = storage + "Sessions"
         _logFile = _logDir + logFileName
         _resourcesDir = _serverRoot + "Resources"
-        _assets = _serverRoot + "Assets"
         _viewsDir = _resourcesDir + "NutViews"
-        _storageViews = _storage + "Fruits"
+        _storageViews = storage + "Fruits"
 
         _isAllowedDirBrowsing = false
+
+        consoleLog = ConsoleDestination()
+        fileLog = FileDestination()
 
         initLog()
         createDirectories()
 
         if !(publicStorageSymlink.exists && publicStorageSymlink.isSymlink) {
-            // TODO remove force try
-            // swiftlint:disable:next force_try
-            try! publicStorageSymlink.symlink(publicStorage)
+            guard (try? publicStorageSymlink.symlink(publicStorage)) != nil else {
+                fatalError("Could not create simlink to \(publicStorage)")
+            }
         }
     }
     // swiftlint:enable cyclomatic_complexity
     // swiftlint:enable function_body_length
 
+    /// Get database config from config file
+    ///
+    /// - Returns: dabase config data
+    /// - Throws: Yaml error, File read error
     public func getDBData() throws -> DBCredentials {
         guard let configFile = _configFile else {
             throw ConfigError(kind: .missingConfigFile)
@@ -184,18 +234,16 @@ public class Config {
     }
 
     private func initLog() {
-        let console = ConsoleDestination()
-        console.minLevel = .verbose
+        consoleLog.minLevel = .debug
 
         #if !Xcode
-            console.useTerminalColors = true
+            consoleLog.useTerminalColors = true
         #endif
 
-        let file = FileDestination()
-        file.logFileURL = URL(fileURLWithPath: logFile.description)
+        fileLog.logFileURL = URL(fileURLWithPath: logFile.description)
 
-        log.addDestination(console)
-        log.addDestination(file)
+        log.addDestination(consoleLog)
+        log.addDestination(fileLog)
     }
 
     private func createDir(path dir: Path) {
@@ -206,24 +254,13 @@ public class Config {
         log.info("creating folder: \(dir.string)")
     }
 
-    private func createDir(url: String) {
-        let fileManager = FileManager.default
-        if !fileManager.fileExists(atPath: url) {
-            try? fileManager.createDirectory(
-                atPath: url,
-                withIntermediateDirectories: true) // TODO handle
-
-            log.info("creating folder: \(url)")
-        }
-    }
-
     private func createDirectories() {
         createDir(path: _logDir)
         createDir(path: serverRoot)
         createDir(path: webRoot)
         createDir(path: storageViews)
+        createDir(path: views)
         createDir(path: cache)
-        createDir(path: assets)
         createDir(path: publicStorage)
         createDir(path: session)
     }

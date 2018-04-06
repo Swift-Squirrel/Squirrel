@@ -16,30 +16,43 @@ import SquirrelConfig
 open class Server: Router {
 
     private let port: UInt16
-    let bufferSize = 20
-    var listenSocket: Socket? = nil
-    var connected = [Int32: Socket]()
-    var acceptNewConnection = true
-    let serverRoot: Path
+    private var listenSocket: Socket?
+    /// Server run status
+    public private(set) var runStatus: RunStatus = .stopped
+    private var connected = [Int32: Socket]()
+    private let semaphore = DispatchSemaphore(value: 1)
+    private let dispatchGroup = DispatchGroup()
+    private let schedulerQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
 
+    let serverRoot: Path
+    /// url
+    public let url: String
     /// global middlewares used for all routes
     public let middlewareGroup: [Middleware]
-
-    /// Construct server
+    /// Constructs erver
     ///
     /// - Parameters:
-    ///   - port: Port for HTTP requests
-    ///   - root: Root directory of server
+    ///   - base: Base url (default: "/")
+    ///   - port: Port for HTTP requests (default: 8080)
+    ///   - root: Root directory of server (default: "Public")
     ///   - globalMiddlewares: Middlewares used on all routes (default: [])
     public init(
+        base: String = "/",
         port: UInt16 = Config.sharedInstance.port,
         serverRoot root: Path = Config.sharedInstance.serverRoot,
         globalMiddlewares: [Middleware] = []) {
 
+        if base.first == "/" {
+            self.url = base
+        } else {
+            squirrelConfig.log.warning(
+                "Server base url should start with '/', (added automatically)")
+
+            self.url = "/\(base)"
+        }
         self.port = port
         self.serverRoot = root
         self.middlewareGroup = globalMiddlewares
-
     }
 
     deinit {
@@ -49,110 +62,185 @@ open class Server: Router {
         listenSocket?.close()
     }
 
+    /// Stops server, if finishConnections is set to true, server waits to
+    /// finish all opened connections and stops accepting new connections.
+    /// If false server will be immidiately stopped.
+    ///
+    /// - Parameter finishConnections: Let opened connections finish (default true)
+    public func stop(finishConnections: Bool = true) {
+        guard isRunning else {
+            return
+        }
+        log.info("Server is stopping")
+        semaphore.wait()
+        runStatus = .stopping(now: !finishConnections)
+        listenSocket?.close()
+        listenSocket = nil
+        semaphore.signal()
+    }
+
+    /// Pause server, call given closure and unpause server
+    ///
+    /// - Parameters:
+    ///   - finishConnections: Waits to finish opened connections,
+    ///     if finishConnections is set to true, server waits to finish
+    ///     all opened connections and stops accepting new connections.
+    ///     If false server will be immidiately stopped. (default true)
+    ///   - closure: Closure to call when server is paused
+    public func pause(finishConnections: Bool = true, closure: @escaping () -> Void) {
+        guard isRunning else {
+            return
+        }
+        log.info("Server is pausing")
+        semaphore.wait()
+        runStatus = .pausing(now: !finishConnections, closure: closure)
+        listenSocket?.close()
+        listenSocket = nil
+        semaphore.signal()
+    }
+
     /// Run server and start to listen on given `port` from `init(port:root:)`
     ///
     /// - Throws: Socket errors
     public func run() throws {
-        let socket = try Socket.create()
-
-        listenSocket = socket
-        try socket.listen(on: Int(port))
-        log.info("Server is running on port \(socket.listeningPort)")
+        // swiftlint:disable:prev function_body_length
         let queue = DispatchQueue(label: "clientQueue", attributes: .concurrent)
         repeat {
-            let connectedSocket = try socket.acceptClientConnection()
-            log.verbose("Connection from: \(connectedSocket.remoteHostname)")
-            queue.async {self.newConnection(socket: connectedSocket)}
-        } while acceptNewConnection
+            let socket = try Socket.create()
+            runStatus = .willRun
+            listenSocket = socket
+            defer {
+                listenSocket?.close()
+                listenSocket = nil
+            }
+            try socket.listen(on: Int(port),
+                              maxBacklogSize: squirrelConfig.maximumPendingConnections,
+                              allowPortReuse: false)
+            log.info("Server is running on port \(socket.listeningPort)")
+            runStatus = .running
+            do {
+                repeat {
+                    let connectedSocket = try socket.acceptClientConnection()
 
+                    dispatchGroup.enter()
+                    log.verbose("Connection from: \(connectedSocket.remoteHostname)")
+                    queue.async {
+                        self.connected[socket.socketfd] = connectedSocket
+                        self.newConnection(socket: connectedSocket)
+                        self.connected.removeValue(forKey: connectedSocket.socketfd)
+                        connectedSocket.close()
+                        self.dispatchGroup.leave()
+                    }
+                } while isRunning
+            } catch let error as Socket.Error {
+                guard error.errorCode == Socket.SOCKET_ERR_ACCEPT_FAILED && !isRunning else {
+                    throw error
+                }
+            }
+            handleRunStatus()
+        } while willRun
+    }
+
+    private func handleRunStatus() {
+        semaphore.wait()
+        switch runStatus {
+        case .stopping(let now):
+            if !now {
+                log.debug("Server is waiting for opened connections")
+                dispatchGroup.wait()
+            }
+            runStatus = .stopped
+            log.info("Server is stopped")
+        case .pausing(let now, let closure):
+            if !now {
+                log.debug("Server is waiting for opened connections")
+                dispatchGroup.wait()
+            }
+            runStatus = .paused
+            log.info("Server is paused")
+            closure()
+            log.debug("Server will run")
+            runStatus = .willRun
+        case .stopped, .paused, .willRun:
+            assertionFailure("Unexpected server state")
+        case .running:
+            assertionFailure("Unexpected server state")
+        }
+        semaphore.signal()
     }
 
     func newConnection(socket: Socket) {
-        connected[socket.socketfd] = socket
-
-        var dataRead = Data(capacity: bufferSize)
-        var cont = true
-        var zeroTimes = 100
-        repeat {
+        do {
             do {
-                let bytes = try socket.read(into: &dataRead)
-                if bytes > 0 {
-                    zeroTimes = 100
-                    do {
-                        let request = try Request(data: dataRead)
-                        log.info(request.method.rawValue + " " + request.path)
+                let request = try Request(socket: socket)
+                log.info(request.method.rawValue + " " + request.path)
+                log.verbose("\(request.remoteHostname) - \(request.method) "
+                    + "\(request.path) \(request.headers)")
+                let response = handle(request: request)
+//                if request.acceptEncoding.count > 0 {
+//                    if request.acceptEncoding.contains(.gzip) {
+//                        response.contentEncoding = .gzip
+//                    }
+//                }
 
-                        if (request.getHeader(for: "Connection") != nil)
-                            && request.getHeader(for: "Connection") != "keep-alive" {
-                            cont = false
-                        }
-                        let response = handle(request: request)
-                        if request.acceptEncoding.count > 0 {
-                            if request.acceptEncoding.contains(.gzip) {
-                                response.contentEncoding = .gzip
-                            }
-                        }
-                        send(socket: socket, response: response)
-                    } catch let error {
-                        let response = ErrorHandler.sharedInstance.response(for: error)
-                        send(socket: socket, response: response)
-                        cont = false
-                        throw error
-                    }
-                    dataRead.removeAll()
+                if let range = request.range, case .ok = response.status {
+                    response.sendPartial(socket: socket, range: range)
                 } else {
-                    zeroTimes -= 1
-                    if zeroTimes == 0 {
-                        cont = false
-                    }
+                    response.send(socket: socket)
                 }
             } catch let error {
-                log.error("error: \(error)")
-                cont = false
+                if let sockErr = error as? Request.SocketError {
+                    if sockErr.kind == .clientClosedConnection {
+                        throw sockErr
+                    }
+                }
+                let response = ErrorHandler.sharedInstance.response(for: error)
+                log.error("unknown - \(response.status): \(error)")
+                response.send(socket: socket)
+                throw error
             }
-        } while cont
-        connected.removeValue(forKey: socket.socketfd)
-        socket.close()
+        } catch let error {
+            log.error("error with client: \(error)")
+        }
     }
 
-    private func handle(request: Request) -> Response {
+    private func handle(request: Request) -> ResponseProtocol {
         do {
             let handler = try getHandler(for: request)
             let handlerResult = try handler(request)
-            return try Response.parseAnyResponse(any: handlerResult)
+            return try parseAnyResponse(any: handlerResult)
         } catch let error {
-            return ErrorHandler.sharedInstance.response(for: error)
+            let errorResponse = ErrorHandler.sharedInstance.response(for: error)
+            log.error("\(request.remoteHostname) - \(errorResponse.status): \(error)")
+            return errorResponse
         }
-
     }
 
     private func getHandler(for request: Request) throws -> AnyResponseHandler {
         if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
-            log.debug("Using handler")
             return handler
         }
         let path: Path
 
-        if (Config.sharedInstance.webRoot + "Storage").isSymlink
-            && Path(request.path.lowercased()).normalize().starts(with: ["storage"]) {
+        if (Config.sharedInstance.storage).isSymlink
+            && Path(request.path.lowercased()).httpNormalized.starts(with: ["storage"]) {
 
-            var a = Path(request.path).normalize().string.split(separator: "/")
+            var a = Path(request.path).string.split(separator: "/")
             a.removeFirst()
-            path = (Config.sharedInstance.publicStorage + a.joined(separator: "/")).normalize()
+            path = (Config.sharedInstance.publicStorage + a.joined(separator: "/")).httpNormalized
         } else {
             let requestPath = String(request.path.dropFirst())
-            path = (Config.sharedInstance.webRoot + requestPath).normalize()
+            path = (Config.sharedInstance.webRoot + requestPath).httpNormalized
 
             guard path.absolute().description.hasPrefix(Config.sharedInstance.webRoot.string) else {
+                // TODO refactor and remove findHandler(for:)
                 if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
-                    log.debug("Using handler")
                     return handler
                 } else {
                     throw HTTPError(status: .notFound, description: "'/' is not handled")
                 }
             }
         }
-
         guard path.exists else {
             throw HTTPError(status: .notFound, description: "\(request.path) is not found.")
         }
@@ -160,58 +248,38 @@ open class Server: Router {
         if path.isDirectory {
             let index = path + "index.html"
             if index.exists {
-                return try Response(pathToFile: index).responeHandler()
+                return chain(middlewares: middlewareGroup, handler: { _ in
+                    return try Response(pathToFile: index)
+                })
             }
             guard Config.sharedInstance.isAllowedDirBrowsing else {
                 throw HTTPError(
                     status: .forbidden,
                     description: "Directory browsing is not allowed")
             }
+
             // TODO Directory browsing
-            return Response(
-                headers: [
-                    HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue
-                ],
-                body: "Not implemented".data(using: .utf8)!
-            ).responeHandler()
+            return chain(middlewares: middlewareGroup, handler: { _ in
+                return Response(
+                    headers: [.contentType(.html)],
+                    body: "Not implemented".data(using: .utf8)!
+                )
+            })
         }
-        return try Response(pathToFile: path).responeHandler()
+        return chain(middlewares: middlewareGroup, handler: { _ in
+            return try Response(pathToFile: path)
+        })
     }
+}
 
-    private func send(socket: Socket, response: Response) {
-        let body = response.rawBody
-        let bodyBytes: [UInt8] = Array(body)
-        if bodyBytes.count <= 4096 {
-            let _ = try? socket.write(from: response.rawHeader + body)
-        } else {
-            response.setHeader(for: "Transfer-Encoding", to: "chunked")
-
-            var c = bodyBytes.count
-            var i = 0
-            let _ = try? socket.write(from: response.rawHeader)
-
-            let chunkSize = 2048
-
-            while c >= chunkSize {
-                let d: [UInt8] = Array(bodyBytes[(i*chunkSize)...(chunkSize*(i+1) - 1)])
-                var d1: Data = (String(format: "%X", d.count) + "\r\n").data(using: .utf8)!
-                d1.append(contentsOf: d)
-                d1.append("\r\n".data(using: .utf8)!)
-
-                let _ = try? socket.write(from: d1)
-                c -= chunkSize
-                i += 1
-            }
-            if c > 0 {
-                let d: [UInt8] = Array(bodyBytes[(bodyBytes.count - c)...(bodyBytes.count - 1)])
-                var d1: Data = (String(format: "%X", c) + "\r\n").data(using: .utf8)!
-                d1.append(contentsOf: d)
-                d1.append("\r\n".data(using: .utf8)!)
-
-                let _ = try? socket.write(from: d1)
-                c = 0
-            }
-            let _ = try? socket.write(from: "0\r\n\r\n".data(using: .utf8)!)
-        }
+// MARK: - Server + drop
+public extension Server {
+    /// Drops handler for given method and route
+    ///
+    /// - Parameters:
+    ///   - method: Method type
+    ///   - route: Route url
+    public func drop(method: RequestLine.Method, on route: String) {
+        ResponseManager.sharedInstance.drop(method: method, on: route)
     }
 }

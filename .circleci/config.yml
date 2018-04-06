@@ -1,6 +1,7 @@
 default_docker: &default_docker
   docker:
-    - image: swiftdocker/swift
+    - image: norionomura/swift
+      #swiftdocker/swift
 
 version: 2.0
 jobs:

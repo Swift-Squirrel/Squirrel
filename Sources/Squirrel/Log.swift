@@ -10,4 +10,5 @@ import Foundation
 import SwiftyBeaver
 import SquirrelConfig
 
-let log = Config.sharedInstance.log
+/// Log
+public let log = squirrelConfig.log

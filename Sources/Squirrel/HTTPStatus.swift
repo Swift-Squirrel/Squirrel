@@ -1,107 +1,9 @@
 //
-//  HTTPHeaders.swift
-//  Micros
+//  HTTPStatus.swift
+//  SquirrelPackageDescription
 //
-//  Created by Filip Klembara on 6/26/17.
+//  Created by Filip Klembara on 11/2/17.
 //
-//
-
-import Foundation
-
-// swiftlint:disable nesting
-
-/// HTTP Headers
-public enum HTTPHeaders {
-
-    /// HTTP protocol types
-    ///
-    /// - http11: HTTP/1.1
-    public enum HTTPProtocol: String {
-        case http11 = "HTTP/1.1"
-    }
-    /// `Content-Length`
-    public static let contentLength = "Content-Length"
-    /// `Location`
-    public static let location = "Location"
-    /// `Authenticate`
-    public static let wwwAuthenticate = "WWW-Authenticate"
-    /// `Retry`
-    public static let retryAfter = "Retry-After"
-    /// `Allow`
-    public static let allow = "Allow"
-
-    /// Content-Encoding values
-    public enum Encoding {
-        /// Content-Encoding
-        public static let contentEncoding = "Content-Encoding"
-        /// Accept-Encoding
-        public static let acceptEncoding = "Accept-Encoding"
-        /// Values
-        ///
-        /// - gzip: gzip
-        public enum EncodingType: String {
-            case gzip
-            case deflate
-        }
-    }
-
-    /// Content type
-    public enum ContentType {
-        /// `Content-Type`
-        public static let contentType = "Content-Type"
-
-        /// Image
-        ///
-        /// - png: `image/png`
-        /// - jpeg: `image/jpeg`
-        /// - svg: `image/svg+xml`
-        public enum Image: String {
-            case png = "image/png"
-            case jpeg = "image/jpeg"
-            case svg = "image/svg+xml"
-        }
-
-        /// Textx
-        ///
-        /// - html: `text/html`
-        /// - plain: `text/plain`
-        /// - css: `text/css`
-        public enum Text: String {
-            case html = "text/html"
-            case plain = "text/plain"
-            case css = "text/css"
-        }
-
-        /// Application
-        ///
-        /// - js: `application/javascript`
-        /// - json: `application/json`
-        /// - formUrlencoded: `application/x-www-form-urlencoded`
-        public enum Application: String {
-            case js = "application/javascript"
-            case json = "application/json"
-            case formUrlencoded = "application/x-www-form-urlencoded"
-        }
-    }
-
-    /// HTTP Method
-    ///
-    /// - post: POST
-    /// - get: GET
-    /// - put: PUT
-    /// - delete: DELETE
-    /// - head: HEAD
-    /// - option: OPTIONS
-    public enum Method: String {
-        case post = "POST"
-        case get = "GET"
-        case put = "PUT"
-        case delete = "DELETE"
-        case head = "HEAD"
-        case options = "OPTIONS"
-        case patch = "PATCH"
-    }
-}
 
 /// HTTP Statuses
 public enum HTTPStatus: CustomStringConvertible {
@@ -111,6 +13,7 @@ public enum HTTPStatus: CustomStringConvertible {
     case accepted
     case noContent
     case resetContent
+    case partialContent
 
     // 3xx
     case movedPermanently(location: String)
@@ -126,7 +29,7 @@ public enum HTTPStatus: CustomStringConvertible {
     case paymentRequired
     case forbidden
     case notFound
-    case notAllowed(allowed: [HTTPHeaders.Method])
+    case notAllowed(allowed: [RequestLine.Method])
     case notAcceptable
     case requestTimeout
     case conflict
@@ -156,6 +59,8 @@ public enum HTTPStatus: CustomStringConvertible {
             return "No Content"
         case .resetContent:
             return "Reset Content"
+        case .partialContent:
+            return "Partial Content"
 
         case .movedPermanently:
             return "Moved Permanently"
@@ -184,7 +89,7 @@ public enum HTTPStatus: CustomStringConvertible {
             return "Method Not Allowed"
         case .notAcceptable:
             return "Not Acceptable"
-        case .requestTimeout: // TODO connection: close
+        case .requestTimeout:
             return "Request Timeout"
         case .conflict:
             return "Conflict"
@@ -210,7 +115,6 @@ public enum HTTPStatus: CustomStringConvertible {
         case .httpVersionUnsupported:
             return "Http Version Not Supported"
         }
-
     }
 
     /// HTTP status code
@@ -226,6 +130,8 @@ public enum HTTPStatus: CustomStringConvertible {
             return 204
         case .resetContent:
             return 205
+        case .partialContent:
+            return 206
 
         case .movedPermanently:
             return 301
@@ -282,7 +188,6 @@ public enum HTTPStatus: CustomStringConvertible {
         }
     }
 
-
     /// Description
     public var description: String {
         let code = self.code
@@ -290,4 +195,3 @@ public enum HTTPStatus: CustomStringConvertible {
         return "\(code) \(message)"
     }
 }
-// swiftlint:enable nesting

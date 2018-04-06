@@ -10,23 +10,110 @@ import Foundation
 
 class RouteNode {
 
-    let route: String
+    let name: String
 
-    private var values: [HTTPHeaders.Method: AnyResponseHandler] = [:]
+    var fullName: String {
+        return name
+    }
 
-    private var defaultHandlers: [HTTPHeaders.Method: AnyResponseHandler] = [:]
+    private var values: [RequestLine.Method: AnyResponseHandler] = [:]
 
-    private var childrens = [RouteNode]()
+    private var defaultHandlers: [RequestLine.Method: AnyResponseHandler] = [:]
+
+    private var children = [RouteNode]()
 
     private var dynamicNodes = [DynamicRouteNode]()
 
+    func routes(prefix: String) -> [(route: String, methods: [RequestLine.Method])] {
+        let route: String
+        let newPrefix: String
+        if name == "/" {
+            route = "/"
+            newPrefix = "/"
+        } else {
+            route = "\(prefix)\(fullName)"
+            newPrefix = "\(route)/"
+        }
+        var result = [(route: String, methods:[RequestLine.Method])]()
+        if !values.isEmpty {
+            result.append((route, values.map { $0.key }))
+        }
+        let childenRoutes = children.flatMap { $0.routes(prefix: newPrefix) }
+        if !childenRoutes.isEmpty {
+            result.append(contentsOf: childenRoutes)
+        }
+        let dynamicRoutes = dynamicNodes.flatMap { $0.routes(prefix: newPrefix) }
+        if !dynamicNodes.isEmpty {
+            result.append(contentsOf: dynamicRoutes)
+        }
+        if !defaultHandlers.isEmpty {
+            result.append(("\(newPrefix)*", defaultHandlers.map { $0.key }))
+        }
+        return result
+    }
+
     init(route: String) {
-        self.route = route
+        self.name = route.lowercased()
+    }
+
+    // swiftlint:disable:next cyclomatic_complexity
+    func drop(method: RequestLine.Method, onReversed components: [String]) {
+        var components = components
+        guard let nodeName = components.popLast() else {
+            return
+        }
+        guard fullName == nodeName else {
+            return
+        }
+
+        if let childName = components.last {
+            if childName == "*" {
+                defaultHandlers.removeValue(forKey: method)
+            } else if childName.first == ":" {
+                var index = dynamicNodes.startIndex
+                while index < dynamicNodes.endIndex {
+                    let child = dynamicNodes[index]
+                    if child.fullName == childName {
+                        child.drop(method: method, onReversed: components)
+                        if child.isEmpty {
+                            _ = dynamicNodes.remove(at: index)
+                        }
+                        break
+                    }
+                    index += 1
+                }
+            } else {
+                var index = children.startIndex
+                while index < children.endIndex {
+                    let child = children[index]
+                    if child.name == childName {
+                        child.drop(method: method, onReversed: components)
+                        if child.isEmpty {
+                            _ = children.remove(at: index)
+                        }
+                        break
+                    }
+                    index += 1
+                }
+            }
+        } else {
+            values.removeValue(forKey: method)
+        }
+    }
+
+    var isEmpty: Bool {
+        guard children.isEmpty && dynamicNodes.isEmpty else {
+            return false
+        }
+        guard values.isEmpty && defaultHandlers.isEmpty else {
+            return false
+        }
+        return true
     }
 
     func addNode(
         routes: [String],
-        method: HTTPHeaders.Method,
+        method: RequestLine.Method,
         handler: @escaping AnyResponseHandler)
         throws {
 
@@ -41,11 +128,9 @@ class RouteNode {
         }
 
         if firstElem.hasPrefix(":") {
-            for node in dynamicNodes {
-                if ":" + node.route == firstElem {
-                    try nodeSetAdd(routes: routes, node: node, method: method, handler: handler)
-                    return
-                }
+            for node in dynamicNodes where ":" + node.name == firstElem {
+                try nodeSetAdd(routes: routes, node: node, method: method, handler: handler)
+                return
             }
             let newDynamicNode = DynamicRouteNode(route: firstElem)
             dynamicNodes.append(newDynamicNode)
@@ -53,21 +138,19 @@ class RouteNode {
             return
         }
 
-        for child in childrens {
-            if child.route == firstElem {
-                try nodeSetAdd(routes: routes, node: child, method: method, handler: handler)
-                return
-            }
+        for child in children where child.name == firstElem {
+            try nodeSetAdd(routes: routes, node: child, method: method, handler: handler)
+            return
         }
 
         let newNode = RouteNode(route: firstElem)
-        childrens.append(newNode)
+        children.append(newNode)
         try nodeSetAdd(routes: routes, node: newNode, method: method, handler: handler)
     }
 
     private func nodeSetAdd(routes: [String],
                             node: RouteNode,
-                            method: HTTPHeaders.Method,
+                            method: RequestLine.Method,
                             handler: @escaping AnyResponseHandler) throws {
         var newRoutes = routes
         newRoutes.remove(at: 0)
@@ -79,7 +162,7 @@ class RouteNode {
     }
 
     private func setDefault(
-        method: HTTPHeaders.Method,
+        method: RequestLine.Method,
         handler: @escaping AnyResponseHandler)
         throws {
 
@@ -89,14 +172,14 @@ class RouteNode {
         defaultHandlers[method] = handler
     }
 
-    func set(method: HTTPHeaders.Method, handler: @escaping AnyResponseHandler) throws {
+    func set(method: RequestLine.Method, handler: @escaping AnyResponseHandler) throws {
         guard values[method] == nil else {
             throw RouteError(kind: .methodHandlerOverwrite)
         }
         values[method] = handler
     }
 
-    func findHandler(for method: HTTPHeaders.Method, in routes: [String])
+    func findHandler(for method: RequestLine.Method, in routes: [String])
         throws -> AnyResponseHandler? {
 
         guard routes.count > 0 else {
@@ -108,8 +191,13 @@ class RouteNode {
                 if values.count == 0 && defaultHandlers.count == 0 {
                     return nil
                 }
-                var methods: [HTTPHeaders.Method] = values.keys.flatMap({ $0 })
-                methods.append(contentsOf: defaultHandlers.keys.flatMap({ $0 }))
+                #if swift(>=4.1)
+                    var methods: [RequestLine.Method] = values.keys.compactMap({ $0 })
+                    methods.append(contentsOf: defaultHandlers.keys.compactMap({ $0 }))
+                #else
+                    var methods: [RequestLine.Method] = values.keys.flatMap({ $0 })
+                    methods.append(contentsOf: defaultHandlers.keys.flatMap({ $0 }))
+                #endif
                 throw HTTPError(
                     status: .notAllowed(allowed: methods),
                     description: "Method is not allowed")
@@ -118,12 +206,12 @@ class RouteNode {
         }
         var rs = routes
         rs.remove(at: 0)
-        for child in childrens {
-            if child.route == rs.first! {
+        for child in children {
+            if child.name == rs.first!.lowercased() {
                 guard let handler = try child.findHandler(for: method, in: rs)
                     ?? defaultHandlers[method] else {
 
-                    throw HTTPError(status: .notFound, description: "Not Found")
+                        return nil
                 }
                 return handler
             }

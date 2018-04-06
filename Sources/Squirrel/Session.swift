@@ -9,27 +9,30 @@ import Foundation
 import SquirrelJSON
 import PathKit
 import SquirrelConfig
+import Crypto
 
 /// Session protocol
-public protocol SessionProtocol: Codable {
+public protocol Session: class, Codable {
     /// Session ID
     var sessionID: String { get }
     /// Expiry of session
     var expiry: Date { get }
 
     /// Indicates if session is new (Do not modify)
-    var isNew: Bool { set get }
+    var _isNew: Bool { get set }
+
+    /// Ip address or hostname
+    var remoteHostname: String { get }
 
     /// Indicates if session should be removed
-    var shouldRemove: Bool { set get }
+    var shouldRemove: Bool { get set }
 
     /// Removes session
     ///
     /// - Returns: True on success
     func delete() -> Bool
 
-    var data: [String: JSON] { set get }
-
+    var data: [String: JSON] { get set }
 
     /// Get or set session parameter
     ///
@@ -38,14 +41,14 @@ public protocol SessionProtocol: Codable {
 }
 
 // MARK: - Subscript
-public extension SessionProtocol {
+public extension Session {
     /// Number of stored elements
     var count: Int {
         return data.count
     }
 }
 
-class Session: SessionProtocol {
+class DefaultSession: Session {
 
     var data: [String: JSON] = [:]
 
@@ -55,37 +58,38 @@ class Session: SessionProtocol {
 
     let userAgent: String
 
-    var isNew: Bool = false
+    let remoteHostname: String
+
+    var _isNew: Bool = false
 
     var shouldRemove: Bool = false
 
-    init(id: String, expiry: Date, userAgent: String) {
+    init(id: String, expiry: Date, remoteHostname: String, userAgent: String) {
+        self.remoteHostname = remoteHostname
         self.sessionID = id
         self.expiry = expiry
         self.userAgent = userAgent
-        let _ = store()
+        _ = store()
     }
 
-    private enum CodingKeys: String, CodingKey {
-        case sessionID
-        case expiry
-        case userAgent
-        case data
-    }
-
-    init?(id: String, userAgent: String) {
+    init?(id: String, remoteHostname: String, userAgent: String) {
         let file = SessionConfig.storage + "\(id).session"
         guard let data: Data = try? file.read() else {
             return nil
         }
         let decoder = JSONDecoder()
-        guard let json = try? decoder.decode(Session.self, from: data) else {
+        guard let json = try? decoder.decode(DefaultSession.self, from: data) else {
             return nil
         }
-        guard json.userAgent == userAgent && json.expiry > Date() else {
-            try? file.delete()
+        guard json.remoteHostname == remoteHostname && json.userAgent == userAgent else {
             return nil
         }
+        guard json.expiry > Date() else {
+            try? file.delete() // TODO rethink it
+            return nil
+        }
+
+        self.remoteHostname = json.remoteHostname
         self.data = json.data
         self.expiry = json.expiry
         self.sessionID = json.sessionID
@@ -104,7 +108,7 @@ class Session: SessionProtocol {
     /// Remove session
     ///
     /// - Returns: true if everything goes ok
-    public func delete() -> Bool {
+    func delete() -> Bool {
         shouldRemove = true
         let file: Path = SessionConfig.storage + "\(sessionID).session"
         return (try? file.delete()) != nil
@@ -116,56 +120,154 @@ class Session: SessionProtocol {
         }
         set(value) {
             data[key] = value
-            let _ = store()
+            _ = store()
         }
+    }
+
+    static func needsRemove(file: Path) -> Bool {
+        guard let data: Data = try? file.read() else {
+            return false
+        }
+        let decoder = JSONDecoder()
+        struct Expiration: Decodable {
+            let expiry: Date
+        }
+        guard let json = try? decoder.decode(Expiration.self, from: data) else {
+            return true
+        }
+        guard json.expiry > Date() else {
+            return true
+        }
+        return false
     }
 }
 
-protocol SessionBuilder {
-    func new(for request: Request) -> SessionProtocol?
+/// Session builder
+public protocol SessionBuilder {
+    /// Creates new session
+    ///
+    /// - Parameter request: Request
+    /// - Returns: New session or nil if session could not be created
+    func new(for request: Request) -> Session?
 
-    func get(for request: Request) -> SessionProtocol?
+    /// Get new session
+    ///
+    /// - Parameter request: Request
+    /// - Returns: Existing session or nil if could not get session
+    func get(for request: Request) -> Session?
+
+    /// Clears expired sessions
+    func clearExpired()
 }
 
-struct SessionConfig {
-    static let sessionName = "SquirrelSession"
+/// Session configurations
+public struct SessionConfig {
+    private init() { }
 
-    static let defaultExpiry = 60.0 * 60.0 * 24.0 * 7.0
+    /// Session name
+    public static var sessionName = "SquirrelSession"
 
-    static let userAgent = "user-agent"
+    /// Session duration (default: one week)
+    public static var defaultExpiry = 604_800.0
 
     static let storage = squirrelConfig.session
 }
 
 struct SessionManager: SessionBuilder {
 
-    func new(for request: Request) -> SessionProtocol? {
-        guard let userAgent = request.getHeader(for: SessionConfig.userAgent) else {
+    func new(for request: Request) -> Session? {
+        guard let userAgent = request.headers[.userAgent] else {
             return nil
         }
-        let id = randomString()
 
-        return Session(
+        guard let host = request.remoteHostname.data(using: .utf8) else {
+            return nil
+        }
+
+        guard let date = Date().description.data(using: .utf8) else {
+            return nil
+        }
+
+        guard let random = try? Random().bytes(count: 32) else {
+            return nil
+        }
+
+        let sessionIDData = host + date + random
+        guard let hash = try? Hash(.md5, sessionIDData) else {
+            return nil
+        }
+
+        guard let hashValue = try? hash.hash() else {
+            return nil
+        }
+
+        let id = hashValue.hexString
+
+        return DefaultSession(
             id: id,
             expiry: Date().addingTimeInterval(SessionConfig.defaultExpiry),
+            remoteHostname: request.remoteHostname,
             userAgent: userAgent)
     }
 
-    func get(for request: Request) -> SessionProtocol? {
-        guard let userAgent = request.getHeader(for: SessionConfig.userAgent) else {
+    func get(for request: Request) -> Session? {
+        guard let userAgent = request.headers[.userAgent] else {
             return nil
         }
         guard let id = request.getCookie(for: SessionConfig.sessionName) else {
             return nil
         }
-        return Session(id: id, userAgent: userAgent)
+        return DefaultSession(id: id, remoteHostname: request.remoteHostname, userAgent: userAgent)
+    }
+
+    func clearExpired() {
+        let sessionsDirectory = squirrelConfig.session
+        guard let children = try? sessionsDirectory.children() else {
+            return
+        }
+        for child in children where child.isFile {
+            if DefaultSession.needsRemove(file: child) {
+                try? child.delete()
+            }
+        }
     }
 }
 
 /// Session middleware
-public struct SessionMiddleware: Middleware {
+public class SessionMiddleware: Middleware {
 
-    private let sessionManager: SessionBuilder = SessionManager()
+    private let sessionManager: SessionBuilder
+    private var schedulerQueue = DispatchQueue(label: "clean session")
+
+    /// Day in seconds
+    public static let dayInSeconds = 86_400
+
+    /// Time between two session clears
+    /// - Note:
+    ///   You can't set `.days` or `.seconds` to 0.
+    ///   This will set to `.never` instead and produce warning
+    public var clearAfter: TimeSheduling {
+        didSet {
+            switch clearAfter {
+            case .days(let time) where time == 0, .seconds(let time) where time == 0:
+                log.warning("You should not set clearAfter in SessionMiddleware to 0, using .never")
+                clearAfter = .never
+            default:
+                break
+            }
+        }
+    }
+
+    /// Time interval
+    ///
+    /// - never: Never
+    /// - days: Number of days
+    /// - seconds: Number of seconds
+    public enum TimeSheduling {
+        case never
+        case days(UInt)
+        case seconds(UInt)
+    }
 
     /// Handle session for given request. If there is no session cookie,
     /// creates new session and put session cookie to response.
@@ -176,7 +278,7 @@ public struct SessionMiddleware: Middleware {
     /// - Returns: badRequest or Response from `next`
     /// - Throws: Custom error or parsing error
     public func respond(to request: Request, next: AnyResponseHandler) throws -> Any {
-        if let session: SessionProtocol = sessionManager.get(for: request) {
+        if let session: Session = sessionManager.get(for: request) {
             request.setSession(session)
         }
         let res = try next(request)
@@ -184,61 +286,74 @@ public struct SessionMiddleware: Middleware {
             return res
         }
         let session = try request.session()
-        guard session.isNew || session.shouldRemove else {
+        guard session._isNew || session.shouldRemove else {
             return res
         }
-        let response = try Response.parseAnyResponse(any: res)
+        let response = try parseAnyResponse(any: res)
         let domain = squirrelConfig.domain
-        if session.isNew {
-            response.cookies[SessionConfig.sessionName] = """
+        if session._isNew {
+            response.setCookie(SessionConfig.sessionName, to: """
                 \(session.sessionID); domain=\(domain);path=/; HTTPOnly
-                """
+                """)
         } else if session.shouldRemove {
-            let _ = session.delete()
-            response.cookies[SessionConfig.sessionName] = """
+            _ = session.delete()
+            response.setCookie(SessionConfig.sessionName, to: """
                 removed; domain=\(domain);path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; HTTPOnly
-                """
+                """)
         }
         return response
-
     }
 
-    /// Constructs Session middleware
+    /// Inits session middleware
     ///
-    /// - Parameter dataInit: This will init session data when new session is established
-    public init() {
-    }
-}
-
-/// Random string generator thanks to Fattie
-///
-/// Taken from
-/// [stack overflow](https://stackoverflow.com/questions/26845307)
-///
-/// - Parameter length: Generated string lenght
-/// - Returns: Random string
-func randomString(length: Int = 32) -> String {
-    enum ValidCharacters {
-        static let chars = Array("abcdefghjklmnopqrstuvwxyz012345789")
-
-        #if os(Linux)
-            static let count = chars.count
-        #else
-            static let count32 = UInt32(chars.count)
-        #endif
+    /// - Parameters:
+    ///   - sessionBuilder: Session builder used to handle sessions
+    ///   - clearAfterEvery: Time to clear expired sessions
+    public init(sessionBuilder: SessionBuilder? = nil, clearAfterEvery: TimeSheduling = .days(1)) {
+        if let sessionBuilder = sessionBuilder {
+            self.sessionManager = sessionBuilder
+        } else {
+            self.sessionManager = SessionManager()
+        }
+        self.clearAfter = clearAfterEvery
+        switch self.clearAfter {
+        case .never:
+            break
+        default:
+            clearExpiredSessions()
+            scheduleClear()
+        }
     }
 
-    var result = [Character](repeating: "a", count: length)
-
-    for i in 0..<length {
-        #if os(Linux)
-            srandom(UInt32(time(nil)))
-            let r = random() % ValidCharacters.count
-        #else
-            let r = Int(arc4random_uniform(ValidCharacters.count32))
-        #endif
-        result[i] = ValidCharacters.chars[r]
+    private func scheduleClear() {
+        let after: Int
+        switch clearAfter {
+        case .never:
+            return
+        case .days(let days):
+            after = Int(days) * SessionMiddleware.dayInSeconds
+        case .seconds(let seconds):
+            after = Int(seconds)
+        }
+        schedulerQueue.asyncAfter(deadline: DispatchTime(secondsFromNow: Double(after)),
+                                  qos: .background) { [weak self] in
+            guard let s = self else {
+                return
+            }
+            switch s.clearAfter {
+            case .never:
+                return
+            default:
+                break
+            }
+            s.clearExpiredSessions()
+            s.scheduleClear()
+        }
     }
 
-    return String(result)
+    /// Clears expired sessions
+    public func clearExpiredSessions() {
+        log.debug("Clearing expired sessions")
+        sessionManager.clearExpired()
+    }
 }

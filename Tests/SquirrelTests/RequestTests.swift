@@ -47,29 +47,19 @@ class RequestTests: XCTestCase {
         ]
         static let wrongFirstLine: [(data: Data, expect: RequestError)] = [
             (data: "POST foo.php HTTP/1.1\r\n\r\n".data(using: .utf8)!,
-             expect: RequestError(kind: .parseError(
-                string: "foo.php",
-                expectations: "URL prefix must be '/' not 'f'."))),
+             expect: RequestError(kind: .headParseError)),
             (data: "POST foo.php  HTTP/1.1\r\n\r\n".data(using: .utf8)!,
-             expect: RequestError(kind: .parseError(
-                string: "POST foo.php  HTTP/1.1",
-                expectations: "First line has to be separatable into  three parts divided by ' '."))),
+             expect: RequestError(kind: .headParseError)),
             (data: "POST HTTP/1.1\r\n\r\n".data(using: .utf8)!,
-             expect: RequestError(kind: .parseError(
-                string: "POST HTTP/1.1",
-                expectations: "First line has to be separatable into  three parts divided by ' '."))),
+             expect: RequestError(kind: .headParseError)),
             (data: "POST\r\n\r\n".data(using: .utf8)!,
-             expect: RequestError(kind: .parseError(
-                string: "POST",
-                expectations: "First line has to be separatable into  three parts divided by ' '."))),
+             expect: RequestError(kind: .headParseError)),
             (data: "POST  HTTP/1.1\r\n\r\n".data(using: .utf8)!,
-             expect: RequestError(kind: .parseError(
-                string: "POST  HTTP/1.1",
-                expectations: "Empty component.")))
+             expect: RequestError(kind: .headParseError))
         ]
         static let wrongMethod: [(data: Data, method: String)] = [
             (data: "POSTA /foo//%20.php HTTP/1.1\r\n\r\n".data(using: .utf8)!, method: "POSTA"),
-            (data: "GetG /foo//%20.php HTTP/1.1\r\n\r\n".data(using: .utf8)!, method: "GetG"),
+            (data: "GetG /foo//%20.php HTTP/1.1\r\n\r\n".data(using: .utf8)!, method: "GETG"),
             (data: "NOTHING /foo//%20.php HTTP/1.1\r\n\r\n".data(using: .utf8)!, method: "NOTHING"),
             (data: "BLAH /foo//%20.php HTTP/1.1\r\n\r\n".data(using: .utf8)!, method: "BLAH"),
         ]
@@ -77,21 +67,19 @@ class RequestTests: XCTestCase {
         static let unknownProtocol: [(data: Data, prot: String)] = [
             (data: "POST /foo//%20.php HTTP/1\r\n\r\n".data(using: .utf8)!, prot: "HTTP/1"),
             (data: "GET /foo//%20.php HTTP/1.0\r\n\r\n".data(using: .utf8)!, prot: "HTTP/1.0"),
-            (data: "HEAD /foo//%20.php HTTP\r\n\r\n".data(using: .utf8)!, prot: "HTTP"),
+            (data: "PUT /foo//%20.php HTTP\r\n\r\n".data(using: .utf8)!, prot: "HTTP"),
             (data: "DELETE /foo//%20.php SMTHASD\r\n\r\n".data(using: .utf8)!, prot: "SMTHASD"),
         ]
 
         static let wrongHead: [(data: Data, expect: RequestError)] = [
             (data: "POST /foo.php HTTP/1.1\r\nKeep-Alive 300\r\n\r\n".data(using: .utf8)!,
-             expect: RequestError(kind: .parseError(
-                string: "Keep-Alive 300",
-                expectations: "Header line has to be separatable by ': ' to two parts"))),
+             expect: RequestError(kind: .headParseError)),
         ]
     }
 
     func testValidInit() {
-        XCTAssertNoThrow(try Request(data: RequestTemplates.get))
-        guard let request = try? Request(data: RequestTemplates.get) else {
+        XCTAssertNoThrow(try Request(remoteHostname: "127.0.0.1", data: RequestTemplates.get))
+        guard let request = try? Request(remoteHostname: "127.0.0.1", data: RequestTemplates.get) else {
             XCTFail()
             return
         }
@@ -101,15 +89,15 @@ class RequestTests: XCTestCase {
         XCTAssertEqual(request.path, "/tutorials/other/top-20-mysql-best-practices")
         XCTAssertEqual(request.urlParameters.count, 0)
         XCTAssertTrue(request.postParameters.isEmpty)
-        XCTAssertTrue(request.getParameters.isEmpty)
+        XCTAssertTrue(request.queryParameters.isEmpty)
         XCTAssertEqual(request.getCookie(for: "PHPSESSID"), "r2t5uvjq435r4q7ib3vtdjq120")
         XCTAssertEqual(request.cookies.count, 1)
-        XCTAssertEqual(request.getHeader(for: "Accept-Charset"), "ISO-8859-1,utf-8;q=0.7,*;q=0.7")
+        XCTAssertEqual(request.headers[.acceptCharset], "ISO-8859-1,utf-8;q=0.7,*;q=0.7")
     }
 
     func testGetParams() {
-        XCTAssertNoThrow(try Request(data: RequestTemplates.getParams))
-        guard let request = try? Request(data: RequestTemplates.getParams) else {
+        XCTAssertNoThrow(try Request(remoteHostname: "127.0.0.1", data: RequestTemplates.getParams))
+        guard let request = try? Request(remoteHostname: "127.0.0.1", data: RequestTemplates.getParams) else {
             XCTFail()
             return
         }
@@ -119,24 +107,24 @@ class RequestTests: XCTestCase {
         XCTAssertEqual(request.path, "/foo.php")
         XCTAssertEqual(request.urlParameters.count, 0)
         XCTAssertTrue(request.postParameters.isEmpty)
-        XCTAssertEqual(request.getParameters.count, 3)
+        XCTAssertEqual(request.queryParameters.count, 3)
         let getParams: [String: String] = [
             "first_name": "John",
             "last_name": "Doe",
             "action": "Submit"
         ]
-        XCTAssertEqual((request.getParameters as? [String: String]) ?? [:], getParams)
-        XCTAssertNotNil(request.getGetParameter(for: "first_name"))
-        XCTAssertEqual(request.getGetParameter(for: "first_name"), getParams["first_name"]!)
-        XCTAssertNotNil(request.getGetParameter(for: "last_name"))
-        XCTAssertEqual(request.getGetParameter(for: "last_name"), getParams["last_name"]!)
-        XCTAssertNotNil(request.getGetParameter(for: "action"))
-        XCTAssertEqual(request.getGetParameter(for: "action"), getParams["action"]!)
+        XCTAssertEqual((request.queryParameters as? [String: String]) ?? [:], getParams)
+        XCTAssertNotNil(request.getQueryParameter(for: "first_name"))
+        XCTAssertEqual(request.getQueryParameter(for: "first_name"), getParams["first_name"]!)
+        XCTAssertNotNil(request.getQueryParameter(for: "last_name"))
+        XCTAssertEqual(request.getQueryParameter(for: "last_name"), getParams["last_name"]!)
+        XCTAssertNotNil(request.getQueryParameter(for: "action"))
+        XCTAssertEqual(request.getQueryParameter(for: "action"), getParams["action"]!)
     }
 
     func testPostParams() {
-        XCTAssertNoThrow(try Request(data: RequestTemplates.postParams))
-        guard let request = try? Request(data: RequestTemplates.postParams) else {
+        XCTAssertNoThrow(try Request(remoteHostname: "127.0.0.1", data: RequestTemplates.postParams))
+        guard let request = try? Request(remoteHostname: "127.0.0.1", data: RequestTemplates.postParams) else {
             XCTFail()
             return
         }
@@ -144,8 +132,8 @@ class RequestTests: XCTestCase {
         XCTAssertEqual(request.method, .post)
         XCTAssertEqual(request.path, "/foo.php")
         XCTAssertEqual(request.urlParameters.count, 0)
-        XCTAssertEqual(request.getHeader(for: "Referer"), "http://localhost/test.php")
-        XCTAssertTrue(request.getParameters.isEmpty)
+        XCTAssertEqual(request.headers[.referer], "http://localhost/test.php")
+        XCTAssertTrue(request.queryParameters.isEmpty)
         XCTAssertEqual(request.postParameters.count, 3)
         let postParams: [String: String] = [
             "first_name": "John",
@@ -162,8 +150,8 @@ class RequestTests: XCTestCase {
     }
 
     func testURLParams() {
-        XCTAssertNoThrow(try Request(data: RequestTemplates.get))
-        guard let request = try? Request(data: RequestTemplates.get) else {
+        XCTAssertNoThrow(try Request(remoteHostname: "127.0.0.1", data: RequestTemplates.get))
+        guard let request = try? Request(remoteHostname: "127.0.0.1", data: RequestTemplates.get) else {
             XCTFail()
             return
         }
@@ -177,7 +165,7 @@ class RequestTests: XCTestCase {
     }
 
     func testUnseparatableHead() {
-        let expect = RequestError(kind: .unseparatableHead)
+        let expect = RequestError(kind: .headParseError)
         RequestErrors.unseparatedHead.forEach({
             XCTAssertTrue(checkInitError(data: $0, expect: expect), String(data: $0, encoding: .utf8)!)
         })
@@ -209,7 +197,7 @@ class RequestTests: XCTestCase {
 
     func testUnsupportedMediaType() {
         do {
-            _ = try Request(data: "POST /foo.php HTTP/1.1\r\n\r\n".data(using: .utf8)!)
+            _ = try Request(remoteHostname: "127.0.0.1", data: "POST /foo.php HTTP/1.1\r\n\r\n".data(using: .utf8)!)
         } catch let error as HTTPError {
             XCTAssertEqual(error.description, HTTPError(status: .unsupportedMediaType, description: "Missing Content-Type").description)
         } catch let error {
@@ -217,7 +205,7 @@ class RequestTests: XCTestCase {
         }
 
         do {
-            _ = try Request(data: "POST /foo.php HTTP/1.1\r\nContent-Type: application/json\r\n\r\n".data(using: .utf8)!)
+            _ = try Request(remoteHostname: "127.0.0.1", data: "POST /foo.php HTTP/1.1\r\nContent-Type: application/json\r\n\r\n".data(using: .utf8)!)
         } catch let error as HTTPError {
             XCTAssertEqual(error.description, HTTPError(status: .unsupportedMediaType, description: "Unsupported Content-Type").description)
         } catch let error {
@@ -227,7 +215,7 @@ class RequestTests: XCTestCase {
 
     private func checkInitError(data: Data, expect: RequestError) -> Bool {
         do {
-            let _ = try Request(data: data)
+            let _ = try Request(remoteHostname: "127.0.0.1", data: data)
             XCTFail()
         } catch let error as RequestError {
             XCTAssertEqual(error.description, expect.description)

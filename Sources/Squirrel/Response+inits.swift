@@ -19,9 +19,7 @@ public extension Response {
     /// - Throws: Filesystem errors
     public convenience init(html path: Path) throws {
         try self.init(pathToFile: path)
-        setHeader(
-            for: HTTPHeaders.ContentType.contentType,
-            to: HTTPHeaders.ContentType.Text.html.rawValue)
+        headers.set(to: .contentType(.html))
     }
 
     /// Construct html response from given string
@@ -34,9 +32,19 @@ public extension Response {
         }
         self.init(
             status: status,
-            headers: [
-                HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue
-            ],
+            headers: [.contentType(.html)],
+            body: data
+        )
+    }
+
+    /// Constructs JSON response from given object
+    ///
+    /// - Parameter json: Object to serialize
+    /// - Throws: `JSONError` and swift JSON errors
+    public convenience init<T: Encodable>(encodable object: T) throws {
+        let data = try JSONCoding.encodeDataJSON(object: object)
+        self.init(
+            headers: [.contentType(.json)],
             body: data
         )
     }
@@ -48,10 +56,7 @@ public extension Response {
     public convenience init<T>(object: T) throws {
         let data = try JSONCoding.encodeDataJSON(object: object)
         self.init(
-            headers: [
-                HTTPHeaders.ContentType.contentType:
-                    HTTPHeaders.ContentType.Application.json.rawValue
-            ],
+            headers: [.contentType(.json)],
             body: data
         )
     }
@@ -71,10 +76,7 @@ public extension Response {
         }
 
         self.init(
-            headers: [
-                HTTPHeaders.ContentType.contentType:
-                    HTTPHeaders.ContentType.Application.json.rawValue
-            ],
+            headers: [.contentType(.json)],
             body: data
         )
     }
@@ -95,19 +97,44 @@ extension Response {
         case .html:
             self.init(
                 status: status,
-                headers: [
-                    HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.html.rawValue
-                ],
+                headers: [.contentType(.html)],
                 body: data)
         case .json:
             self.init(
                 status: status,
-                headers: [
-                    HTTPHeaders.ContentType.contentType:
-                        HTTPHeaders.ContentType.Application.json.rawValue],
+                headers: [.contentType(.json)],
                 body: data)
         case .text:
             self.init(status: status, body: data)
         }
+    }
+}
+
+// MARK: - Download
+public extension Response {
+    /// Response which force download
+    ///
+    /// - Parameter file: Path to file
+    /// - Throws: file read Errors
+    convenience init (download file: Path) throws {
+        let fileName = file.lastComponent
+        try self.init(pathToFile: file)
+        setDownloadHeaders(fileName: fileName)
+    }
+
+    /// Response which force download
+    ///
+    /// - Parameters:
+    ///   - data: Data to download
+    ///   - name: Name
+    convenience init(download data: Data, name: String) {
+        self.init(body: data)
+        setDownloadHeaders(fileName: name)
+    }
+
+    private func setDownloadHeaders(fileName: String) {
+        headers.set(to: .contentType(.forceDownload))
+        headers[.contentDisposition] = "attachment; filename=\"\(fileName)\""
+        headers[.contentTransferEncoding] = "binary"
     }
 }

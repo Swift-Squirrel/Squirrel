@@ -72,14 +72,8 @@ fastlane/test_output
 # xcodeproj
 Squirrel.xcodeproj
 
-# Squirrel
-Public/
-Storage/
-.squirrel
-Sources/App
-/Resources/
-.squirrel.yaml
-
-# Testing
-Sources/main.swift
+# Supporting files
+/off/
+/Storage
+/Public
 

@@ -6,8 +6,11 @@
 //
 //
 
+// swiftlint:disable file_length
+
 import Foundation
 import Regex
+import Socket
 #if os(Linux)
     import Dispatch
 #endif
@@ -15,137 +18,185 @@ import Regex
 /// Request class
 open class Request {
 
-    private var requestType = ""
-
-    private let _method: HTTPHeaders.Method
-
     /// Request method
-    public var method: HTTPHeaders.Method {
-        return _method
-    }
+    public let method: RequestLine.Method
+
     private let _path: URL
 
     private var _cookies: [String: String] = [:]
 
+    /// Hostname or IP
+    public let remoteHostname: String
+
+    /// Session builder used to create new sessions
+    public var sessionBuilder: SessionBuilder = SessionManager()
+
     /// Accept-Encoding
-    public var acceptEncoding = Set<HTTPHeaders.Encoding.EncodingType>()
+    public private(set) var acceptEncoding = Set<HTTPHeader.Encoding>()
 
     /// Request path
     public var path: String {
         return _path.path
     }
-    private let httpProtocol: String
-    //    private let host: URL
-    private let rawHeader: String
-    private let rawBody: String
 
-    private var headers: [String: String] = [:]
+    /// Request path with query parameters
+    public let originalPath: String
+
+    /// Protocol
+    public let httpProtocol: RequestLine.HTTPProtocol
+
+    /// HTTP Head
+    public private(set) var headers: HTTPHead = [:]
+
+    /// Request body
+    public let body: Data
 
     /// Session
-    private var _session: SessionProtocol? = nil
+    private var _session: Session?
 
     private var _urlParameters: [String: String] = [:]
+    private var _queryParameters: [String: String] = [:]
     private var _postParameters: [String: String] = [:]
+
+    /// Requested range
+    public let range: (bottom: UInt, top: UInt)?
+
+    /// Post parameters when body is multipart
+    public private(set) var postMultipart: [String: Multipart] = [:]
 
     // swiftlint:disable function_body_length
     // swiftlint:disable cyclomatic_complexity
-    /// Init Request from data
-    ///
-    /// - Parameter data: Data of request
-    /// - Throws: `DataError` and other parse errors
-    /// - TODO: Do not parse body to string
-    /// - Bug: When body contains binary data, init will fail
-    init(data: Data) throws {
-        guard let stringData = String(data: data, encoding: .utf8) else {
-            throw DataError(kind: .dataEncodingError)
+    private init(remoteHostname: String, buffer: Buffer) throws {
+        self.remoteHostname = remoteHostname
+        let method = (try buffer.readString(until: .space, allowEmpty: false)).uppercased()
+        guard ["GET", "POST", "DELETE", "PUT", "PATCH"].contains(method) else {
+            throw RequestError(kind: .unknownMethod(method: method))
         }
-        var lines = stringData.components(separatedBy: "\r\n\r\n")
-        if lines.count != 2 {
-            throw RequestError(kind: .unseparatableHead)
-        }
-        rawHeader = lines[0]
-        rawBody = lines[1]
+        self.method = RequestLine.Method(rawValue: method)!
 
-        lines = rawHeader.components(separatedBy: "\r\n")
-        let line = lines[0]
-        let components = line.components(separatedBy: " ")
-        if components.count != 3 {
-            throw RequestError(
-                kind: .parseError(
-                    string: line,
-                    expectations: "First line has to be separatable into "
-                        + " three parts divided by ' '."
-                )
-            )
+        let pathString = try buffer.readString(until: .space, allowEmpty: false)
+        guard pathString.first == "/" else {
+            throw RequestError(kind: .headParseError)
         }
+        originalPath = pathString
+        guard let path = URL(string: pathString) else {
+            throw RequestError(kind: .headParseError, description: "Could not parse url")
+        }
+        _path = path
 
-        try components.forEach {
-            (component: String) throws in
-            guard !component.isEmpty else {
+        let protString = (try buffer.readString(until: .crlf, allowEmpty: false)).uppercased()
+        guard let prot = RequestLine.HTTPProtocol(rawValue: protString) else {
+            throw RequestError(kind: .unknownProtocol(prot: protString))
+        }
+        httpProtocol = prot
+        var line = try buffer.readString(until: .crlf, allowEmpty: true)
+        while !line.isEmpty {
+            let arr = line.split(separator: ":", maxSplits: 1)
+            guard arr.count == 2 else {
+                throw RequestError(kind: .headParseError)
+            }
+            let key = String(arr.first!)
+            var value = arr.last!
+            guard !(key.isEmpty || value.isEmpty) else {
                 throw RequestError(
-                    kind: .parseError(
-                        string: line,
-                        expectations: "Empty component."
-                    )
-                )
+                    kind: .headParseError,
+                    description: "Wrong head format: \(key):\(value)")
+            }
+            if value.first == " " {
+                _ = value.popFirst()
+            }
+            headers[key.lowercased()] = String(value)
+            line = try buffer.readString(until: .crlf, allowEmpty: true)
+        }
+
+        if let lengthString = headers[.contentLength],
+            let length = Int(lengthString) {
+            body = try buffer.read(bytes: length)
+        } else {
+            body = Data()
+        }
+        var rang: (bottom: UInt, top: UInt)? = nil
+        if let range = headers[.range] {
+            if range.hasPrefix("bytes=") {
+                let index = range.index(range.startIndex, offsetBy: 6)
+                let inter = range[index...]
+                let numbers = inter.split(separator: "-", maxSplits: 1)
+                if numbers.count == 2 {
+                    if let bottom = UInt(numbers.first!), let top = UInt(numbers.last!) {
+                        rang = (bottom: bottom, top: top)
+                    }
+                }
             }
         }
-
-        guard components[1].first == "/" else {
-            throw RequestError(
-                kind: .parseError(
-                    string: components[1],
-                    expectations: "URL prefix must be '/' not '\(components[1].first!)'."
-                )
-            )
-        }
-
-        guard let fullpath = URL(string: components[1]) else {
-            throw RequestError(kind: .parseError(
-                string: components[1],
-                expectations: "Has to be parsable as URL."))
-        }
-        _path = fullpath
-
-        let methodRegex = Regex("^(post|get|delete|put|head|option)$")
-        guard methodRegex.matches(components[0].lowercased()) == true else {
-            throw RequestError(kind: .unknownMethod(method: components[0]))
-        }
-        _method = HTTPHeaders.Method(rawValue: components[0]) ?? HTTPHeaders.Method.get
-
-        guard components[2] == HTTPHeaders.HTTPProtocol.http11.rawValue else {
-            throw RequestError(kind: .unknownProtocol(prot: components[2]))
-        }
-        httpProtocol = components[2]
-
-        lines.remove(at: 0)
-        for line in lines {
-            let pomArray: [String] = line.split(
-                separator: ":",
-                maxSplits: 1,
-                omittingEmptySubsequences: false).map({ String($0) })
-
-            if pomArray.count != 2 || pomArray[1].first != " " {
-                throw RequestError(kind: .parseError(
-                    string: line,
-                    expectations: "Header line has to be separatable by ': ' to two parts"
-                    ))
-            }
-            headers[pomArray[0].lowercased()] = String(pomArray[1].dropFirst())
-        }
-
+        self.range = rang
         parseCookies()
+        _queryParameters = try parseURLQuery(url: originalPath)
         parseEncoding()
 
-        if _method == .post {
+        if self.method == .post && !body.isEmpty {
             try parsePostRequest()
         }
     }
     // swiftlint:enable function_body_length
     // swiftlint:enable cyclomatic_complexity
 
+    /// Constructs request
+    ///
+    /// - Parameter socket: Socket
+    /// - Throws: Request errors
+    public convenience init(socket: Socket) throws {
+        let socketBuffer = try SocketBuffer(socket: socket)
+        try self.init(remoteHostname: socket.remoteHostname, buffer: socketBuffer)
+    }
+
+    // For testing purposes
+    convenience init(remoteHostname: String, data: Data) throws {
+        try self.init(remoteHostname: remoteHostname, buffer: StaticBuffer(buffer: data))
+    }
+
+    private func parseURLQuery(url: String) throws -> [String: String] {
+        let splits = url.split(separator: "?", maxSplits: 1)
+        guard splits.count == 2 else {
+            return [:]
+        }
+        return try parseURLQuery(query: splits.last!.description)
+    }
+
+    private func parseURLQuery(query: String) throws -> [String: String] {
+        var res = [String: String]()
+        var arrIndexing = [String: Int]()
+        for qs in query.components(separatedBy: "&") {
+            let values = qs.split(separator: "=", maxSplits: 1)
+
+            var key = qs.components(separatedBy: "=").first!
+            var value: String
+            if values.count == 2 {
+                value = qs.components(separatedBy: "=").last!
+                value = value.replacingOccurrences(of: "+", with: " ")
+                if key.hasSuffix("[]") {
+                    let indexKey = key
+                    if arrIndexing[indexKey] == nil {
+                        arrIndexing[indexKey] = 0
+                    }
+                    let index = arrIndexing[indexKey]!
+                    _ = key.removeLast()
+                    key += "\(index)]"
+                    arrIndexing[indexKey] = index + 1
+                }
+            } else {
+                value = ""
+            }
+
+            guard let finalValue = value.removingPercentEncoding else {
+                throw RequestError(kind: .postBodyParseError(errorString: value))
+            }
+            res[key] = finalValue
+        }
+        return res
+    }
+
     private func parseEncoding() {
-        guard var acceptLine = getHeader(for: "accept-encoding") else {
+        guard var acceptLine = headers[.acceptEncoding] else {
             return
         }
         acceptLine.replaceAll(matching: " ", with: "")
@@ -160,11 +211,10 @@ open class Request {
                 break
             }
         })
-
     }
 
     private func parseCookies() {
-        guard let cookieLine = getHeader(for: "Cookie") else {
+        guard let cookieLine = headers[.cookie] else {
             return
         }
 
@@ -179,38 +229,100 @@ open class Request {
     }
 
     private func parsePostRequest() throws {
-        guard let contentType = getHeader(for: HTTPHeaders.ContentType.contentType) else {
+        guard let contentType = headers[.contentType] else {
             throw HTTPError(
                 status: .unsupportedMediaType,
-                description: "Missing \(HTTPHeaders.ContentType.contentType)")
+                description: "Missing \(HTTPHeaderKey.contentType)")
         }
+        let lowercasedType = contentType.lowercased()
+        if lowercasedType.hasPrefix(HTTPHeader.ContentType.formUrlencoded.description) {
+            try parseURLEncoded()
+        } else if lowercasedType.hasPrefix(HTTPHeader.ContentType.formData.description) {
+            try parseMultipart(contentType: contentType)
+        }
+        // TODO JSON
+    }
 
-        switch contentType {
-        case HTTPHeaders.ContentType.Application.formUrlencoded.rawValue:
-            try parseURLEncoded(body: rawBody.data(using: .utf8)!) // TODO not as string
-        default:
-            throw HTTPError(
-                status: .unsupportedMediaType,
-                description: "Unsupported \(HTTPHeaders.ContentType.contentType)")
+    private func parseMultipart(contentType: String) throws {
+        let CRLF = Data(bytes: [0xD, 0xA])
+        let parts = contentType.components(separatedBy: "boundary=")
+        guard parts.count == 2 else {
+            throw RequestError(kind: .postBodyParseError(errorString: "No boundary"))
+        }
+        let boundary = "--\(parts[1])"
+        guard let boundaryData = boundary.data(using: .utf8) else {
+            throw RequestError(kind: .headParseError)
+        }
+        var buffer = StaticBuffer(buffer: body)
+        guard (try buffer.read(until: boundaryData, allowEmpty: true)).isEmpty else {
+            throw RequestError(kind: .postBodyParseError(errorString: "Wrong format"))
+        }
+        let end = CRLF + boundaryData
+        var working = true
+        while working {
+            // swiftlint:disable:next force_try
+            let pom = try! buffer.read(bytes: 2)
+            if pom == CRLF {
+                let (name, fileName) = try parseMultipartLine(buffer: &buffer)
+                // swiftlint:disable:next force_try
+                _ = try! buffer.read(bytes: 2)
+                let body = try buffer.read(until: end, allowEmpty: false)
+                self.postMultipart[name] = Multipart(name: name, fileName: fileName, content: body)
+            } else if pom == Data(bytes: [0x2D, 0x2D]) {
+                working = false
+            }
         }
     }
 
-    private func parseURLEncoded(body data: Data) throws {
-        guard var body = String(data: data, encoding: .utf8) else {
+    private func parseMultipartLine(buffer: inout StaticBuffer)
+        throws -> (name: String, fileName: String?) {
+            let line = try buffer.readString(until: .crlf)
+            let contentDisposition = line.split(separator: ":", maxSplits: 1)
+            guard contentDisposition.first!.lowercased() == "content-disposition" else {
+                throw RequestError(
+                    kind: .postBodyParseError(errorString: "missing content-disposition"))
+            }
+            var name: String? = nil
+            var fileName: String? = nil
+            String(contentDisposition.last!).components(separatedBy: ";").forEach { valueString in
+                let value: String
+                if valueString.first == " " {
+                    value = String(valueString.dropFirst())
+                } else {
+                    value = valueString
+                }
+                let attribute = value.split(separator: "=", maxSplits: 1)
+                guard attribute.count == 2
+                    && attribute.last!.first == "\""
+                    && attribute.last!.last == "\"" else {
+                        return
+                }
+                let start = attribute.last!.index(after: attribute.last!.startIndex)
+                let end = attribute.last!.index(before: attribute.last!.endIndex)
+                let attributeValue = String(attribute.last![start..<end])
+                switch attribute.first! {
+                case "name":
+                    name = attributeValue
+                case "filename":
+                    fileName = attributeValue
+                default:
+                    break
+                }
+            }
+
+            guard name != nil else {
+                throw RequestError(
+                    kind: .postBodyParseError(errorString: "Missing 'name' in Content-Disposition"))
+            }
+            return (name!, fileName)
+    }
+
+    private func parseURLEncoded() throws {
+        let data = body
+        guard let query = String(data: data, encoding: .utf8) else {
             throw DataError(kind: .dataEncodingError)
         }
-        body.replaceAll(matching: "\\+", with: " ")
-        body.replaceAll(matching: "%2B", with: "+")
-        let groups = body.components(separatedBy: "&")
-        for group in groups {
-            var values = group.components(separatedBy: "=")
-            guard values.count > 1 else {
-                throw RequestError(kind: .postBodyParseError(errorString: group))
-            }
-            let key = values.removeFirst()
-            let value = values.joined()
-            _postParameters[key] = value
-        }
+        _postParameters = try parseURLQuery(query: query)
     }
 }
 
@@ -250,16 +362,16 @@ extension Request {
 
     /// Returns parameter from URL
     ///
-    /// GET parameters are after '?' in url for example in
+    /// Query parameters are after '?' in url for example in
     ///
     ///     "http://localhost/posts?name=Leo&age=21"
     ///
-    /// are GET parameters *name* with value 'Leo' and *age* with value '21'
+    /// are query parameters *name* with value 'Leo' and *age* with value '21'
     ///
     /// - Parameter key: Parameter name
     /// - Returns: Parameter value
-    public func getGetParameter(for key: String) -> String? {
-        return _path[key]
+    public func getQueryParameter(for key: String) -> String? {
+        return _queryParameters[key]
     }
 
     /// Returns parameter coded in body of request
@@ -289,16 +401,8 @@ extension Request {
     }
 
     /// Returns all get parameters
-    public var getParameters: [String: String?] {
-        return _path.allQueryParams
-    }
-
-    /// Return header
-    ///
-    /// - Parameter key: Header name
-    /// - Returns: Header value
-    public func getHeader(for key: String) -> String? {
-        return headers[key.lowercased()]
+    public var queryParameters: [String: String?] {
+        return _queryParameters
     }
 }
 
@@ -309,11 +413,11 @@ extension Request {
     /// - Returns: New session
     /// - Throws: `SessionError(kind: .cantEstablish)`
     @discardableResult
-    public func newSession() throws -> SessionProtocol {
-        guard var new = SessionManager().new(for: self) else {
+    public func newSession() throws -> Session {
+        guard let new = sessionBuilder.new(for: self) else {
             throw SessionError(kind: .cantEstablish)
         }
-        new.isNew = true
+        new._isNew = true
         _session = new
         return new
     }
@@ -322,7 +426,7 @@ extension Request {
     ///
     /// - Returns: Current session
     /// - Throws: `SessionError(kind: .missingSession)` if there is no session
-    public func session() throws -> SessionProtocol {
+    public func session() throws -> Session {
         guard let sess = _session else {
             throw SessionError(kind: .missingSession)
         }
@@ -334,7 +438,7 @@ extension Request {
         return _session != nil
     }
 
-    func setSession(_ session: SessionProtocol) {
+    func setSession(_ session: Session) {
         _session = session
     }
 }

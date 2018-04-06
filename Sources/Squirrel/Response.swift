@@ -8,44 +8,58 @@
 
 import Foundation
 import PathKit
-import GZip
 import SquirrelCore
+import Socket
 
 /// Responder
 public typealias AnyResponseHandler = ((Request) throws -> Any)
 
-/// Response class
-open class Response {
+/// Response describing protocol
+public protocol ResponseProtocol: class {
+    func send(socket: Socket)
+    func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt))
+    var headers: HTTPHead { get set }
+    var status: HTTPStatus { get }
+}
 
-    private let routeTree = RouteTree()
-
-    private let status: HTTPStatus
-
-    private let httpProtocolVersion = "HTTP/1.1"
-
-    var contentEncoding: HTTPHeaders.Encoding.EncodingType? = nil
-
-    /// Cookies
-    public var cookies: [String: String] = [:]
-
-    private var headers: [String: String] = [
-        HTTPHeaders.ContentType.contentType: HTTPHeaders.ContentType.Text.plain.rawValue
-    ]
-
-    private var body = Data() {
-        didSet {
-            finalBody = nil
-        }
+// MARK: - Cookies
+public extension ResponseProtocol {
+    /// Set cookie
+    ///
+    /// - Parameters:
+    ///   - name: Cookie name
+    ///   - value: Cookie value
+    public func setCookie(_ name: String, to value: String) {
+        headers.cookies[name] = value
     }
 
-    private var finalBody: Data? = nil
+    /// Returns Cookie
+    ///
+    /// - Parameter name: Cookie name
+    /// - Returns: Cookie value if exists, otherwise nil
+    func cookie(for name: String) -> String? {
+        return headers.cookies[name]
+    }
+}
+
+/// Response class
+open class Response: ResponseProtocol {
+
+    /// Response status
+    public let status: HTTPStatus
+
+    private let httpVersion = RequestLine.HTTPProtocol.http11
+
+    var contentEncoding: HTTPHeader.Encoding?
+
+    /// HTTP head
+    public var headers = HTTPHead()
+
+    private var body = Data()
 
     /// Body length
     var bodyLength: Int {
-        if finalBody == nil {
-            finalBody = body
-        }
-        return Array<UInt8>(finalBody!).count
+        return body.count
     }
 
     /// Construct response with HTTP status
@@ -53,20 +67,21 @@ open class Response {
     /// - Parameter status: HTTP Status
     public init(status: HTTPStatus) {
         self.status = status
+        headers.set(to: .contentType(.plain))
 
         if let location = getLocationFor(status: status) {
-            headers[HTTPHeaders.location] = location
+            headers.set(to: .location(location: location))
         }
 
         switch status {
         case .unauthorized(let wwwAuthenticate):
-            headers[HTTPHeaders.wwwAuthenticate] = wwwAuthenticate
+            headers[.wwwAuthenticate] = wwwAuthenticate
         case .tooManyRequests(let retryAfter),
              .serviceUnavailable(let retryAfter):
-            headers[HTTPHeaders.retryAfter] = retryAfter
+            headers[.retryAfter] = retryAfter
         case .notAllowed(let allowed):
-            let value = allowed.flatMap({ $0.rawValue.uppercased() }).joined(separator: ", ")
-            headers[HTTPHeaders.allow] = value
+            let value = allowed.map { $0.rawValue }.joined(separator: ", ")
+            headers[.allow] = value
         default:
             break
         }
@@ -87,6 +102,21 @@ open class Response {
         }
     }
 
+    /// Construct response with HTTP status, headers and body
+    ///
+    /// - Parameters:
+    ///   - status: HTTP Status
+    ///   - headers: HTTP Headers
+    ///   - body: HTTP Body
+    public convenience init(status: HTTPStatus = .ok, headers: Set<HTTPHeader>, body: Data) {
+        var hds = [String: String]()
+        for header in headers {
+            let (key, value) = header.keyValue
+            hds[key] = value
+        }
+        self.init(status: status, headers: hds, body: body)
+    }
+
     private func getLocationFor(status: HTTPStatus) -> String? {
         switch status {
         case .created(let location),
@@ -100,15 +130,6 @@ open class Response {
         default:
             return nil
         }
-    }
-
-    /// Set HTTP Header
-    ///
-    /// - Parameters:
-    ///   - key: Header Key
-    ///   - value: Header Value
-    public func setHeader(for key: String, to value: String) {
-        headers[key] = value
     }
 
     // swiftlint:disable cyclomatic_complexity
@@ -134,118 +155,109 @@ open class Response {
         if let fileExtension = path.`extension` {
             switch fileExtension.lowercased() {
             case "json":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Application.json.rawValue
-                )
+                headers.set(to: .contentType(.json))
             case "js":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Application.js.rawValue)
+                headers.set(to: .contentType(.js))
 
             case "jpg", "jpeg":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Image.jpeg.rawValue)
+                headers.set(to: .contentType(.jpeg))
             case "png":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Image.png.rawValue)
+                headers.set(to: .contentType(.png))
             case "svg":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Image.svg.rawValue)
+                headers.set(to: .contentType(.svg))
 
             case "css":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Text.css.rawValue)
+                headers.set(to: .contentType(.css))
             case "html":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Text.html.rawValue)
+                headers.set(to: .contentType(.html))
             case "txt":
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Text.plain.rawValue)
+                headers.set(to: .contentType(.plain))
+
+            case "mp4":
+                headers.set(to: .contentType(.mp4))
+                headers[.acceptRanges] = "bytes"
+            case "ogg":
+                headers.set(to: .contentType(.ogg))
+                headers[.acceptRanges] = "bytes"
+            case "mov", "gt":
+                headers.set(to: .contentType(.mov))
+                headers[.acceptRanges] = "bytes"
+            case "webm":
+                headers.set(to: .contentType(.webm))
+                headers[.acceptRanges] = "bytes"
+            case "avi":
+                headers.set(to: .contentType(.avi))
+                headers[.acceptRanges] = "bytes"
+            case "wmv":
+                headers.set(to: .contentType(.wmv))
+                headers[.acceptRanges] = "bytes"
             default:
-                setHeader(
-                    for: HTTPHeaders.ContentType.contentType,
-                    to: HTTPHeaders.ContentType.Text.plain.rawValue)
+                headers.set(to: .contentType(.plain))
             }
         } else {
             // TODO Binary data
-            setHeader(
-                for: HTTPHeaders.ContentType.contentType,
-                to: HTTPHeaders.ContentType.Text.plain.rawValue)
+            headers.set(to: .contentType(.plain))
         }
     }
     // swiftlint:enable cyclomatic_complexity
     // swiftlint:enable function_body_length
+}
 
-    func responeHandler() -> (Request) -> Response {
-        return {
-            _ in
-            return self
-        }
+/// Parse any to response
+///
+/// - Parameter any: Something waht do you want to return as response
+/// - Returns: Response representation of given `any`
+/// - Throws: Response initialize errors
+public func parseAnyResponse(any: Any) throws -> ResponseProtocol {
+    switch any {
+    case let response as ResponseProtocol:
+        return response
+    case let string as String:
+        return try Response(html: string)
+    case let presentable as SquirrelPresentable:
+        return try Response(presentable: presentable)
+    default:
+        return try Response(object: any)
     }
 }
 
-// MARK: - Raw head and body
-extension Response {
-    var rawHeader: Data {
-        if finalBody == nil {
-            finalBody = rawBody
-        }
-        var header = httpProtocolVersion + " " + status.description + "\r\n"
-        header += HTTPHeaders.contentLength + ": " + String(bodyLength) + "\r\n"
-        if let encoding = contentEncoding {
-            header += HTTPHeaders.Encoding.contentEncoding + ": "
-                + encoding.rawValue + "\r\n"
-        }
-        for (key, value) in headers {
-            header += key + ": " + value + "\r\n"
-        }
-        for (key, value) in cookies {
-            header += "Set-Cookie: " + "\(key)=\(value)\r\n"
-        }
-        header += "\r\n"
-        return header.data(using: .utf8)!
-    }
-
-    var rawBody: Data {
-        if let final = finalBody {
-            return final
-        }
-        let res: Data
-        if contentEncoding != nil {
-            // swiftlint:disable:next force_try
-            res = try! body.gzipped()
-        } else {
-            res = body
-        }
-        finalBody = res
-        return res
-    }
-}
-
-// MARK: - Parsing response
+// MARK: - Sending data
 public extension Response {
-    /// Parse any to response
-    ///
-    /// - Parameter any: Something waht do you want to return as response
-    /// - Returns: Response representation of given `any`
-    /// - Throws: Response initialize errors
-    public static func parseAnyResponse(any: Any) throws -> Response {
-        switch any {
-        case let response as Response:
-            return response
-        case let string as String:
-            return try Response(html: string)
-        case let presentable as SquirrelPresentable:
-            return try Response(presentable: presentable)
-        default:
-            return try Response(object: any)
+    func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt)) {
+        log.verbose("Sending partial \(range.bottom) \(range.top)")
+        let top: UInt
+        if range.top < bodyLength {
+            top = range.top
+        } else {
+            top = UInt(bodyLength - 1)
         }
+        let bottom: UInt
+        if range.bottom <= top {
+            bottom = range.bottom
+        } else {
+            bottom = top
+        }
+        let data = body[bottom..<top + 1]
+        headers[.connection] = "keep-alive"
+        headers[.acceptRanges] = nil
+        headers.set(to: .contentRange(
+            start: bottom,
+            end: top,
+            from: UInt(bodyLength)))
+
+        let size = data.count
+        headers.set(to: .contentLength(size: size))
+
+        let head = headers.makeHeader(httpVersion: httpVersion, status: .partialContent)
+        _ = try? socket.write(from: head)
+        _ = try? socket.write(from: data)
+    }
+
+    func send(socket: Socket) {
+        log.verbose("Sending response")
+        headers.set(to: .contentLength(size: bodyLength))
+        let head = headers.makeHeader(httpVersion: httpVersion, status: status)
+        _ = try? socket.write(from: head)
+        _ = try? socket.write(from: body)
     }
 }

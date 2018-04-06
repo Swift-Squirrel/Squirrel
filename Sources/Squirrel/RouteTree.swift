@@ -9,19 +9,45 @@
 import Foundation
 
 class RouteTree {
-    private var root: RouteNode? = nil
+    private var root: RouteNode?
+
+    var allRoutes: [RouteDescriptor] {
+        guard let root = root else {
+            return []
+        }
+        return root.routes(prefix: "").map { RouteDescriptor(route: $0.route, methods: $0.methods) }
+    }
+
+    func drop(method: RequestLine.Method, on route: String) {
+        log.debug("Removing route (\(route)) for method \(method.rawValue) ")
+        guard let node = root else {
+            log.debug("\tRoute \(route) does not exists")
+            return
+        }
+        var route = route
+        if route.first != "/" {
+            route = "/\(route)"
+        }
+        var components = route.components(separatedBy: "/")
+        guard !components.isEmpty else {
+            return
+        }
+        components[components.startIndex] = "/"
+        node.drop(method: method, onReversed: components.reversed())
+    }
 
     func add(
         route: String,
-        forMethod method: HTTPHeaders.Method,
+        forMethod method: RequestLine.Method,
         handler: @escaping AnyResponseHandler) {
 
         log.debug("Adding route for method \(method.rawValue) in route: \(route)")
 
         guard !(route.contains("/./") || !route.hasPrefix("/") || route.contains("/../")) else {
-            log.error("Route can not contains with \"/./\""
-                + " or \"/../\" and must has prefix with \"/\"")
-            exit(1)
+            let msg = "Route can not contains \"/./\""
+                + " or \"/../\" and must has prefix with \"/\""
+            log.error(msg)
+            fatalError(msg)
         }
 
         if route == "/" {
@@ -32,13 +58,21 @@ class RouteTree {
                 try root!.set(method: method, handler: handler)
             } catch let error as RouteError {
                 log.error(error.description)
-                exit(1)
+                fatalError(error.description)
             } catch let error {
                 log.error(error.localizedDescription)
-                exit(1)
+                fatalError(error.localizedDescription)
             }
         } else {
-            let routes = route.components(separatedBy: "/").filter { $0 != "" }
+            let routes: [String] = route.components(separatedBy: "/")
+                .filter { $0 != "" }.map { (route: String) -> String in
+
+                if route.first == ":" {
+                    return route
+                } else {
+                    return route.lowercased()
+                }
+             }
             if self.root == nil {
                 self.root = RouteNode(route: "/")
             }
@@ -48,16 +82,16 @@ class RouteTree {
                 try root.addNode(routes: routes, method: method, handler: handler)
             } catch let error as RouteError {
                 log.error(error.description)
-                exit(1)
+                fatalError(error.description)
             } catch let error {
                 log.error(error.localizedDescription)
-                exit(1)
+                fatalError(error.localizedDescription)
             }
         }
     }
 
     func findHandler(
-        for method: HTTPHeaders.Method,
+        for method: RequestLine.Method,
         in route: String)
         throws -> AnyResponseHandler? {
 
@@ -68,24 +102,24 @@ class RouteTree {
 
         var routes = route.components(separatedBy: "/").filter { $0 != "" }
 
-        var i = 0
-        for r in routes {
-            if r == "." {
-                routes.remove(at: i)
-            } else if r == ".." {
-                if i == 0 {
-                    i = -1
+        var index = 0
+        for route in routes {
+            if route == "." {
+                routes.remove(at: index)
+            } else if route == ".." {
+                if index == 0 {
+                    index = -1
                     break
                 }
-                routes.remove(at: i)
-                routes.remove(at: i - 1)
-                i -= 1
+                routes.remove(at: index)
+                routes.remove(at: index - 1)
+                index -= 1
             } else {
-                i += 1
+                index += 1
             }
         }
 
-        if i < 0 {
+        if index < 0 {
             routes.removeAll()
         }
 
@@ -93,6 +127,4 @@ class RouteTree {
 
         return try root?.findHandler(for: method, in: routes)
     }
-
-
 }
