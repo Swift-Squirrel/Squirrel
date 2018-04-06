@@ -14,6 +14,7 @@ public typealias Streamer = (WriteSocket) throws -> Void
 /// Protocol for writing to socket in stream
 public protocol WriteSocket {
     func send(_ data: Data) throws
+    func send(_ string: String) throws
 }
 
 /// Response with stream
@@ -105,6 +106,13 @@ open class StreamResponse: ResponseProtocol {
 
 extension StreamResponse {
     private class SocketStream: WriteSocket {
+        func send(_ string: String) throws {
+            guard let data = string.data(using: .utf8) else {
+                throw DataError(kind: .dataCodingError(string: string))
+            }
+            try send(data)
+        }
+
         private static let CRLF = "\r\n".data(using: .utf8)!
         private let socket: Socket
         init(socket: Socket) {
@@ -162,6 +170,13 @@ extension StreamResponse {
             currentIndex = 0
             buffer = Data()
             sent = false
+        }
+
+        func send(_ string: String) throws {
+            guard let data = string.data(using: .utf8) else {
+                throw DataError(kind: .dataCodingError(string: string))
+            }
+            try send(data)
         }
 
         func send(_ data: Data) throws {
