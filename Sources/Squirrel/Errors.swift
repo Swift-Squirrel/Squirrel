@@ -11,7 +11,7 @@ import SquirrelJSON
 import SquirrelCore
 
 // MARK: - JSON error
-extension JSONError: SquirrelError, HTTPErrorConvertible {
+extension JSONError: SquirrelError, HTTPConvertibleError {
     /// JSONError as HTTP error
     public var asHTTPError: HTTPError {
         return HTTPError(status: .internalError, description: description)
@@ -19,7 +19,7 @@ extension JSONError: SquirrelError, HTTPErrorConvertible {
 }
 
 /// Data errors
-public struct DataError: SquirrelError, HTTPErrorConvertible {
+public struct DataError: SquirrelError, HTTPConvertibleError {
     /// Error kinds
     ///
     /// - dataEncodingError: Encoding filed
@@ -67,7 +67,7 @@ public struct DataError: SquirrelError, HTTPErrorConvertible {
 }
 
 /// HTTP error
-public struct HTTPError: Error, CustomStringConvertible, HTTPErrorConvertible {
+public struct HTTPError: Error, CustomStringConvertible, HTTPConvertibleError {
     /// HTTP status
     public let status: HTTPStatus
     /// Description of error
@@ -115,7 +115,7 @@ public struct RouteError: SquirrelError {
 }
 
 /// Request error
-public struct RequestError: SquirrelError, HTTPErrorConvertible {
+public struct RequestError: SquirrelError, HTTPConvertibleError {
     /// Error kinds
     ///
     /// - unknownMethod: Unknown method

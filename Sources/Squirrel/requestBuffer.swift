@@ -297,7 +297,7 @@ extension Request {
     }
 
     /// SocketError
-    public struct SocketError: HTTPErrorConvertible, SquirrelError {
+    public struct SocketError: HTTPConvertibleError, SquirrelError {
         /// Returns HTTPError representation
         public var asHTTPError: HTTPError {
             switch kind {

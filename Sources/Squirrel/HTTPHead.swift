@@ -11,8 +11,11 @@ import Foundation
 public struct HTTPHead {
     /// Inner dictionary type
     public typealias DictionaryType = [String: String]
+
+    /// Cookies
+    public internal(set) var cookies: [String: String] = [:]
+
     private var headers: DictionaryType
-    var cookies: [String: String] = [:]
 
     /// Constructs from key value dictionary
     ///

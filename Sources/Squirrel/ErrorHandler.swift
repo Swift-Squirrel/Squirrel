@@ -45,12 +45,11 @@ public class ErrorHandler {
             return handler
         }
 
-        if let httpError = error as? HTTPErrorConvertible {
+        if let httpError = error as? HTTPConvertibleError {
             if let handler = findErrorHandler(for: httpError.asHTTPError) {
                 return handler
             }
         }
-
         return nil
     }
 

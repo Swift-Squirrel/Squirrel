@@ -12,6 +12,6 @@
 //}
 
 /// Bridge between Error and HTTPErrors
-public protocol HTTPErrorConvertible {
+public protocol HTTPConvertibleError {
     var asHTTPError: HTTPError { get }
 }

@@ -251,7 +251,7 @@ open class Request {
         guard let boundaryData = boundary.data(using: .utf8) else {
             throw RequestError(kind: .headParseError)
         }
-        var buffer = StaticBuffer(buffer: body)
+        let buffer = StaticBuffer(buffer: body)
         guard (try buffer.read(until: boundaryData, allowEmpty: true)).isEmpty else {
             throw RequestError(kind: .postBodyParseError(errorString: "Wrong format"))
         }
@@ -259,11 +259,11 @@ open class Request {
         var working = true
         while working {
             // swiftlint:disable:next force_try
-            let pom = try! buffer.read(bytes: 2)
+            let pom = try! buffer.read(bytes: 2) // StaticBuffer.read() never throws
             if pom == CRLF {
-                let (name, fileName) = try parseMultipartLine(buffer: &buffer)
+                let (name, fileName) = try parseMultipartLine(buffer: buffer)
                 // swiftlint:disable:next force_try
-                _ = try! buffer.read(bytes: 2)
+                _ = try! buffer.read(bytes: 2) // StaticBuffer.read() never throws
                 let body = try buffer.read(until: end, allowEmpty: false)
                 self.postMultipart[name] = Multipart(name: name, fileName: fileName, content: body)
             } else if pom == Data(bytes: [0x2D, 0x2D]) {
@@ -272,7 +272,7 @@ open class Request {
         }
     }
 
-    private func parseMultipartLine(buffer: inout StaticBuffer)
+    private func parseMultipartLine(buffer: StaticBuffer)
         throws -> (name: String, fileName: String?) {
             let line = try buffer.readString(until: .crlf)
             let contentDisposition = line.split(separator: ":", maxSplits: 1)
