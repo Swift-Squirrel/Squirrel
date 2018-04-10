@@ -23,8 +23,6 @@ open class Request {
 
     private let _path: URL
 
-    private var _cookies: [String: String] = [:]
-
     /// Hostname or IP
     public let remoteHostname: String
 
@@ -224,7 +222,7 @@ open class Request {
             guard values.count == 2 else {
                 return
             }
-            _cookies[values[0]] = values[1]
+            headers.cookies[values[0]] = values[1]
         }
     }
 
@@ -389,15 +387,15 @@ extension Request {
 
     /// Returns cookie
     ///
-    /// - Parameter key: Cookie name
+    /// - Parameter name: Cookie name
     /// - Returns: Cookie value
-    public func getCookie(for key: String) -> String? {
-        return _cookies[key]
+    public func cookie(for name: String) -> String? {
+        return headers.cookies[name]
     }
 
     /// Returns all cookies
     public var cookies: [String: String] {
-        return _cookies
+        return headers.cookies
     }
 
     /// Returns all get parameters
