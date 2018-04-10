@@ -90,7 +90,7 @@ class RequestTests: XCTestCase {
         XCTAssertEqual(request.urlParameters.count, 0)
         XCTAssertTrue(request.postParameters.isEmpty)
         XCTAssertTrue(request.queryParameters.isEmpty)
-        XCTAssertEqual(request.getCookie(for: "PHPSESSID"), "r2t5uvjq435r4q7ib3vtdjq120")
+        XCTAssertEqual(request.cookie(for: "PHPSESSID"), "r2t5uvjq435r4q7ib3vtdjq120")
         XCTAssertEqual(request.cookies.count, 1)
         XCTAssertEqual(request.headers[.acceptCharset], "ISO-8859-1,utf-8;q=0.7,*;q=0.7")
     }

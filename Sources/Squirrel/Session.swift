@@ -214,7 +214,7 @@ struct SessionManager: SessionBuilder {
         guard let userAgent = request.headers[.userAgent] else {
             return nil
         }
-        guard let id = request.getCookie(for: SessionConfig.sessionName) else {
+        guard let id = request.cookie(for: SessionConfig.sessionName) else {
             return nil
         }
         return DefaultSession(id: id, remoteHostname: request.remoteHostname, userAgent: userAgent)
