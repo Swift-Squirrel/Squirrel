@@ -171,34 +171,47 @@ open class Server: Router {
 
     func newConnection(socket: Socket) {
         do {
-            do {
-                let request = try Request(socket: socket)
-                log.info(request.method.rawValue + " " + request.path)
-                log.verbose("\(request.remoteHostname) - \(request.method) "
-                    + "\(request.path) \(request.headers)")
-                let response = handle(request: request)
-//                if request.acceptEncoding.count > 0 {
-//                    if request.acceptEncoding.contains(.gzip) {
-//                        response.contentEncoding = .gzip
-//                    }
-//                }
+            var keepAlive = false
+            repeat {
+                do {
+                    let request = try Request(socket: socket)
+                    log.error(keepAlive)
+                    log.info(request.method.rawValue + " " + request.path)
+                    log.verbose("\(request.remoteHostname) - \(request.method) "
+                        + "\(request.path) \(request.headers)")
+                    let response = handle(request: request)
+                    //                if request.acceptEncoding.count > 0 {
+                    //                    if request.acceptEncoding.contains(.gzip) {
+                    //                        response.contentEncoding = .gzip
+                    //                    }
+                    //                }
 
-                if let range = request.range, case .ok = response.status {
-                    response.sendPartial(socket: socket, range: range)
-                } else {
-                    response.send(socket: socket)
-                }
-            } catch let error {
-                if let sockErr = error as? Request.SocketError {
-                    if sockErr.kind == .clientClosedConnection {
-                        throw sockErr
+                    if let range = request.range, case .ok = response.status {
+                        response.sendPartial(socket: socket, range: range)
+                    } else {
+                        response.send(socket: socket)
                     }
+                    if request.headers[.connection]?.lowercased() == "keep-alive" {
+                        keepAlive = true
+                    } else {
+                        keepAlive = false
+                    }
+                } catch let error {
+                    if let sockErr = error as? Request.SocketError {
+                        if sockErr.kind == .clientClosedConnection {
+                            throw sockErr
+                        }
+                        if sockErr.kind == .nothingToRead && keepAlive {
+                            log.debug(sockErr.description)
+                            return
+                        }
+                    }
+                    let response = ErrorHandler.sharedInstance.response(for: error)
+                    log.error("unknown - \(response.status): \(error)")
+                    response.send(socket: socket)
+                    throw error
                 }
-                let response = ErrorHandler.sharedInstance.response(for: error)
-                log.error("unknown - \(response.status): \(error)")
-                response.send(socket: socket)
-                throw error
-            }
+            } while keepAlive && isRunning
         } catch let error {
             log.error("error with client: \(error)")
         }

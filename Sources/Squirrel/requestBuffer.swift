@@ -185,7 +185,9 @@ extension Request {
         public init(socket: Socket) throws {
             self.socket = socket
             buffer = []
-            try wait(miliseconds: SocketBuffer.initWait)
+            guard (try? wait(miliseconds: SocketBuffer.initWait)) != nil else {
+                throw SocketError(kind: .nothingToRead)
+            }
             try refreshBuffer()
         }
 
@@ -305,6 +307,8 @@ extension Request {
                 return HTTPError(status: .requestTimeout, description: description)
             case .clientClosedConnection:
                 fatalError(description)
+            case .nothingToRead:
+                fatalError(description)
             }
         }
 
@@ -314,6 +318,7 @@ extension Request {
         /// - clientClosedConnection: Client closed connection
         public enum Kind {
             case timeout
+            case nothingToRead
             case clientClosedConnection
         }
         /// Error kind
@@ -326,6 +331,8 @@ extension Request {
             switch kind {
             case .clientClosedConnection:
                 description = "Client closed connection"
+            case .nothingToRead:
+                description = "Waiting for request timed out, nothing to read"
             case .timeout:
                 description = "Request timed out"
             }
