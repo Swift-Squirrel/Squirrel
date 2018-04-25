@@ -18,7 +18,7 @@ public typealias AnyResponseHandler = ((Request) throws -> Any)
 public protocol ResponseProtocol: class {
     func send(socket: Socket)
     func sendPartial(socket: Socket, range: (bottom: UInt, top: UInt))
-    var headers: HTTPHead { get set }
+    var headers: HTTPHeader { get set }
     var status: HTTPStatus { get }
 }
 
@@ -50,10 +50,10 @@ open class Response: ResponseProtocol {
 
     private let httpVersion = RequestLine.HTTPProtocol.http11
 
-    var contentEncoding: HTTPHeader.Encoding?
+    var contentEncoding: HTTPHeaderElement.Encoding?
 
     /// HTTP head
-    public var headers = HTTPHead()
+    public var headers = HTTPHeader()
 
     private var body = Data()
 
@@ -108,13 +108,24 @@ open class Response: ResponseProtocol {
     ///   - status: HTTP Status
     ///   - headers: HTTP Headers
     ///   - body: HTTP Body
-    public convenience init(status: HTTPStatus = .ok, headers: Set<HTTPHeader>, body: Data) {
+    public convenience init(status: HTTPStatus = .ok, headers: Set<HTTPHeaderElement>, body: Data) {
         var hds = [String: String]()
         for header in headers {
             let (key, value) = header.keyValue
             hds[key] = value
         }
         self.init(status: status, headers: hds, body: body)
+    }
+
+    /// Construct response with HTTP status, header and body
+    ///
+    /// - Parameters:
+    ///   - status: HTTP Status
+    ///   - headers: HTTP Header
+    ///   - body: HTTP body
+    public convenience init(status: HTTPStatus = .ok, headers: HTTPHeaderElement..., body: Data) {
+        let set = Set<HTTPHeaderElement>(headers)
+        self.init(status: status, headers: set, body: body)
     }
 
     private func getLocationFor(status: HTTPStatus) -> String? {
@@ -212,10 +223,10 @@ public func parseAnyResponse(any: Any) throws -> ResponseProtocol {
     switch any {
     case let response as ResponseProtocol:
         return response
-    case let string as String:
-        return try Response(html: string)
     case let presentable as SquirrelPresentable:
         return try Response(presentable: presentable)
+    case let string as String:
+        return try Response(html: string)
     default:
         return try Response(object: any)
     }

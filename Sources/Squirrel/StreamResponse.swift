@@ -20,7 +20,7 @@ public protocol WriteSocket {
 /// Response with stream
 open class StreamResponse: ResponseProtocol {
     /// HTTP headers
-    public var headers = HTTPHead()
+    public var headers = HTTPHeader()
 
     /// HTTP status
     public let status: HTTPStatus
@@ -37,8 +37,8 @@ open class StreamResponse: ResponseProtocol {
     ///   - header: HTTP header
     ///   - streamClosure: Closure where you can stream data to client
     public init(status: HTTPStatus = .ok,
-                contentType: HTTPHeader.ContentType? = nil,
-                header: HTTPHead,
+                contentType: HTTPHeaderElement.ContentType? = nil,
+                header: HTTPHeader,
                 streamClosure: @escaping Streamer) {
 
         self.headers = header
@@ -47,6 +47,23 @@ open class StreamResponse: ResponseProtocol {
         }
         self.streamer = streamClosure
         self.status = status
+
+        if let location = getLocationFor(status: status) {
+            headers.set(to: .location(location: location))
+        }
+
+        switch status {
+        case .unauthorized(let wwwAuthenticate):
+            headers[.wwwAuthenticate] = wwwAuthenticate
+        case .tooManyRequests(let retryAfter),
+             .serviceUnavailable(let retryAfter):
+            headers[.retryAfter] = retryAfter
+        case .notAllowed(let allowed):
+            let value = allowed.map { $0.rawValue }.joined(separator: ", ")
+            headers[.allow] = value
+        default:
+            break
+        }
     }
 
     /// Inits stream response
@@ -57,7 +74,7 @@ open class StreamResponse: ResponseProtocol {
     ///   - header: HTTP header
     ///   - streamClosure: Closure where you can stream data to client
     public convenience init(status: HTTPStatus = .ok,
-                            contentType: HTTPHeader.ContentType? = nil,
+                            contentType: HTTPHeaderElement.ContentType? = nil,
                             headers: [String: String] = [:],
                             streamClosure: @escaping Streamer) {
 
@@ -101,6 +118,21 @@ open class StreamResponse: ResponseProtocol {
 
         let header = headers.makeHeader(httpVersion: httpVersion, status: .partialContent)
         try? stream.close(withHeader: header)
+    }
+
+    private func getLocationFor(status: HTTPStatus) -> String? {
+        switch status {
+        case .created(let location),
+             .movedPermanently(let location),
+             .found(let location),
+             .seeOther(let location),
+             .temporaryRedirect(let location),
+             .permanentRedirect(let location):
+
+            return location.description
+        default:
+            return nil
+        }
     }
 }
 

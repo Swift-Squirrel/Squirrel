@@ -19,19 +19,19 @@ public class ErrorHandler {
     public static let sharedInstance = ErrorHandler()
 
     private init() {
-        addErrorHandler(handler: BasicErrors())
-        addErrorHandler(handler: HTMLConvertibleErrors())
+        addError(handler: BasicErrors())
+        addError(handler: HTMLConvertibleErrors())
     }
     private var handlers = [ErrorHandlerProtocol]()
 
     /// Add error hanler as firt in array of error handlers
     ///
     /// - Parameter handler: handler to insert
-    public func addErrorHandler(handler: ErrorHandlerProtocol) {
+    public func addError(handler: ErrorHandlerProtocol) {
         handlers.insert(handler, at: 0)
     }
 
-    private func findErrorHandler(for error: Error) -> ResponseProtocol? {
+    private func findHandler(for error: Error) -> ResponseProtocol? {
         for handler in handlers {
             if let response = handler.getResponse(for: error) {
                 return response
@@ -41,12 +41,12 @@ public class ErrorHandler {
     }
 
     private func getErrorResponse(for error: Error) -> ResponseProtocol? {
-        if let handler = findErrorHandler(for: error) {
+        if let handler = findHandler(for: error) {
             return handler
         }
 
         if let httpError = error as? HTTPConvertibleError {
-            if let handler = findErrorHandler(for: httpError.asHTTPError) {
+            if let handler = findHandler(for: httpError.asHTTPError) {
                 return handler
             }
         }
@@ -62,7 +62,9 @@ public class ErrorHandler {
                     '\(description)'
                 """
             let escapedBody = body.escaped
-            return Response(status: .internalError, body: escapedBody.data(using: .utf8)!)
+            return Response(status: .internalError,
+                            headers: [.contentType(.html)],
+                            body: escapedBody.data(using: .utf8)!)
         }
         return response
     }

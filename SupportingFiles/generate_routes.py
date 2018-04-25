@@ -76,7 +76,7 @@ TYPES = [
     RouteParam(name="request", type_name="Request", doc="Request class"),
     RouteParam(name="params", type_name="T", doc="struct/class created from request", protocols="Decodable",
                builder=convert_builder),
-    RouteParam(name="session", type_name="SessionProtocol", doc="Session class", builder=session_builder),
+    RouteParam(name="session", type_name="Session", doc="Session class", builder=session_builder),
     RouteParam(name="sessionParams", type_name="S", doc="struct/class created from session",
                protocols="SessionDecodable", builder=session_convert_builder),
     RouteParam(name="builder", type_name="@escaping (_ request: Request) throws -> C",

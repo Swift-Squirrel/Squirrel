@@ -196,7 +196,7 @@ public class Config {
 
         if !(publicStorageSymlink.exists && publicStorageSymlink.isSymlink) {
             guard (try? publicStorageSymlink.symlink(publicStorage)) != nil else {
-                fatalError("Could not create simlink to \(publicStorage)")
+                fatalError("Could not create symlink to \(publicStorage)")
             }
         }
     }

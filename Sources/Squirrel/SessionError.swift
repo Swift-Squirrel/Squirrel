@@ -7,7 +7,7 @@
 
 import SquirrelCore
 
-struct SessionError: SquirrelError {
+struct SessionError: SquirrelError, HTTPConvertibleError {
     var asHTTPError: HTTPError {
         switch kind {
         case .missingSession:

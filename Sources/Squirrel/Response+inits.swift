@@ -106,6 +106,11 @@ extension Response {
                 body: data)
         case .text:
             self.init(status: status, body: data)
+        case .custom(let type):
+            self.init(
+                status: status,
+                headers: [HTTPHeaderKey.contentType.description: type],
+                body: data)
         }
     }
 }

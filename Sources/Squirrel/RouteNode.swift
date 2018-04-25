@@ -191,13 +191,8 @@ class RouteNode {
                 if values.count == 0 && defaultHandlers.count == 0 {
                     return nil
                 }
-                #if swift(>=4.1)
-                    var methods: [RequestLine.Method] = values.keys.compactMap({ $0 })
-                    methods.append(contentsOf: defaultHandlers.keys.compactMap({ $0 }))
-                #else
-                    var methods: [RequestLine.Method] = values.keys.flatMap({ $0 })
-                    methods.append(contentsOf: defaultHandlers.keys.flatMap({ $0 }))
-                #endif
+                var methods: [RequestLine.Method] = values.keys.map { $0 }
+                methods.append(contentsOf: defaultHandlers.keys.map { $0 })
                 throw HTTPError(
                     status: .notAllowed(allowed: methods),
                     description: "Method is not allowed")

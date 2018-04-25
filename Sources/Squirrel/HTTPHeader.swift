@@ -1,223 +1,153 @@
 //
-//  HTTPHeaders.swift
-//  Micros
+//  HTTPHead.swift
+//  SquirrelPackageDescription
 //
-//  Created by Filip Klembara on 6/26/17.
+//  Created by Filip Klembara on 11/2/17.
 //
-//
 
-/// Request-line in HTTP request
-public enum RequestLine {
-    /// HTTP Method
+import Foundation
+
+/// HTTP head
+public struct HTTPHeader {
+    /// Inner dictionary type
+    public typealias DictionaryType = [String: String]
+
+    /// Cookies
+    public internal(set) var cookies: [String: String] = [:]
+
+    private var headers: DictionaryType
+
+    /// Constructs from key value dictionary
     ///
-    /// - post: POST
-    /// - get: GET
-    /// - put: PUT
-    /// - delete: DELETE
-    /// - head: HEAD
-    /// - option: OPTIONS
-    /// - patch: PATCH
-    public enum Method: String, CustomStringConvertible {
-        case post = "POST"
-        case get = "GET"
-        case put = "PUT"
-        case delete = "DELETE"
-        case head = "HEAD"
-        case options = "OPTIONS"
-        case patch = "PATCH"
-
-        /// Uppercased rawValue
-        public var description: String {
-            return rawValue
+    /// - Parameter headers: New headers
+    public init(headers: [String: String] = [:]) {
+        self.headers = [:]
+        for (key, value) in headers {
+            self[key] = value
         }
     }
 
-    /// HTTP protocol
+    /// Constructs from key value dictionary
     ///
-    /// - http11: 1.1
-    public enum HTTPProtocol: String, CustomStringConvertible {
-        case http11 = "HTTP/1.1"
-
-        init?(rawHTTPValue value: String) {
-            guard value == "HTTP/1.1" else {
-                return nil
-            }
-
-            self = .http11
-        }
-
-        /// Returns `rawValue`
-        /// - Note: Value is uppercased
-        public var description: String {
-            return rawValue
-        }
-    }
-}
-
-/// HTTP header
-///
-/// - contentLength: Content length
-/// - contentEncoding: Content encoding
-/// - contentType: Content type
-/// - location: Location
-public enum HTTPHeader {
-    case contentLength(size: Int)
-    case contentEncoding(HTTPHeader.Encoding)
-    case contentType(HTTPHeader.ContentType)
-    case location(location: String)
-    case range(UInt, UInt)
-    case contentRange(start: UInt, end: UInt, from: UInt)
-}
-
-// MARK: - Hashable
-extension HTTPHeader: Hashable {
-    /// Hash value
-    public var hashValue: Int {
-        switch self {
-        case .contentType:
-            return 0
-        case .contentEncoding:
-            return 1
-        case .contentLength:
-            return 2
-        case .location:
-            return 3
-        case .range:
-            return 4
-        case .contentRange:
-            return 5
+    /// - Parameter headers: New headers
+    public init(headers: [HTTPHeaderKey: String]) {
+        self.headers = [:]
+        for (key, value) in headers {
+            self[key] = value
         }
     }
 
-    /// Check string equality
+    /// Constructs from HTTPHeader array
     ///
-    /// - Parameters:
-    ///   - lhs: lhs
-    ///   - rhs: rhs
-    /// - Returns: `lhs.description == rhs.description`
-    public static func == (lhs: HTTPHeader, rhs: HTTPHeader) -> Bool {
-        return lhs.description == rhs.description
+    /// - Parameter headers: New headers
+    public init(headers: [HTTPHeaderElement]) {
+        self.headers = [:]
+        for head in headers {
+            set(to: head)
+        }
+    }
+
+    func makeHeader(httpVersion: RequestLine.HTTPProtocol, status: HTTPStatus) -> Data {
+        var header = httpVersion.rawValue + " " + status.description + "\r\n"
+
+        for (key, value) in self {
+            header += key + ": " + value + "\r\n"
+        }
+
+        for (key, value) in cookies {
+            header += "\(HTTPHeaderKey.setCookie): \(key)=\(value)\r\n"
+        }
+        header += "\r\n"
+        return header.data(using: .utf8)!
     }
 }
 
-// MARK: - Sub enums
-public extension HTTPHeader {
+// MARK: - Collection
+extension HTTPHeader: Collection {
+    /// Index type
+    public typealias Index = DictionaryType.Index
+    /// Element type
+    public typealias Element = DictionaryType.Element
 
-    /// Encoding
+    /// Start index
+    public var startIndex: Index { return headers.startIndex }
+    /// End index
+    public var endIndex: Index { return headers.endIndex }
+
+    /// Index subscript
     ///
-    /// - gzip
-    /// - deflate
-    public enum Encoding: String, CustomStringConvertible {
-        case gzip
-        case deflate
+    /// - Parameter index: Index
+    public subscript(index: Index) -> (key: String, value: String) {
+        get { return headers[index] }
+    }
 
-        /// Returns raw value
-        public var description: String {
-            return self.rawValue
+    /// Returns next index
+    ///
+    /// - Parameter index: Index
+    /// - Returns: Index after passed index
+    public func index(after index: DictionaryType.Index) -> DictionaryType.Index {
+        return headers.index(after: index)
+    }
+}
+
+// MARK: - Subscripts
+extension HTTPHeader {
+    /// String key subscript (case-insensitive)
+    ///
+    /// - Parameter key: Key
+    public subscript(key: String) -> String? {
+        set {
+            headers[key.lowercased()] = newValue
+        }
+        get {
+            return headers[key.lowercased()]
         }
     }
 
-    /// Content type
-    enum ContentType: String, CustomStringConvertible {
-        // Image
-        case png
-        case jpeg
-        case svg = "svg+xml"
+    /// HTTPHeaderKey subscript
+    ///
+    /// - Parameter key: Key
+    public subscript(key: HTTPHeaderKey) -> String? {
+        set {
+            headers[key.description.lowercased()] = newValue
+        }
+        get {
+            return headers[key.description.lowercased()]
+        }
+    }
 
-        //Text
-        case html
-        case plain
-        case css
+    /// Set header
+    ///
+    /// - Parameter keyValue: HTTPHeader key value
+    public mutating func set(to keyValue: HTTPHeaderElement) {
+        let (key, value) = keyValue.keyValue
+        headers[key.lowercased()] = value
+    }
+}
 
-        // Application
-        case js = "javascript"
-        case json = "json"
-        case formUrlencoded = "x-www-form-urlencoded"
-        case forceDownload = "force-download"
+// MARK: - ExpressibleByDictionaryLiteral
+extension HTTPHeader: ExpressibleByDictionaryLiteral {
 
-        // multipart
-        case formData = "form-data"
-
-        // video
-        case mp4
-        case ogg
-        case mov = "quicktime"
-        case webm
-        case wmv = "x-ms-wmv"
-        case avi = "x-msvideo"
-
-        /// MIME representation
-        public var description: String {
-            let mime: String
-            switch self {
-            case .png, .jpeg, .svg:
-                mime = "image"
-            case .html, .plain, .css:
-                mime = "text"
-            case .js, .json, .formUrlencoded, .forceDownload:
-                mime = "application"
-            case .formData:
-                mime = "multipart"
-            case .mp4, .ogg, .mov, .webm, .wmv, .avi:
-                mime = "video"
-            }
-            return "\(mime)/\(rawValue)"
+    /// Constructs from dictionary literal
+    ///
+    /// - Parameter elements: dictionary literal
+    public init(dictionaryLiteral elements: (String, String)...) {
+        self.headers = [:]
+        for (key, value) in elements {
+            headers[key.lowercased()] = value
         }
     }
 }
 
-// MARK: - Getting values from HTTPHeader
-extension HTTPHeader: CustomStringConvertible {
-    /// <key>: <value> description
-    public var description: String {
-        let (key, value) = keyValue
-        return "\(key): \(value)"
-    }
-
-    /// Returns key and value
-    public var keyValue: (key: String, value: String) {
-        let key: HTTPHeaderKey
-        let value: String
-        switch self {
-        case .contentLength(let size):
-            key = .contentLength
-            value = size.description
-        case .contentEncoding(let encoding):
-            key = .contentEncoding
-            value = encoding.description
-        case .contentType(let type):
-            key = .contentType
-            value = type.description
-        case .location(let location):
-            key = .location
-            value = location
-        case .range(let bottom, let top):
-            key = .range
-            value = "bytes=\(bottom)-\(top)"
-        case .contentRange(let start, let end, let from):
-            key = .contentRange
-            value = "bytes \(start)-\(end)/\(from)"
+// MARK: - ExpressibleByArrayLiteral
+extension HTTPHeader: ExpressibleByArrayLiteral {
+    /// Constructs from array literal
+    ///
+    /// - Parameter elements: Array literal
+    public init(arrayLiteral elements: HTTPHeaderElement...) {
+        self.headers = [:]
+        for head in elements {
+            set(to: head)
         }
-        return (key.description, value)
     }
-}
-
-/// Check lowercased equality
-///
-/// - Parameters:
-///   - lhs: lhs
-///   - rhs: rhs
-/// - Returns: If string representation in lowercased is same
-public func == (lhs: String?, rhs: HTTPHeader.ContentType) -> Bool {
-    return lhs?.lowercased() == rhs.description.lowercased()
-}
-
-/// Check lowercased equality
-///
-/// - Parameters:
-///   - lhs: lhs
-///   - rhs: rhs
-/// - Returns: If string representation in lowercased is same
-public func == (lhs: String?, rhs: HTTPHeader.Encoding) -> Bool {
-    return lhs?.lowercased() == rhs.description.lowercased()
 }

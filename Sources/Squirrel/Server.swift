@@ -21,7 +21,7 @@ open class Server: Router {
     public private(set) var runStatus: RunStatus = .stopped
     private var connected = [Int32: Socket]()
     private let semaphore = DispatchSemaphore(value: 1)
-    private let dispatchGroup = DispatchGroup()
+    private let connectionsGroup = DispatchGroup()
     private let schedulerQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
 
     let serverRoot: Path
@@ -72,7 +72,10 @@ open class Server: Router {
             return
         }
         log.info("Server is stopping")
-        semaphore.wait()
+        guard semaphore.wait(timeout: 3) == .success else {
+            log.error("Stoping server timed out")
+            return
+        }
         runStatus = .stopping(now: !finishConnections)
         listenSocket?.close()
         listenSocket = nil
@@ -92,7 +95,10 @@ open class Server: Router {
             return
         }
         log.info("Server is pausing")
-        semaphore.wait()
+        guard semaphore.wait(timeout: 3) == .success else {
+            log.error("Pausing server timed out")
+            return
+        }
         runStatus = .pausing(now: !finishConnections, closure: closure)
         listenSocket?.close()
         listenSocket = nil
@@ -122,14 +128,14 @@ open class Server: Router {
                 repeat {
                     let connectedSocket = try socket.acceptClientConnection()
 
-                    dispatchGroup.enter()
+                    connectionsGroup.enter()
                     log.verbose("Connection from: \(connectedSocket.remoteHostname)")
+                    connected[socket.socketfd] = connectedSocket
                     queue.async {
-                        self.connected[socket.socketfd] = connectedSocket
                         self.newConnection(socket: connectedSocket)
                         self.connected.removeValue(forKey: connectedSocket.socketfd)
                         connectedSocket.close()
-                        self.dispatchGroup.leave()
+                        self.connectionsGroup.leave()
                     }
                 } while isRunning
             } catch let error as Socket.Error {
@@ -138,6 +144,7 @@ open class Server: Router {
                 }
             }
             handleRunStatus()
+            listenSocket?.close()
         } while willRun
     }
 
@@ -147,14 +154,14 @@ open class Server: Router {
         case .stopping(let now):
             if !now {
                 log.debug("Server is waiting for opened connections")
-                dispatchGroup.wait()
+                connectionsGroup.wait()
             }
             runStatus = .stopped
             log.info("Server is stopped")
         case .pausing(let now, let closure):
             if !now {
                 log.debug("Server is waiting for opened connections")
-                dispatchGroup.wait()
+                connectionsGroup.wait()
             }
             runStatus = .paused
             log.info("Server is paused")
@@ -191,7 +198,7 @@ open class Server: Router {
                     } else {
                         response.send(socket: socket)
                     }
-                    if request.headers[.connection]?.lowercased() == "keep-alive" {
+                    if request.headers[.connection] == .keepAlive {
                         keepAlive = true
                     } else {
                         keepAlive = false
@@ -201,7 +208,7 @@ open class Server: Router {
                         if sockErr.kind == .clientClosedConnection {
                             throw sockErr
                         }
-                        if sockErr.kind == .nothingToRead && keepAlive {
+                        if sockErr.kind == .nothingToRead {
                             log.debug(sockErr.description)
                             return
                         }
@@ -233,6 +240,7 @@ open class Server: Router {
         if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
             return handler
         }
+
         let path: Path
 
         if (Config.sharedInstance.storage).isSymlink
@@ -256,6 +264,10 @@ open class Server: Router {
         }
         guard path.exists else {
             throw HTTPError(status: .notFound, description: "\(request.path) is not found.")
+        }
+
+        guard request.method == .get else {
+            throw HTTPError(status: .notAllowed(allowed: [.get]))
         }
 
         if path.isDirectory {
@@ -282,17 +294,5 @@ open class Server: Router {
         return chain(middlewares: middlewareGroup, handler: { _ in
             return try Response(pathToFile: path)
         })
-    }
-}
-
-// MARK: - Server + drop
-public extension Server {
-    /// Drops handler for given method and route
-    ///
-    /// - Parameters:
-    ///   - method: Method type
-    ///   - route: Route url
-    public func drop(method: RequestLine.Method, on route: String) {
-        ResponseManager.sharedInstance.drop(method: method, on: route)
     }
 }

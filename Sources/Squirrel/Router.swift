@@ -36,3 +36,15 @@ public extension Router {
         return ResponseManager.sharedInstance.allRoutes
     }
 }
+
+// MARK: - Router + drop
+public extension Router {
+    /// Drops handler for given method and route
+    ///
+    /// - Parameters:
+    ///   - method: Method type
+    ///   - route: Route url
+    public func drop(method: RequestLine.Method, on route: String) {
+        ResponseManager.sharedInstance.drop(method: method, on: route)
+    }
+}

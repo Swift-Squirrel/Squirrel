@@ -30,7 +30,7 @@ open class Request {
     public var sessionBuilder: SessionBuilder = SessionManager()
 
     /// Accept-Encoding
-    public private(set) var acceptEncoding = Set<HTTPHeader.Encoding>()
+    public private(set) var acceptEncoding = Set<HTTPHeaderElement.Encoding>()
 
     /// Request path
     public var path: String {
@@ -44,7 +44,7 @@ open class Request {
     public let httpProtocol: RequestLine.HTTPProtocol
 
     /// HTTP Head
-    public private(set) var headers: HTTPHead = [:]
+    public private(set) var headers: HTTPHeader = [:]
 
     /// Request body
     public let body: Data
@@ -233,9 +233,9 @@ open class Request {
                 description: "Missing \(HTTPHeaderKey.contentType)")
         }
         let lowercasedType = contentType.lowercased()
-        if lowercasedType.hasPrefix(HTTPHeader.ContentType.formUrlencoded.description) {
+        if lowercasedType.hasPrefix(HTTPHeaderElement.ContentType.formUrlencoded.description) {
             try parseURLEncoded()
-        } else if lowercasedType.hasPrefix(HTTPHeader.ContentType.formData.description) {
+        } else if lowercasedType.hasPrefix(HTTPHeaderElement.ContentType.formData.description) {
             try parseMultipart(contentType: contentType)
         }
         // TODO JSON

@@ -18,7 +18,7 @@ public protocol Session: class, Codable {
     /// Expiry of session
     var expiry: Date { get }
 
-    /// Indicates if session is new (Do not modify)
+    /// Indicates if session is new (Do not modify!)
     var _isNew: Bool { get set }
 
     /// Ip address or hostname
@@ -32,7 +32,7 @@ public protocol Session: class, Codable {
     /// - Returns: True on success
     func delete() -> Bool
 
-    var data: [String: JSON] { get set }
+    var data: [String: JSON] { get }
 
     /// Get or set session parameter
     ///
@@ -50,9 +50,9 @@ public extension Session {
 
 class DefaultSession: Session {
 
-    var data: [String: JSON] = [:]
+    private(set) var data: [String: JSON] = [:]
 
-    var sessionID: String
+    let sessionID: String
 
     let expiry: Date
 

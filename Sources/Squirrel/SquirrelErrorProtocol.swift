@@ -6,12 +6,9 @@
 //
 //
 
-/// Protocol used for most of SquirrelErrors
-//public protocol SquirrelErrorProtocol: Error, CustomStringConvertible, AsHTTPProtocol {
-//
-//}
+import SquirrelCore
 
 /// Bridge between Error and HTTPErrors
-public protocol HTTPConvertibleError {
+public protocol HTTPConvertibleError: SquirrelError {
     var asHTTPError: HTTPError { get }
 }
