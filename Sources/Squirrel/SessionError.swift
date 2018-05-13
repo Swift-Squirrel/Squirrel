@@ -11,9 +11,9 @@ struct SessionError: SquirrelError, HTTPConvertibleError {
     var asHTTPError: HTTPError {
         switch kind {
         case .missingSession:
-            return HTTPError(status: .internalError, description: self.description)
+            return HTTPError(.internalError, description: self.description)
         case .cantEstablish:
-            return HTTPError(status: .badRequest, description: self.description)
+            return HTTPError(.badRequest, description: self.description)
         }
     }
 

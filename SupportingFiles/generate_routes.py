@@ -69,13 +69,16 @@ RESULT_FILE_PATH = "../Sources/Squirrel/{}".format(RESULT_FILE)
 print("Result file path: {}".format(RESULT_FILE_PATH))
 
 convert_builder = "try ResponseManager.convertParameters(request: request)"
+convert_body_builder = "try ResponseManager.convertBodyParameters(request: request)"
 session_convert_builder = "try ResponseManager.convertSessionParameters(request: request)"
 session_builder = "try request.session()"
 
 TYPES = [
     RouteParam(name="request", type_name="Request", doc="Request class"),
-    RouteParam(name="params", type_name="T", doc="struct/class created from request", protocols="Decodable",
+    RouteParam(name="params", type_name="T", doc="struct/class created from request query patameters", protocols="Decodable",
                builder=convert_builder),
+    RouteParam(name="bodyParams", type_name="B", doc="struct/class created from request body", protocols="BodyDecodable",
+               builder=convert_body_builder),
     RouteParam(name="session", type_name="Session", doc="Session class", builder=session_builder),
     RouteParam(name="sessionParams", type_name="S", doc="struct/class created from session",
                protocols="SessionDecodable", builder=session_convert_builder),

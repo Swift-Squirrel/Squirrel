@@ -155,11 +155,11 @@ open class Response: ResponseProtocol {
         status = .ok
 
         guard path.exists else {
-            throw HTTPError(status: .notFound, description: "Path does not exists.")
+            throw HTTPError(.notFound, description: "Path does not exists.")
         }
 
         guard path.isFile else {
-            throw HTTPError(status: .notFound, description: "File not found")
+            throw HTTPError(.notFound, description: "File not found")
         }
         body = try path.read()
 

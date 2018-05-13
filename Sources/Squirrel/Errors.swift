@@ -14,7 +14,7 @@ import SquirrelCore
 extension JSONError: HTTPConvertibleError {
     /// JSONError as HTTP error
     public var asHTTPError: HTTPError {
-        return HTTPError(status: .internalError, description: description)
+        return HTTPError(.internalError, description: description)
     }
 }
 
@@ -62,7 +62,7 @@ public struct DataError: HTTPConvertibleError {
 
     /// HTTPError representation
     public var asHTTPError: HTTPError {
-        return HTTPError(status: .internalError, description: description)
+        return HTTPError(.internalError, description: description)
     }
 }
 
@@ -73,12 +73,25 @@ public struct HTTPError: HTTPConvertibleError {
     /// Description of error
     public let description: String
 
+    // TODO - remove in next version
+    /// Construct HTTPError with given code and description
+    ///
+    /// - Note: This init can be removed in next version
+    ///
+    /// - Parameters:
+    ///   - status: HTTP Status code
+    ///   - description: Error description
+    @available(*, deprecated: 1.0.2, message: "Use init(_:description:)")
+    public init(status: HTTPStatus, description: String = "") {
+        self.init(status, description: description)
+    }
+
     /// Construct HTTPError with given code and description
     ///
     /// - Parameters:
     ///   - status: HTTP Status code
     ///   - description: Error description
-    public init(status: HTTPStatus, description: String = "") {
+    public init(_ status: HTTPStatus, description: String = "") {
         self.status = status
         self.description = description
     }
@@ -162,11 +175,11 @@ public struct RequestError: HTTPConvertibleError {
     public var asHTTPError: HTTPError {
         switch kind {
         case .unknownMethod:
-            return HTTPError(status: .notImplemented, description: description)
+            return HTTPError(.notImplemented, description: description)
         case .unknownProtocol:
-            return HTTPError(status: .httpVersionUnsupported, description: description)
+            return HTTPError(.httpVersionUnsupported, description: description)
         case .postBodyParseError, .headParseError:
-            return HTTPError(status: .badRequest, description: description)
+            return HTTPError(.badRequest, description: description)
         }
     }
 }

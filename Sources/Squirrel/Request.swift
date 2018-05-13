@@ -11,6 +11,7 @@
 import Foundation
 import Regex
 import Socket
+import SquirrelJSON
 #if os(Linux)
     import Dispatch
 #endif
@@ -61,6 +62,9 @@ open class Request {
 
     /// Post parameters when body is multipart
     public private(set) var postMultipart: [String: Multipart] = [:]
+
+    /// JSON from body
+    public private(set) var json: JSON?
 
     // swiftlint:disable function_body_length
     // swiftlint:disable cyclomatic_complexity
@@ -160,7 +164,11 @@ open class Request {
         return try parseURLQuery(query: splits.last!.description)
     }
 
-    private func parseURLQuery(query: String) throws -> [String: String] {
+    private func parseURLQuery(query percentageQuery: String) throws -> [String: String] {
+
+        guard let query = percentageQuery.removingPercentEncoding else {
+            throw RequestError(kind: .postBodyParseError(errorString: percentageQuery))
+        }
         var res = [String: String]()
         var arrIndexing = [String: Int]()
         for qs in query.components(separatedBy: "&") {
@@ -184,11 +192,7 @@ open class Request {
             } else {
                 value = ""
             }
-
-            guard let finalValue = value.removingPercentEncoding else {
-                throw RequestError(kind: .postBodyParseError(errorString: value))
-            }
-            res[key] = finalValue
+            res[key] = value
         }
         return res
     }
@@ -199,7 +203,7 @@ open class Request {
         }
         acceptLine.replaceAll(matching: " ", with: "")
         let acceptable = acceptLine.components(separatedBy: ",")
-        acceptable.forEach({ (encoding) in
+        acceptable.forEach { (encoding) in
             switch encoding {
             case "gzip":
                 acceptEncoding.insert(.gzip)
@@ -208,7 +212,7 @@ open class Request {
             default:
                 break
             }
-        })
+        }
     }
 
     private func parseCookies() {
@@ -224,103 +228,6 @@ open class Request {
             }
             headers.cookies[values[0]] = values[1]
         }
-    }
-
-    private func parsePostRequest() throws {
-        guard let contentType = headers[.contentType] else {
-            throw HTTPError(
-                status: .unsupportedMediaType,
-                description: "Missing \(HTTPHeaderKey.contentType)")
-        }
-        let lowercasedType = contentType.lowercased()
-        if lowercasedType.hasPrefix(HTTPHeaderElement.ContentType.formUrlencoded.description) {
-            try parseURLEncoded()
-        } else if lowercasedType.hasPrefix(HTTPHeaderElement.ContentType.formData.description) {
-            try parseMultipart(contentType: contentType)
-        }
-        // TODO JSON
-    }
-
-    private func parseMultipart(contentType: String) throws {
-        let CRLF = Data(bytes: [0xD, 0xA])
-        let parts = contentType.components(separatedBy: "boundary=")
-        guard parts.count == 2 else {
-            throw RequestError(kind: .postBodyParseError(errorString: "No boundary"))
-        }
-        let boundary = "--\(parts[1])"
-        guard let boundaryData = boundary.data(using: .utf8) else {
-            throw RequestError(kind: .headParseError)
-        }
-        let buffer = StaticBuffer(buffer: body)
-        guard (try buffer.read(until: boundaryData, allowEmpty: true)).isEmpty else {
-            throw RequestError(kind: .postBodyParseError(errorString: "Wrong format"))
-        }
-        let end = CRLF + boundaryData
-        var working = true
-        while working {
-            // swiftlint:disable:next force_try
-            let pom = try! buffer.read(bytes: 2) // StaticBuffer.read() never throws
-            if pom == CRLF {
-                let (name, fileName) = try parseMultipartLine(buffer: buffer)
-                // swiftlint:disable:next force_try
-                _ = try! buffer.read(bytes: 2) // StaticBuffer.read() never throws
-                let body = try buffer.read(until: end, allowEmpty: false)
-                self.postMultipart[name] = Multipart(name: name, fileName: fileName, content: body)
-            } else if pom == Data(bytes: [0x2D, 0x2D]) {
-                working = false
-            }
-        }
-    }
-
-    private func parseMultipartLine(buffer: StaticBuffer)
-        throws -> (name: String, fileName: String?) {
-            let line = try buffer.readString(until: .crlf)
-            let contentDisposition = line.split(separator: ":", maxSplits: 1)
-            guard contentDisposition.first!.lowercased() == "content-disposition" else {
-                throw RequestError(
-                    kind: .postBodyParseError(errorString: "missing content-disposition"))
-            }
-            var name: String? = nil
-            var fileName: String? = nil
-            String(contentDisposition.last!).components(separatedBy: ";").forEach { valueString in
-                let value: String
-                if valueString.first == " " {
-                    value = String(valueString.dropFirst())
-                } else {
-                    value = valueString
-                }
-                let attribute = value.split(separator: "=", maxSplits: 1)
-                guard attribute.count == 2
-                    && attribute.last!.first == "\""
-                    && attribute.last!.last == "\"" else {
-                        return
-                }
-                let start = attribute.last!.index(after: attribute.last!.startIndex)
-                let end = attribute.last!.index(before: attribute.last!.endIndex)
-                let attributeValue = String(attribute.last![start..<end])
-                switch attribute.first! {
-                case "name":
-                    name = attributeValue
-                case "filename":
-                    fileName = attributeValue
-                default:
-                    break
-                }
-            }
-
-            guard name != nil else {
-                throw RequestError(
-                    kind: .postBodyParseError(errorString: "Missing 'name' in Content-Disposition"))
-            }
-            return (name!, fileName)
-    }
-
-    private func parseURLEncoded() throws {
-        let data = body
-        guard let query = String(data: data, encoding: .utf8) else {
-            throw DataError(kind: .dataEncodingError)
-        }
-        _postParameters = try parseURLQuery(query: query)
     }
 }
 
@@ -438,5 +345,113 @@ extension Request {
 
     func setSession(_ session: Session) {
         _session = session
+    }
+}
+
+// MARK: - Parsing post request
+extension Request {
+    private func parsePostRequest() throws {
+        guard let contentType = headers[.contentType] else {
+            throw HTTPError(.unsupportedMediaType,
+                            description: "Missing \(HTTPHeaderKey.contentType)")
+        }
+        let lowercasedType = contentType.lowercased()
+        if lowercasedType.hasPrefix(HTTPHeaderElement.ContentType.formUrlencoded.description) {
+            try parseURLEncoded()
+        } else if lowercasedType.hasPrefix(HTTPHeaderElement.ContentType.formData.description) {
+            try parseMultipart(contentType: contentType)
+        } else if lowercasedType.hasPrefix(HTTPHeaderElement.ContentType.json.description) {
+            try parseJSON()
+        }
+    }
+
+    private func parseJSON() throws {
+        let decoder = JSONDecoder()
+        guard let json = try? decoder.decode(JSON.self, from: body) else {
+            throw HTTPError(.badRequest, description: "Could not create json from body")
+        }
+        self.json = json
+    }
+
+    private func parseMultipart(contentType: String) throws {
+        let CRLF = Data(bytes: [0xD, 0xA])
+        let parts = contentType.components(separatedBy: "boundary=")
+        guard parts.count == 2 else {
+            throw RequestError(kind: .postBodyParseError(errorString: "No boundary"))
+        }
+        let boundary = "--\(parts[1])"
+        guard let boundaryData = boundary.data(using: .utf8) else {
+            throw RequestError(kind: .headParseError)
+        }
+        let buffer = StaticBuffer(buffer: body)
+        guard (try buffer.read(until: boundaryData, allowEmpty: true)).isEmpty else {
+            throw RequestError(kind: .postBodyParseError(errorString: "Wrong format"))
+        }
+        let end = CRLF + boundaryData
+        var working = true
+        while working {
+            // swiftlint:disable:next force_try
+            let pom = try! buffer.read(bytes: 2) // StaticBuffer.read() never throws
+            if pom == CRLF {
+                let (name, fileName) = try parseMultipartLine(buffer: buffer)
+                // swiftlint:disable:next force_try
+                _ = try! buffer.read(bytes: 2) // StaticBuffer.read() never throws
+                let body = try buffer.read(until: end, allowEmpty: false)
+                self.postMultipart[name] = Multipart(name: name, fileName: fileName, content: body)
+            } else if pom == Data(bytes: [0x2D, 0x2D]) {
+                working = false
+            }
+        }
+    }
+
+    private func parseMultipartLine(buffer: StaticBuffer)
+        throws -> (name: String, fileName: String?) {
+            let line = try buffer.readString(until: .crlf)
+            let contentDisposition = line.split(separator: ":", maxSplits: 1)
+            guard contentDisposition.first!.lowercased() == "content-disposition" else {
+                throw RequestError(
+                    kind: .postBodyParseError(errorString: "missing content-disposition"))
+            }
+            var name: String? = nil
+            var fileName: String? = nil
+            String(contentDisposition.last!).components(separatedBy: ";").forEach { valueString in
+                let value: String
+                if valueString.first == " " {
+                    value = String(valueString.dropFirst())
+                } else {
+                    value = valueString
+                }
+                let attribute = value.split(separator: "=", maxSplits: 1)
+                guard attribute.count == 2
+                    && attribute.last!.first == "\""
+                    && attribute.last!.last == "\"" else {
+                        return
+                }
+                let start = attribute.last!.index(after: attribute.last!.startIndex)
+                let end = attribute.last!.index(before: attribute.last!.endIndex)
+                let attributeValue = String(attribute.last![start..<end])
+                switch attribute.first! {
+                case "name":
+                    name = attributeValue
+                case "filename":
+                    fileName = attributeValue
+                default:
+                    break
+                }
+            }
+
+            guard name != nil else {
+                throw RequestError(
+                    kind: .postBodyParseError(errorString: "Missing 'name' in Content-Disposition"))
+            }
+            return (name!, fileName)
+    }
+
+    private func parseURLEncoded() throws {
+        let data = body
+        guard let query = String(data: data, encoding: .utf8) else {
+            throw DataError(kind: .dataEncodingError)
+        }
+        _postParameters = try parseURLQuery(query: query)
     }
 }

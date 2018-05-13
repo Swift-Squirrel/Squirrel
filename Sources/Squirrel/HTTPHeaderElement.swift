@@ -222,6 +222,26 @@ public enum RequestLine {
     }
 }
 
+/// Check if pattern match value
+///
+/// - Parameters:
+///   - pattern: pattern
+///   - value: value
+/// - Returns: if pattern matches value
+public func ~= (pattern: HTTPHeaderElement.ContentType, value: String) -> Bool {
+    guard let valueType = value.split(separator: "/", maxSplits: 1).last?
+        .split(separator: ";").first?.split(separator: " ").first,
+
+        let patternValue = HTTPHeaderElement.ContentType(rawValue: valueType.description) else {
+
+            return false
+    }
+    guard patternValue == pattern else {
+        return false
+    }
+    return true
+}
+
 /// Check lowercased equality
 ///
 /// - Parameters:

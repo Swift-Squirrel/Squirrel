@@ -182,7 +182,6 @@ open class Server: Router {
             repeat {
                 do {
                     let request = try Request(socket: socket)
-                    log.error(keepAlive)
                     log.info(request.method.rawValue + " " + request.path)
                     log.verbose("\(request.remoteHostname) - \(request.method) "
                         + "\(request.path) \(request.headers)")
@@ -209,7 +208,7 @@ open class Server: Router {
                             throw sockErr
                         }
                         if sockErr.kind == .nothingToRead {
-                            log.debug(sockErr.description)
+                            log.verbose(sockErr.description)
                             return
                         }
                     }
@@ -258,16 +257,16 @@ open class Server: Router {
                 if let handler = try ResponseManager.sharedInstance.findHandler(for: request) {
                     return handler
                 } else {
-                    throw HTTPError(status: .notFound, description: "'/' is not handled")
+                    throw HTTPError(.notFound, description: "'/' is not handled")
                 }
             }
         }
         guard path.exists else {
-            throw HTTPError(status: .notFound, description: "\(request.path) is not found.")
+            throw HTTPError(.notFound, description: "\(request.path) is not found.")
         }
 
         guard request.method == .get else {
-            throw HTTPError(status: .notAllowed(allowed: [.get]))
+            throw HTTPError(.notAllowed(allowed: [.get]))
         }
 
         if path.isDirectory {
@@ -278,8 +277,7 @@ open class Server: Router {
                 })
             }
             guard Config.sharedInstance.isAllowedDirBrowsing else {
-                throw HTTPError(
-                    status: .forbidden,
+                throw HTTPError(.forbidden,
                     description: "Directory browsing is not allowed")
             }
 

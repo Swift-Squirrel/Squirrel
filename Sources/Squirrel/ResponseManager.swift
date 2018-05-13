@@ -14,8 +14,7 @@ class ResponseManager {
 
     private var routeTree = RouteTree()
 
-    private init() {
-    }
+    private init() { }
 
     var allRoutes: [RouteDescriptor] {
         return routeTree.allRoutes
@@ -39,6 +38,9 @@ class ResponseManager {
 /// Protocol used as constrain in route methods
 public protocol SessionDecodable: Decodable { }
 
+/// Protocol used as constrain in route methods
+public protocol BodyDecodable: Decodable { }
+
 // MARK: - Route methods
 extension ResponseManager {
 
@@ -53,11 +55,6 @@ extension ResponseManager {
 
         var values = request.urlParameters
 
-        if request.method == RequestLine.Method.post {
-            for (key, value) in request.postParameters where values[key] == nil {
-                values[key] = value
-            }
-        }
         for (key, value) in request.queryParameters where values[key] == nil {
             values[key] = value
         }
@@ -67,10 +64,44 @@ extension ResponseManager {
             let decoded = try decoder.decode(T.self, from: values)
             return decoded
         } catch let error {
-            throw HTTPError(
-                status: .badRequest,
+            throw HTTPError(.badRequest,
                 description: "Wrong parameters type or missing parameters - \(error)")
         }
+    }
+
+    static func convertBodyParameters<T: BodyDecodable>(request: Request) throws -> T {
+
+        request.headers.forEach { (key, value) in
+            print("\(key): \(value)")
+        }
+
+        guard let contentType = request.headers[.contentType] else {
+            throw HTTPError(.unsupportedMediaType, description: "Missing Content-Type header")
+        }
+        let decoded: T
+        switch contentType {
+        case .json:
+            do {
+                decoded = try JSONDecoder().decode(T.self, from: request.body)
+            } catch let error {
+                throw HTTPError(.badRequest,
+                                description: "Wrong parameters type or missing "
+                                    + "parameters - \(error)")
+            }
+        case .formUrlencoded:
+            do {
+                let values = request.postParameters
+                decoded = try KeyValueDecoder().decode(T.self, from: values)
+            } catch let error {
+                throw HTTPError(.badRequest,
+                                description: "Wrong parameters type or missing "
+                                    + "parameters - \(error)")
+            }
+        default:
+            throw HTTPError(.unsupportedMediaType,
+                            description: "Content-Type: \(contentType) is not supported")
+        }
+        return decoded
     }
 
     static func convertSessionParameters<T: SessionDecodable>(request: Request) throws -> T {
@@ -79,7 +110,7 @@ extension ResponseManager {
             let data = try JSONEncoder().encode(session.data)
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
-            throw HTTPError(status: .badRequest,
+            throw HTTPError(.badRequest,
                             description: "Wrong parameters type or missing parameters")
         }
     }

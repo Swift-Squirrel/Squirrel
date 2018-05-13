@@ -22,6 +22,12 @@ public struct KeyValueDecoder {
     }
 }
 
+extension KeyValueDecoder {
+    static func badRequest() throws -> Never {
+        throw HTTPError(.badRequest, description: "Can not build required type.")
+    }
+}
+
 fileprivate struct _KeyValueDecoder: Decoder {
     var codingPath: [CodingKey] {
         return []
@@ -76,15 +82,8 @@ fileprivate struct KeyValueUnkeyedDecodingContainer: UnkeyedDecodingContainer {
         self.values = try values.map { (arg) -> (Int, String) in
 
             let (key, value) = arg
-            guard key.first == "[" && key.last == "]" else {
-                let context = DecodingError.Context(codingPath: [], debugDescription: "execting key format '[<number>]' but \(key) got")
-                throw DecodingError.dataCorrupted(context)
-            }
-            var newKey = key
-            let _ = newKey.removeLast()
-            let _ = newKey.removeFirst()
-            guard let index = Int(newKey) else {
-                let context = DecodingError.Context(codingPath: [], debugDescription: "execting key format '[<number>]' but \(key) got")
+            guard let index = Int(key) else {
+                let context = DecodingError.Context(codingPath: [], debugDescription: "expecting key format '[<number>]' but \(key) got")
                 throw DecodingError.dataCorrupted(context)
             }
             return (index, value)
@@ -234,15 +233,15 @@ fileprivate struct KeyValueUnkeyedDecodingContainer: UnkeyedDecodingContainer {
     }
 
     mutating func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
-        fatalError("Not implemented")
+        try KeyValueDecoder.badRequest()
     }
 
     mutating func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer {
-        fatalError("Not implemented")
+        try KeyValueDecoder.badRequest()
     }
 
     mutating func superDecoder() throws -> Decoder {
-        fatalError("Not implemented")
+        try KeyValueDecoder.badRequest()
     }
 }
 
@@ -426,10 +425,13 @@ fileprivate struct KeyValueKeyedDecodingContainer<K : CodingKey>
         _ type: T.Type, forKey key: K
         ) throws -> T where T : Decodable {
         let _values = decoder.values.filter { $0.key.hasPrefix(key.stringValue) }.map { (k, v) -> (String, String) in
-            let nk = k.dropFirst(key.stringValue.count).description
-            if nk.count == 0 {
+            var nk = k.dropFirst(key.stringValue.count).description
+            if nk.count < 3 || nk.first != "[" || nk.last != "]" {
                 return (key.stringValue, v)
             }
+
+            nk.removeFirst()
+            nk.removeLast()
             return (nk, v)
         }
         var values = [String: String]()
@@ -443,13 +445,13 @@ fileprivate struct KeyValueKeyedDecodingContainer<K : CodingKey>
     func nestedContainer<NestedKey>(
         keyedBy type: NestedKey.Type, forKey key: K
         ) throws -> KeyedDecodingContainer<NestedKey> {
-        fatalError("unsupported")
+        try KeyValueDecoder.badRequest()
     }
 
     func nestedUnkeyedContainer(
         forKey key: K
         ) throws -> UnkeyedDecodingContainer {
-        fatalError("unsupported")
+        try KeyValueDecoder.badRequest()
     }
 
     func superDecoder() throws -> Decoder {
@@ -457,7 +459,7 @@ fileprivate struct KeyValueKeyedDecodingContainer<K : CodingKey>
     }
 
     func superDecoder(forKey key: K) throws -> Decoder {
-        fatalError("unsupported")
+        try KeyValueDecoder.badRequest()
     }
 }
 

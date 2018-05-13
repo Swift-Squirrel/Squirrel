@@ -193,9 +193,8 @@ class RouteNode {
                 }
                 var methods: [RequestLine.Method] = values.keys.map { $0 }
                 methods.append(contentsOf: defaultHandlers.keys.map { $0 })
-                throw HTTPError(
-                    status: .notAllowed(allowed: methods),
-                    description: "Method is not allowed")
+                throw HTTPError(.notAllowed(allowed: methods),
+                                description: "Method is not allowed")
             }
             return handler
         }

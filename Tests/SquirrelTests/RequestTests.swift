@@ -199,7 +199,7 @@ class RequestTests: XCTestCase {
         do {
             _ = try Request(remoteHostname: "127.0.0.1", data: "POST /foo.php HTTP/1.1\r\n\r\n".data(using: .utf8)!)
         } catch let error as HTTPError {
-            XCTAssertEqual(error.description, HTTPError(status: .unsupportedMediaType, description: "Missing Content-Type").description)
+            XCTAssertEqual(error.description, HTTPError(.unsupportedMediaType, description: "Missing Content-Type").description)
         } catch let error {
             XCTFail("Unexpected error '\(String(describing: type(of: error)))': \(error)")
         }
@@ -207,7 +207,7 @@ class RequestTests: XCTestCase {
         do {
             _ = try Request(remoteHostname: "127.0.0.1", data: "POST /foo.php HTTP/1.1\r\nContent-Type: application/json\r\n\r\n".data(using: .utf8)!)
         } catch let error as HTTPError {
-            XCTAssertEqual(error.description, HTTPError(status: .unsupportedMediaType, description: "Unsupported Content-Type").description)
+            XCTAssertEqual(error.description, HTTPError(.unsupportedMediaType, description: "Unsupported Content-Type").description)
         } catch let error {
             XCTFail("Unexpected error '\(String(describing: type(of: error)))': \(error)")
         }

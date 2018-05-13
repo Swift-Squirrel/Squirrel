@@ -97,7 +97,7 @@ class RouteTree {
 
         guard route.hasPrefix("/") else {
             log.error("Route is without prefix \"/\"")
-            throw HTTPError(status: .badRequest, description: "Route is without prefix '/'")
+            throw HTTPError(.badRequest, description: "Route is without prefix '/'")
         }
 
         var routes = route.components(separatedBy: "/").filter { $0 != "" }

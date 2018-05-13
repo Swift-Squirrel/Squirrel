@@ -304,7 +304,7 @@ extension Request {
         public var asHTTPError: HTTPError {
             switch kind {
             case .timeout:
-                return HTTPError(status: .requestTimeout, description: description)
+                return HTTPError(.requestTimeout, description: description)
             case .clientClosedConnection:
                 fatalError(description)
             case .nothingToRead:
